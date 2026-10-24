@@ -41,18 +41,22 @@ public sealed class CatalogLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Load_ReportsBrokenJsonWithFileAndLine()
+    public void Load_ReportsBrokenJsonWithFileAndLine_AndKeepsLoadingLaterFiles()
     {
         WriteCards();
-        WriteGroup("a.json", "a", Switches.Make("a-one"));
-        Write("b.json", "{\"group\":\"b\",\"title\":\"B\",\"switches\":[]}\n\n}");
+        Write("a.json", "{\"group\":\"a\",\"title\":\"A\",\"switches\":[]}\n\n}");
+        WriteGroup("b.json", "b", Switches.Make("b-one"));
+        WriteGroup("c.json", "c", Switches.Make("Bad_Id"));
 
         var result = CatalogLoader.Load(_dir);
 
         Assert.False(result.Ok);
         Assert.Null(result.Catalog);
-        Assert.Contains(result.Errors, e => e.File == "b.json" && e.Line == 3);
-        Assert.DoesNotContain(result.Errors, e => e.File == "a.json");
+        var broken = Assert.Single(result.Errors, e => e.File == "a.json");
+        Assert.Equal(3, broken.Line);
+        Assert.DoesNotContain("LineNumber", broken.Message);
+        Assert.Contains(result.Errors, e => e.File == "c.json" && e.SwitchId == "Bad_Id");
+        Assert.DoesNotContain(result.Errors, e => e.File == "b.json");
     }
 
     [Fact]
@@ -68,6 +72,8 @@ public sealed class CatalogLoaderTests : IDisposable
         Assert.Contains("registry.nuke", json);
         var error = Assert.Single(result.Errors);
         Assert.Equal("a.json", error.File);
+        Assert.NotNull(error.Line);
+        Assert.DoesNotContain("LineNumber", error.Message);
     }
 
     private void WriteWithNull(string listName)
@@ -111,6 +117,24 @@ public sealed class CatalogLoaderTests : IDisposable
         var result = CatalogLoader.Load(_dir);
 
         Assert.Contains(result.Errors, e => e.File == "a.json" && e.SwitchId == "a-one");
+    }
+
+    [Fact]
+    public void Load_ReportsMissingActionType()
+    {
+        WriteCards();
+        WriteGroup("a.json", "a", Switches.Make("a-one"));
+        var json = File.ReadAllText(Path.Combine(_dir, "a.json")).Replace("\"type\": \"registry.set\",", "");
+        Write("a.json", json);
+
+        var result = CatalogLoader.Load(_dir);
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal("a.json", error.File);
+        Assert.Contains("type discriminator", error.Message);
+        Assert.Contains("$.switches[0].live[0]", error.Message);
+        // System.Text.Json reports a missing discriminator as NotSupportedException without a position.
+        Assert.Null(error.Line);
     }
 
     [Fact]

@@ -1,11 +1,16 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using NitrOS.Core.Json;
 using NitrOS.Core.Model;
 
 namespace NitrOS.Core.Loading;
 
-public static class CatalogLoader
+public static partial class CatalogLoader
 {
+    // System.Text.Json appends a 0-based position; CatalogError.Line carries the 1-based one.
+    [GeneratedRegex(@"\s*\|\s*LineNumber:\s*\d+\s*\|\s*BytePositionInLine:\s*\d+")]
+    private static partial Regex PositionSuffix();
+
     private const string CardsFile = "cards.json";
 
     public static CatalogLoadResult Load(string directory)
@@ -107,11 +112,11 @@ public static class CatalogLoader
         }
         catch (JsonException ex)
         {
-            errors.Add(new CatalogError(name, ex.LineNumber is { } l ? l + 1 : null, null, ex.Message));
+            errors.Add(new CatalogError(name, ex.LineNumber is { } l ? l + 1 : null, null, PositionSuffix().Replace(ex.Message, "")));
         }
         catch (NotSupportedException ex)
         {
-            errors.Add(new CatalogError(name, null, null, ex.Message));
+            errors.Add(new CatalogError(name, null, null, PositionSuffix().Replace(ex.Message, "")));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
