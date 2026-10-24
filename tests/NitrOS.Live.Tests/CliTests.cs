@@ -218,4 +218,144 @@ public class CliTests : IDisposable
         Assert.Contains("Plan", text);
         File.WriteAllText(Path.Combine(Path.GetTempPath(), "nitros-plan-gamer.txt"), text);
     }
+
+    private CliEnvironment HandheldEnv() => Env() with { Device = new Device(true, 10, "ASUS", "RC73XA") };
+
+    private static string SkippedOnHandheld() =>
+        NitrOS.Core.Loading.CatalogLoader.Load(RepoCatalog()).Catalog!.Switches.First(s => s.SkipOn.Count > 0).Id;
+
+    [Fact]
+    public void Drift_CorruptJournal_PrintsErrorAndExits1()
+    {
+        Directory.CreateDirectory(_journals);
+        File.WriteAllText(Path.Combine(_journals, "bad.json"), "{ not json");
+        var (code, text) = Run(Env(), "drift", "bad");
+        Assert.Equal(1, code);
+        Assert.StartsWith("Error: ", text);
+    }
+
+    [Fact]
+    public void Undo_CorruptJournal_PrintsErrorAndExits1()
+    {
+        Directory.CreateDirectory(_journals);
+        File.WriteAllText(Path.Combine(_journals, "bad.json"), "{ not json");
+        var (code, text) = Run(Env(), "undo", "bad", "--yes");
+        Assert.Equal(1, code);
+        Assert.Contains("Error: ", text);
+    }
+
+    [Fact]
+    public void Apply_SystemsFactoryThrows_PrintsErrorAndExits1()
+    {
+        var env = Env(systems: () => throw new InvalidOperationException("boom"));
+        var (code, text) = Run(env, "apply", "--ids", "game-mode-on", "--yes");
+        Assert.Equal(1, code);
+        Assert.Contains("Error: boom", text);
+    }
+
+    [Fact]
+    public void Apply_PrintsDroppedIds()
+    {
+        var skipped = SkippedOnHandheld();
+        var (code, text) = Run(HandheldEnv(), "apply", "--ids", $"{skipped},game-mode-on", "--yes");
+        Assert.Equal(0, code);
+        Assert.Contains("Dropped", text);
+        Assert.Contains(skipped, text);
+    }
+
+    [Fact]
+    public void Apply_EmptySelection_RefusesBeforeRestorePointOrJournal()
+    {
+        var (code, text) = Run(HandheldEnv(), "apply", "--ids", SkippedOnHandheld(), "--yes");
+        Assert.Equal(1, code);
+        Assert.Contains("Nothing to apply.", text);
+        Assert.Empty(_fake.RestorePoint.Descriptions);
+        Assert.Equal(0, _systemsCalls);
+        Assert.False(Directory.Exists(_journals));
+    }
+
+    [Fact]
+    public void Apply_Cancelled_StopsBeforeChangingAnything()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        var w = new StringWriter();
+        var code = CliApp.Run(["apply", "--ids", "game-mode-on", "--yes"], w, Env(), cts.Token);
+        Assert.Equal(1, code);
+        Assert.Contains("Stopped", w.ToString());
+        Assert.Empty(_fake.Registry.Values);
+    }
+
+    [Fact]
+    public void Apply_IdsMissingValue_Exit2AndAppliesNothing()
+    {
+        var (code, _) = Run(Env(), "apply", "--ids", "--yes");
+        Assert.Equal(2, code);
+        Assert.Equal(0, _systemsCalls);
+        Assert.Empty(_fake.Registry.Values);
+    }
+
+    [Fact]
+    public void AllowWithoutRestorePoint_OnlyChangesApply()
+    {
+        var (c1, t1) = Run(Env(), "plan", "--card", "gamer");
+        var (c2, t2) = Run(Env(), "plan", "--card", "gamer", "--allow-without-restore-point");
+        Assert.Equal(c1, c2);
+        Assert.Equal(t1, t2);
+        Assert.Equal(0, _systemsCalls);
+
+        _fake.RestorePoint.Outcome = NitrOS.Live.Systems.RestorePointOutcome.Unavailable;
+        var (refused, _) = Run(Env(), "apply", "--ids", "game-mode-on", "--yes");
+        Assert.Equal(1, refused);
+        Assert.Empty(_fake.Registry.Values);
+        var (allowed, _) = Run(Env(), "apply", "--ids", "game-mode-on", "--yes", "--allow-without-restore-point");
+        Assert.Equal(0, allowed);
+    }
+
+    [Fact]
+    public void Card_IsCaseInsensitive()
+    {
+        var (code, _) = Run(Env(), "plan", "--card", "Gamer");
+        Assert.Equal(0, code);
+        var (code2, _) = Run(Env(), "plan", "--card", "MAX-LEAN");
+        Assert.Equal(0, code2);
+    }
+
+    [Theory]
+    [InlineData("undo")]
+    [InlineData("drift")]
+    public void Journal_OutsideBackupsFolder_IsRefusedWithExit2(string command)
+    {
+        var other = Path.Combine(Path.GetTempPath(), "nitros-other-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(other);
+        try
+        {
+            var file = Path.Combine(other, "x.json");
+            File.WriteAllText(file, "{}");
+            var args = command == "undo" ? new[] { command, file, "--yes" } : [command, file];
+            var (code, text) = Run(Env(), args);
+            Assert.Equal(2, code);
+            Assert.Contains("Journals are only read from the NitrOS backups folder.", text);
+            Assert.Equal(0, _systemsCalls);
+        }
+        finally { Directory.Delete(other, true); }
+    }
+
+    [Fact]
+    public void Journal_DotDotPathEscapingFolder_IsRefused()
+    {
+        Directory.CreateDirectory(_journals);
+        var sneaky = Path.Combine(_journals, "..", "x.json");
+        var (code, _) = Run(Env(), "drift", sneaky);
+        Assert.Equal(2, code);
+    }
+
+    [Fact]
+    public void JournalFolder_IsSecuredBeforeJournalIsRead()
+    {
+        var calls = 0;
+        var env = Env() with { SecureJournalDir = () => { calls++; return []; } };
+        Run(env, "drift", "missing");
+        Assert.Equal(1, calls);
+    }
 }

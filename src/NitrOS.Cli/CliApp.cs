@@ -20,10 +20,11 @@ public static class CliApp
 
     private sealed record Parsed(string? Card, string[]? Ids, bool Yes, bool AllowNoRestore, string? Catalog, List<string> Positional);
 
-    public static int Run(string[] args, TextWriter output, LiveSystems systems, CliEnvironment env) =>
-        Run(args, output, env with { Systems = () => systems });
+    public static int Run(string[] args, TextWriter output, LiveSystems systems, CliEnvironment env, CancellationToken ct = default) =>
+        Run(args, output, env with { Systems = () => systems }, ct);
 
-    public static int Run(string[] args, TextWriter output, CliEnvironment env)
+    /// <summary><paramref name="ct"/> stops an apply after the current action; that switch is rolled back.</summary>
+    public static int Run(string[] args, TextWriter output, CliEnvironment env, CancellationToken ct = default)
     {
         try
         {
@@ -34,7 +35,7 @@ public static class CliApp
             {
                 "detect" => Detect(p, output, env),
                 "plan" => Plan(p, output, env),
-                "apply" => Apply(p, output, env),
+                "apply" => Apply(p, output, env, ct),
                 "undo" => Undo(p, output, env),
                 "drift" => Drift(p, output, env),
                 "health" => Health(p, output, env),
@@ -47,6 +48,11 @@ public static class CliApp
             output.WriteLine($"Error: {e.Message}");
             output.WriteLine(Usage);
             return BadArguments;
+        }
+        catch (Exception e)
+        {
+            output.WriteLine($"Error: {e.Message}");
+            return Refused;
         }
     }
 
@@ -101,10 +107,10 @@ public static class CliApp
 
     private static CardId ParseCard(string card) => card switch
     {
-        "recommended" => CardId.Recommended,
-        "gamer" => CardId.Gamer,
-        "streamer" => CardId.Streamer,
-        "max-lean" => CardId.MaxLean,
+        _ when card.Equals("recommended", StringComparison.OrdinalIgnoreCase) => CardId.Recommended,
+        _ when card.Equals("gamer", StringComparison.OrdinalIgnoreCase) => CardId.Gamer,
+        _ when card.Equals("streamer", StringComparison.OrdinalIgnoreCase) => CardId.Streamer,
+        _ when card.Equals("max-lean", StringComparison.OrdinalIgnoreCase) => CardId.MaxLean,
         _ => throw new UsageException($"Unknown card '{card}'. Use recommended, gamer, streamer or max-lean."),
     };
 
@@ -131,7 +137,7 @@ public static class CliApp
         return Ok;
     }
 
-    private static int Apply(Parsed p, TextWriter o, CliEnvironment env)
+    private static int Apply(Parsed p, TextWriter o, CliEnvironment env, CancellationToken ct)
     {
         NoPositional(p);
         RequireSelectionArgs(p);
@@ -149,12 +155,18 @@ public static class CliApp
 
         var (sel, code) = BuildSelection(p, o, env);
         if (sel is null) return code;
+        PrintDropped(sel, o);
+        if (sel.On.Count == 0)
+        {
+            o.WriteLine("Nothing to apply.");
+            return Refused;
+        }
 
         var store = OpenStore(o, env);
         if (store is null) return Refused;
         var engine = new TuneEngine(env.Systems(), store);
         var options = new TuneOptions(p.AllowNoRestore, env.Session.ProcessUserSid, env.Session.WindowsBuild.ToString());
-        var result = engine.Apply(sel, options, new Progress(o), CancellationToken.None);
+        var result = engine.Apply(sel, options, new Progress(o), ct);
 
         if (result.Refused)
         {
@@ -168,6 +180,11 @@ public static class CliApp
         foreach (var (id, r) in result.Switches) o.WriteLine($"  {id}: {r}");
         if (result.LeftChanged.Count > 0) o.WriteLine($"Still changed: {string.Join(", ", result.LeftChanged)}");
         o.WriteLine($"Journal: {result.JournalPath}");
+        if (ct.IsCancellationRequested)
+        {
+            o.WriteLine("Stopped before every switch was reached. Undo this journal to put the changed ones back.");
+            return Refused;
+        }
         return result.Switches.Values.Any(r => r == SwitchResult.Failed) ? Refused : Ok;
     }
 
@@ -332,6 +349,13 @@ public static class CliApp
         }
     }
 
+    private static void PrintDropped(Selection sel, TextWriter o)
+    {
+        if (sel.Dropped.Count == 0) return;
+        o.WriteLine("Dropped:");
+        foreach (var (id, reason) in sel.Dropped) o.WriteLine($"  {id}: {reason}");
+    }
+
     private static void PrintPlan(Selection sel, TextWriter o)
     {
         var on = sel.Catalog.Switches.Where(s => sel.IsOn(s.Id)).ToList();
@@ -341,11 +365,7 @@ public static class CliApp
             o.WriteLine($"  [{s.Id}] {s.Name}");
             foreach (var a in s.Live) o.WriteLine($"      {Describe(a)}");
         }
-        if (sel.Dropped.Count > 0)
-        {
-            o.WriteLine("Dropped:");
-            foreach (var (id, reason) in sel.Dropped) o.WriteLine($"  {id}: {reason}");
-        }
+        PrintDropped(sel, o);
         var warnings = WarningEngine.For(sel);
         if (warnings.Count > 0)
         {
@@ -374,14 +394,32 @@ public static class CliApp
         _ => a.GetType().Name,
     };
 
-    /// <summary>A journal given as a file path, or as a run id inside the journal folder. Null when neither exists.</summary>
+    /// <summary>
+    /// A journal given as a run id, or as a path that is a direct child of the journal folder (full-path normalised, no junction or
+    /// link on the way). Anything outside the folder is a usage error. Null when it is inside but does not exist.
+    /// </summary>
     private static string? ResolveJournal(string arg, CliEnvironment env)
     {
-        if (File.Exists(arg)) return Path.GetFullPath(arg);
-        if (arg.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) return null;
-        var name = arg.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? arg : arg + ".json";
-        var candidate = Path.Combine(env.JournalDir, name);
-        return File.Exists(candidate) ? candidate : null;
+        const string outside = "Journals are only read from the NitrOS backups folder.";
+        var folder = Path.GetFullPath(env.JournalDir).TrimEnd('\\', '/');
+        string full;
+        if (arg.IndexOfAny(['\\', '/', ':']) >= 0)
+        {
+            full = Path.GetFullPath(arg);
+            var parent = Path.GetDirectoryName(full)?.TrimEnd('\\', '/');
+            if (!string.Equals(parent, folder, StringComparison.OrdinalIgnoreCase)) throw new UsageException(outside);
+        }
+        else
+        {
+            if (arg.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || arg is "." or "..") throw new UsageException(outside);
+            var name = arg.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? arg : arg + ".json";
+            full = Path.Combine(folder, name);
+        }
+        if (!File.Exists(full)) return null;
+        for (var d = new DirectoryInfo(folder); d is not null; d = d.Parent)
+            if (d.Exists && (d.Attributes & FileAttributes.ReparsePoint) != 0) throw new UsageException(outside);
+        if ((File.GetAttributes(full) & FileAttributes.ReparsePoint) != 0) throw new UsageException(outside);
+        return full;
     }
 
     private static string YesNo(bool b) => b ? "yes" : "no";

@@ -44,6 +44,7 @@ public sealed class JournalStore(string directory, Action? ensureDirectory = nul
     public RunJournal Load(string path)
     {
         EnsureDirectory();
+        if (Windows.BackupFolder.LinkCount(path) > 1) throw new InvalidOperationException("journal file has extra hard links");
         return JsonSerializer.Deserialize<RunJournal>(File.ReadAllText(path), CatalogJson.Options)
             ?? throw new JsonException("Journal is null.");
     }

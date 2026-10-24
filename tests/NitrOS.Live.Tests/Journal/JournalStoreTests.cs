@@ -168,4 +168,21 @@ public class JournalStoreTests : IDisposable
         Assert.Empty(store.List());
         Assert.Equal(3, calls);
     }
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+    private static extern bool CreateHardLink(string newFile, string existingFile, IntPtr reserved);
+
+    [Fact]
+    public void JournalStore_Load_RefusesHardLinkedFile()
+    {
+        var store = new JournalStore(_dir);
+        var path = store.Save(Journal("linked"));
+        Assert.Single(store.Load(path).SwitchIds); // an ordinary file loads
+        var link = Path.Combine(_dir, "planted.json");
+        Assert.True(CreateHardLink(link, path, IntPtr.Zero));
+
+        var ex = Assert.Throws<InvalidOperationException>(() => store.Load(path));
+        Assert.Equal("journal file has extra hard links", ex.Message);
+        Assert.Throws<InvalidOperationException>(() => store.Load(link));
+    }
 }
