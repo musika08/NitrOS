@@ -82,10 +82,12 @@ public class SelectionTests
         var image = sel.Toggle("x");
         Assert.False(image.Changed);
         Assert.Equal("Only available when building an ISO.", image.RefusedReason);
+        Assert.False(image.Selection.IsOn("x"));
 
         var battery = sel.Toggle("b");
         Assert.False(battery.Changed);
         Assert.Equal("Kept on this device because it runs on battery.", battery.RefusedReason);
+        Assert.False(battery.Selection.IsOn("b"));
     }
 
     [Fact]
