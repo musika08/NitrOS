@@ -37,7 +37,11 @@
     {
       "id": "onedrive-setup-startup-off", "name": "Stop OneDrive setup at sign-in", "feature": "OneDrive setup entry",
       "description": "Turns off the OneDrive setup entry that runs at every sign-in.",
-      "risk": "caution", "breaks": ["If OneDrive is kept, new users on this PC may not get OneDrive set up."],
+      "risk": "caution",
+      "breaks": [
+        "On an ISO you build, new accounts don't get OneDrive set up, even on Recommended.",
+        "In Tune mode an installed OneDrive is kept."
+      ],
       "modes": ["live", "image"], "reversible": true,
       "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
       "live": [ { "type": "startup.disable", "source": "run", "name": "OneDriveSetup", "hive": "HKCU" } ],

@@ -47,6 +47,13 @@ public class CardsTableTests
     [InlineData("diagtrack-off", CardDefault.On, CardDefault.On, CardDefault.On, CardDefault.On)]           // privacy, ads, tips
     [InlineData("fax-off", CardDefault.On, CardDefault.On, CardDefault.On, CardDefault.On)]                 // idle background services
     [InlineData("background-apps-off", CardDefault.On, CardDefault.On, CardDefault.On, CardDefault.On)]     // start-up cleanup, background apps
+    [InlineData("game-bar-remove", CardDefault.Off, CardDefault.Off, CardDefault.Off, CardDefault.On)]      // Xbox line: Game Bar
+    [InlineData("gaming-services-remove", CardDefault.Off, CardDefault.Off, CardDefault.Off, CardDefault.On)] // Xbox line: Gaming Services
+    [InlineData("xbox-sign-in-remove", CardDefault.Off, CardDefault.Off, CardDefault.Off, CardDefault.On)]  // Xbox line: sign-in parts
+    [InlineData("xbox-services-off", CardDefault.Off, CardDefault.Off, CardDefault.Off, CardDefault.On)]    // Xbox line: Xbox Live services
+    [InlineData("snipping-tool-remove", CardDefault.Off, CardDefault.Off, CardDefault.Off, CardDefault.On)] // camera and capture parts
+    [InlineData("geolocation-off", CardDefault.Off, CardDefault.Off, CardDefault.Off, CardDefault.On)]      // location service (owner 2026-10-24)
+    [InlineData("onedrive-setup-startup-off", CardDefault.On, CardDefault.On, CardDefault.On, CardDefault.On)] // OneDrive setup entry (owner 2026-10-24)
     public void CardsTable_MatchesSpec(string id, CardDefault recommended, CardDefault gamer,
         CardDefault streamer, CardDefault maxLean)
     {
@@ -101,6 +108,8 @@ public class CardsTableTests
     {
         var selection = Pick(card, new DeviceProfile(true, false, false));
         Assert.False(selection.IsOn("high-performance-plan"));
+        var ally = Pick(card, new DeviceProfile(true, true, true));
+        Assert.False(ally.IsOn("high-performance-plan"));
         if (card != CardId.Recommended)
             Assert.True(Pick(card).IsOn("high-performance-plan"));
     }

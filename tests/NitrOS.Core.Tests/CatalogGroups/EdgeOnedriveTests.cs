@@ -31,6 +31,14 @@ public class EdgeOnedriveTests
     }
 
     [Fact]
+    public void EdgeOnedrive_EdgeRemoveKeepsWebView2RuntimeUpdater()
+    {
+        var sw = Group().Switches.Single(s => s.Id == "edge-remove");
+        var paths = sw.Image.OfType<FileRemove>().Select(f => f.Path).ToList();
+        Assert.DoesNotContain(paths, p => p.Contains("EdgeUpdate") || p.Contains("EdgeCore"));
+    }
+
+    [Fact]
     public void EdgeOnedrive_SpotCheck()
     {
         var sw = Group().Switches.Single(s => s.Id == "edge-remove");
@@ -45,8 +53,6 @@ public class EdgeOnedriveTests
         Assert.Equal(new SwitchAction[]
         {
             new FileRemove(@"%ProgramFiles(x86)%\Microsoft\Edge"),
-            new FileRemove(@"%ProgramFiles(x86)%\Microsoft\EdgeUpdate"),
-            new FileRemove(@"%ProgramFiles(x86)%\Microsoft\EdgeCore"),
             new RegistryDelete("HKLM", uninstall + "Microsoft Edge"),
             new RegistryDelete("HKLM", uninstall + "Microsoft Edge Update"),
         }, sw.Image);

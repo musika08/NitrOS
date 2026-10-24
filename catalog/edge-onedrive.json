@@ -21,8 +21,6 @@
       ],
       "image": [
         { "type": "file.remove", "path": "%ProgramFiles(x86)%\\Microsoft\\Edge" },
-        { "type": "file.remove", "path": "%ProgramFiles(x86)%\\Microsoft\\EdgeUpdate" },
-        { "type": "file.remove", "path": "%ProgramFiles(x86)%\\Microsoft\\EdgeCore" },
         { "type": "registry.delete", "hive": "HKLM", "key": "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Microsoft Edge" },
         { "type": "registry.delete", "hive": "HKLM", "key": "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Microsoft Edge Update" }
       ]

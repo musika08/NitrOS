@@ -40,7 +40,7 @@ public class XboxTests
     public void Xbox_AppRemoveRequiresStoreGamingServicesAndSignIn()
     {
         Assert.Equal(
-            new[] { "store-remove", "gaming-services-remove", "xbox-sign-in-remove" },
+            new[] { "store-remove", "gaming-services-remove", "xbox-sign-in-remove", "xbox-services-off" },
             Sw("xbox-app-remove").Requires);
     }
 

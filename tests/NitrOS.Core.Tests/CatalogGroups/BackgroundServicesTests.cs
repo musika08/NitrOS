@@ -36,8 +36,26 @@ public class BackgroundServicesTests
     public void BackgroundServices_MultiSentenceBreaksOnePerSentence()
     {
         Assert.Equal(2, Sw("svchost-grouping-on").Breaks.Count);
-        Assert.Equal(2, Sw("geolocation-off").Breaks.Count);
+        Assert.Equal(3, Sw("geolocation-off").Breaks.Count);
         Assert.Single(Sw("fax-off").Breaks);
+    }
+
+    [Fact]
+    public void BackgroundServices_RetailDemoHasNoNonBreakageText()
+    {
+        Assert.Empty(Sw("retail-demo-off").Breaks);
+    }
+
+    [Fact]
+    public void BackgroundServices_LocationIsMaxLeanOnlyAndSaysWhatStops()
+    {
+        var sw = Sw("geolocation-off");
+        Assert.Equal(CardDefault.Off, sw.Cards.Recommended);
+        Assert.Equal(CardDefault.Off, sw.Cards.Gamer);
+        Assert.Equal(CardDefault.Off, sw.Cards.Streamer);
+        Assert.Equal(CardDefault.On, sw.Cards.MaxLean);
+        Assert.Contains("Automatic time zone may stop updating.", sw.Breaks);
+        Assert.Contains("Find My Device can't locate this PC.", sw.Breaks);
     }
 
     [Fact]

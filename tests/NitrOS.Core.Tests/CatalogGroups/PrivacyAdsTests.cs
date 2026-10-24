@@ -43,9 +43,9 @@ public class PrivacyAdsTests
     }
 
     [Fact]
-    public void PrivacyAds_TypingSpeechBreaksOnePerSentence()
+    public void PrivacyAds_TypingSpeechBreaksOnlyWhatStops()
     {
-        Assert.Equal(2, Sw("typing-speech-data-off").Breaks.Count);
+        Assert.Equal(new[] { "Online voice typing (cloud dictation) stops." }, Sw("typing-speech-data-off").Breaks);
     }
 
     [Fact]

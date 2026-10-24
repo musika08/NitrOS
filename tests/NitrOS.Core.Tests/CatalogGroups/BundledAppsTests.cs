@@ -46,6 +46,20 @@ public class BundledAppsTests
     public void BundledApps_EdgeGameAssistRequiresEdgeRemove()
     {
         var sw = Group().Switches.Single(s => s.Id == "edge-game-assist-remove");
-        Assert.Equal(new[] { "edge-remove" }, sw.Requires);
+        Assert.Equal(new[] { "edge-remove", "game-bar-remove" }, sw.Requires);
+    }
+
+    [Fact]
+    public void BundledApps_PhoneLinkRequiresItsServices()
+    {
+        var sw = Group().Switches.Single(s => s.Id == "phone-link-remove");
+        Assert.Equal(new[] { "connected-devices-off", "phone-service-off" }, sw.Requires);
+    }
+
+    [Fact]
+    public void BundledApps_ClipchampBreaksDoesNotPromiseTheStore()
+    {
+        var sw = Group().Switches.Single(s => s.Id == "clipchamp-remove");
+        Assert.Equal(new[] { "Clipchamp is gone; reinstall it from the Microsoft Store if you keep the Store." }, sw.Breaks);
     }
 }

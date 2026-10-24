@@ -87,3 +87,10 @@ Inventory: `docs/research/switch-inventory.md`, frozen by this check.
 - Defender: DisableAntiSpyware is reported ignored since platform 4.18.2007.8, and Tamper Protection blocks live service writes; prove in the VM.
 - Search web-view override data (`EnabledState`=1) is Winhance's off state as seen on this PC, not a Microsoft-documented value.
 - Removed single-source packages (Widgets runtime, Start Experiences, older Teams names, AIX, Copilot client packages, the retired apps) can come back once seen on a clean 24H2 or 25H2 image in the measuring VM.
+
+## Spec rows only partly delivered in v1
+
+- No NVIDIA panel switch: the vendor GPU panel is only stopped on AMD (`amd-panel-background-off`).
+- No Office AI switch (the spec mentions AI features in Office).
+- Dropped start-up entries: Maps, Teams and Phone Link.
+- Dropped OEM tray apps and the resident Snipping Tool start-up entry.

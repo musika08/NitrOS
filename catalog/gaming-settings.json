@@ -49,6 +49,9 @@
       "breaks": [
         "\"Record what happened\" clips and Game Bar capture are off."
       ],
+      "requires": [
+        "game-bar-remove"
+      ],
       "modes": [
         "live",
         "image"

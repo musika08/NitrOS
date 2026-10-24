@@ -5,7 +5,7 @@
     {
       "id": "clipchamp-remove", "name": "Remove Clipchamp", "feature": "Clipchamp",
       "description": "Removes the Clipchamp video editor.",
-      "risk": "safe", "breaks": ["The Clipchamp video editor is gone (reinstall it from the Store)."],
+      "risk": "safe", "breaks": ["Clipchamp is gone; reinstall it from the Microsoft Store if you keep the Store."],
       "modes": ["live", "image"], "reversible": false,
       "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
       "live": [ { "type": "appx.remove", "name": "Clipchamp.Clipchamp" } ],
@@ -74,6 +74,7 @@
       "id": "phone-link-remove", "name": "Remove Phone Link", "feature": "Phone Link",
       "description": "Removes Phone Link and the cross-device service that connects your phone.",
       "risk": "safe", "breaks": ["Phone Link, phone notifications and file transfer from your phone stop."],
+      "requires": ["connected-devices-off", "phone-service-off"],
       "modes": ["live", "image"], "reversible": false,
       "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
       "live": [
@@ -242,7 +243,7 @@
       "id": "edge-game-assist-remove", "name": "Remove Edge Game Assist", "feature": "Edge Game Assist",
       "description": "Removes the in-game browser overlay from Game Bar.",
       "risk": "safe", "breaks": ["The Edge browser panel in Game Bar is gone."],
-      "requires": ["edge-remove"],
+      "requires": ["edge-remove", "game-bar-remove"],
       "modes": ["live", "image"], "reversible": false,
       "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
       "live": [ { "type": "appx.remove", "name": "Microsoft.Edge.GameAssist" } ],

@@ -31,6 +31,12 @@ public class GamingSettingsTests
     }
 
     [Fact]
+    public void GamingSettings_BackgroundRecordingRequiresGameBarRemove()
+    {
+        Assert.Equal(new[] { "game-bar-remove" }, Sw("game-recording-background-off").Requires);
+    }
+
+    [Fact]
     public void GamingSettings_SingleSentenceBreaksHaveOneItem()
     {
         Assert.Single(Sw("game-recording-background-off").Breaks);

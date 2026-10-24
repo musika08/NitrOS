@@ -138,11 +138,16 @@ bottom updates live.
 | Virtual Machine Platform, Hyper-V | unchanged | unchanged | unchanged | off (owner 2026-10-24: Gamer and Streamer leave them, because Memory Integrity and anti-cheat use the hypervisor and the measuring VM runs on the owner's PC) |
 | Recovery tools (ISO mode only) | keep | keep | keep | remove |
 | Printing and Print to PDF | keep | keep | keep | remove |
+| Location service | keep | keep | keep | off (owner 2026-10-24) |
 | Bluetooth, microphone, touch, rotation, battery, sleep | keep | keep | keep | keep |
 | Power plan | unchanged | high performance (desktop) | high performance (desktop) | high performance (desktop) |
 
 On battery devices the power plan is left alone on every card, because high
 performance drains handheld batteries.
+
+OneDrive on a Recommended ISO: the OneDrive setup entry is turned off on every
+card (owner 2026-10-24), so an ISO built from Recommended does not set up
+OneDrive for new accounts. Tune mode keeps an installed OneDrive.
 
 **Custom** starts with nothing ticked.
 

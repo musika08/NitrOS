@@ -783,8 +783,7 @@
       "description": "Stops Windows collecting your typing, inking and voice to personalise input.",
       "risk": "safe",
       "breaks": [
-        "Online voice typing (cloud dictation) stops.",
-        "The touch keyboard keeps working."
+        "Online voice typing (cloud dictation) stops."
       ],
       "modes": [
         "live",

@@ -6,6 +6,15 @@ namespace NitrOS.Core.Tests.CatalogGroups;
 
 public class StartupTests
 {
+    [Fact]
+    public void Startup_OneDriveSetupBreaksSaysNewAccountsGetNoOneDrive()
+    {
+        var result = CatalogLoader.Load(RepoPaths.CatalogDir());
+        Assert.True(result.Ok);
+        var sw = result.Catalog!.Get("onedrive-setup-startup-off");
+        Assert.Contains("On an ISO you build, new accounts don't get OneDrive set up, even on Recommended.", sw.Breaks);
+    }
+
     private static GroupFile Group()
     {
         var result = CatalogLoader.Load(RepoPaths.CatalogDir());

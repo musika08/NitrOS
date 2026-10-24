@@ -85,10 +85,11 @@
       "risk": "caution",
       "breaks": [
         "Apps can't find your location.",
-        "Find My Device stops working."
+        "Automatic time zone may stop updating.",
+        "Find My Device can't locate this PC."
       ],
       "modes": ["live", "image"], "reversible": true,
-      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
       "live": [
         { "type": "service.start", "service": "lfsvc", "start": "disabled" },
         { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location", "name": "Value", "kind": "string", "data": "Deny" }
@@ -112,7 +113,6 @@
       "id": "retail-demo-off", "name": "Turn off Retail Demo", "feature": "Retail Demo service",
       "description": "Turns off the shop demo service.",
       "risk": "safe",
-      "breaks": ["Nothing for a normal PC."],
       "modes": ["live", "image"], "reversible": true,
       "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
       "live": [ { "type": "service.start", "service": "RetailDemo", "start": "disabled" } ],

@@ -34,6 +34,14 @@ public class SecurityUpdatesTests
     }
 
     [Fact]
+    public void SecurityUpdates_WindowsUpdateAutoOffLeavesTheServiceAvailable()
+    {
+        var sw = Sw("windows-update-auto-off");
+        Assert.DoesNotContain(sw.Live, a => a is ServiceStart);
+        Assert.DoesNotContain(sw.Image, a => a is ServiceStart);
+    }
+
+    [Fact]
     public void SecurityUpdates_MaxLeanOnly()
     {
         foreach (var id in new[] { "defender-remove", "windows-update-auto-off", "memory-integrity-off" })

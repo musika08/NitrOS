@@ -183,9 +183,9 @@ public class CatalogValidatorTests
     [Fact]
     public void LaunchAtLogon_LiveOnly()
     {
-        Assert.Empty(One(LiveOnly(new LaunchAtLogon(@"C:.exe"))));
+        Assert.Empty(One(LiveOnly(new LaunchAtLogon(@"C:\a.exe"))));
         AssertOne(One(LiveOnly(new LaunchAtLogon(" "))), "launch.at-logon program");
-        AssertOne(One(ImageOnly(new LaunchAtLogon(@"C:.exe"))), "launch.at-logon");
+        AssertOne(One(ImageOnly(new LaunchAtLogon(@"C:\a.exe"))), "launch.at-logon");
     }
 
     [Fact]

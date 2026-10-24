@@ -23,7 +23,7 @@ public class CatalogJsonTests
         new StartupDisable(StartupSource.StartupFolder, "Test.lnk", "HKCU"),
         new RegistryDelete("HKCU", @"SOFTWARE\Test", null),
         new PowerScheme("8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"),
-        new LaunchAtLogon(@"C:\Testpp.exe", "--min"),
+        new LaunchAtLogon(@"C:\Test\app.exe", "--min"),
     ];
 
     [Fact]
