@@ -1,0 +1,323 @@
+{
+  "group": "bundled-apps",
+  "title": "Bundled apps",
+  "switches": [
+    {
+      "id": "clipchamp-remove", "name": "Remove Clipchamp", "feature": "Clipchamp",
+      "description": "Removes the Clipchamp video editor.",
+      "risk": "safe", "breaks": ["The Clipchamp video editor is gone (reinstall it from the Store)."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Clipchamp.Clipchamp" } ],
+      "image": [ { "type": "appx.remove", "name": "Clipchamp.Clipchamp" } ]
+    },
+    {
+      "id": "news-remove", "name": "Remove News", "feature": "News app",
+      "description": "Removes the Microsoft News app.",
+      "risk": "safe", "breaks": ["The News app is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.BingNews" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.BingNews" } ]
+    },
+    {
+      "id": "weather-remove", "name": "Remove Weather", "feature": "Weather app",
+      "description": "Removes the Weather app.",
+      "risk": "safe", "breaks": ["The Weather app is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.BingWeather" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.BingWeather" } ]
+    },
+    {
+      "id": "solitaire-remove", "name": "Remove Solitaire", "feature": "Solitaire",
+      "description": "Removes the Microsoft Solitaire Collection.",
+      "risk": "safe", "breaks": ["Solitaire is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.MicrosoftSolitaireCollection" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.MicrosoftSolitaireCollection" } ]
+    },
+    {
+      "id": "teams-remove", "name": "Remove Teams", "feature": "Microsoft Teams",
+      "description": "Removes personal Teams and hides the taskbar Chat icon.",
+      "risk": "safe", "breaks": ["Teams chat is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "appx.remove", "name": "MSTeams" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Chat", "name": "ChatIcon", "kind": "dword", "data": "3" },
+        { "type": "registry.set", "hive": "HKCU", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "TaskbarMn", "kind": "dword", "data": "0" }
+      ],
+      "image": [
+        { "type": "appx.remove", "name": "MSTeams" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Chat", "name": "ChatIcon", "kind": "dword", "data": "3" },
+        { "type": "registry.set", "hive": "HKCU", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "TaskbarMn", "kind": "dword", "data": "0" }
+      ]
+    },
+    {
+      "id": "outlook-new-remove", "name": "Remove new Outlook", "feature": "New Outlook",
+      "description": "Removes the new Outlook app and stops Windows Update putting it back.",
+      "risk": "safe", "breaks": ["The new Outlook app is gone (classic Office Outlook is not touched)."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "appx.remove", "name": "Microsoft.OutlookForWindows" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Orchestrator\\UScheduler\\OutlookUpdate", "name": "workCompleted", "kind": "dword", "data": "1" }
+      ],
+      "image": [
+        { "type": "appx.remove", "name": "Microsoft.OutlookForWindows" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Orchestrator\\UScheduler\\OutlookUpdate", "name": "workCompleted", "kind": "dword", "data": "1" }
+      ]
+    },
+    {
+      "id": "phone-link-remove", "name": "Remove Phone Link", "feature": "Phone Link",
+      "description": "Removes Phone Link and the cross-device service that connects your phone.",
+      "risk": "safe", "breaks": ["Phone Link, phone notifications and file transfer from your phone stop."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "appx.remove", "name": "Microsoft.YourPhone" },
+        { "type": "appx.remove", "name": "MicrosoftWindows.CrossDevice" }
+      ],
+      "image": [
+        { "type": "appx.remove", "name": "Microsoft.YourPhone" },
+        { "type": "appx.remove", "name": "MicrosoftWindows.CrossDevice" }
+      ]
+    },
+    {
+      "id": "feedback-hub-remove", "name": "Remove Feedback Hub", "feature": "Feedback Hub",
+      "description": "Removes the Feedback Hub app.",
+      "risk": "safe", "breaks": ["You can't send feedback to Microsoft from this PC."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.WindowsFeedbackHub" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.WindowsFeedbackHub" } ]
+    },
+    {
+      "id": "get-help-remove", "name": "Remove Get Help", "feature": "Get Help",
+      "description": "Removes the Get Help support app.",
+      "risk": "safe", "breaks": ["\"Get help\" links in Settings and troubleshooters stop opening."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.GetHelp" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.GetHelp" } ]
+    },
+    {
+      "id": "todo-remove", "name": "Remove To Do", "feature": "To Do",
+      "description": "Removes the Microsoft To Do app.",
+      "risk": "safe", "breaks": ["The To Do app is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.Todos" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.Todos" } ]
+    },
+    {
+      "id": "widgets-remove", "name": "Remove Widgets", "feature": "Widgets board",
+      "description": "Turns off the Widgets board and removes the app that runs it.",
+      "risk": "caution", "breaks": ["The Widgets board and taskbar weather are gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Dsh", "name": "AllowNewsAndInterests", "kind": "dword", "data": "0" },
+        { "type": "appx.remove", "name": "MicrosoftWindows.Client.WebExperience" }
+      ],
+      "image": [
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Dsh", "name": "AllowNewsAndInterests", "kind": "dword", "data": "0" },
+        { "type": "appx.remove", "name": "MicrosoftWindows.Client.WebExperience" }
+      ]
+    },
+    {
+      "id": "office-hub-remove", "name": "Remove Microsoft 365 app", "feature": "Microsoft 365 app",
+      "description": "Removes the Microsoft 365 (Office) launcher and its promo notifications.",
+      "risk": "safe", "breaks": ["The Microsoft 365 launcher app is gone (installed Office apps stay)."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "appx.remove", "name": "Microsoft.MicrosoftOfficeHub" },
+        { "type": "appx.remove", "name": "Microsoft.OfficePushNotificationUtility" }
+      ],
+      "image": [
+        { "type": "appx.remove", "name": "Microsoft.MicrosoftOfficeHub" },
+        { "type": "appx.remove", "name": "Microsoft.OfficePushNotificationUtility" }
+      ]
+    },
+    {
+      "id": "bing-search-remove", "name": "Remove Bing Search app", "feature": "Bing Search",
+      "description": "Removes the Bing Search app that adds web results to search.",
+      "risk": "safe", "breaks": ["Bing results in Windows search are gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.BingSearch" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.BingSearch" } ]
+    },
+    {
+      "id": "movies-tv-remove", "name": "Remove Movies and TV", "feature": "Movies and TV",
+      "description": "Removes the Movies and TV app.",
+      "risk": "safe", "breaks": ["The Movies and TV app is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.ZuneVideo" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.ZuneVideo" } ]
+    },
+    {
+      "id": "media-player-remove", "name": "Remove Media Player", "feature": "Media Player",
+      "description": "Removes the Media Player app.",
+      "risk": "caution", "breaks": ["Music and video files no longer open in Media Player; pick another player."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.ZuneMusic" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.ZuneMusic" } ]
+    },
+    {
+      "id": "sound-recorder-remove", "name": "Remove Sound Recorder", "feature": "Sound Recorder",
+      "description": "Removes the Sound Recorder app.",
+      "risk": "safe", "breaks": ["Sound Recorder is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.WindowsSoundRecorder" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.WindowsSoundRecorder" } ]
+    },
+    {
+      "id": "clock-remove", "name": "Remove Clock", "feature": "Clock app",
+      "description": "Removes the Clock app (alarms, timers, focus sessions).",
+      "risk": "safe", "breaks": ["Alarms, timers and focus sessions are gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.WindowsAlarms" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.WindowsAlarms" } ]
+    },
+    {
+      "id": "sticky-notes-remove", "name": "Remove Sticky Notes", "feature": "Sticky Notes",
+      "description": "Removes the Sticky Notes app.",
+      "risk": "safe", "breaks": ["Sticky Notes is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.MicrosoftStickyNotes" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.MicrosoftStickyNotes" } ]
+    },
+    {
+      "id": "quick-assist-remove", "name": "Remove Quick Assist", "feature": "Quick Assist",
+      "description": "Removes Quick Assist, the remote help app.",
+      "risk": "safe", "breaks": ["Someone else can't help you remotely with Quick Assist."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "MicrosoftCorporationII.QuickAssist" } ],
+      "image": [ { "type": "appx.remove", "name": "MicrosoftCorporationII.QuickAssist" } ]
+    },
+    {
+      "id": "dev-home-remove", "name": "Remove Dev Home", "feature": "Dev Home",
+      "description": "Removes Dev Home (retired by Microsoft) and stops it reinstalling.",
+      "risk": "safe", "breaks": ["Dev Home is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "appx.remove", "name": "Microsoft.Windows.DevHome" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Orchestrator\\UScheduler\\DevHomeUpdate", "name": "workCompleted", "kind": "dword", "data": "1" }
+      ],
+      "image": [
+        { "type": "appx.remove", "name": "Microsoft.Windows.DevHome" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Orchestrator\\UScheduler\\DevHomeUpdate", "name": "workCompleted", "kind": "dword", "data": "1" }
+      ]
+    },
+    {
+      "id": "power-automate-remove", "name": "Remove Power Automate", "feature": "Power Automate",
+      "description": "Removes Power Automate for desktop.",
+      "risk": "safe", "breaks": ["Power Automate is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.PowerAutomateDesktop" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.PowerAutomateDesktop" } ]
+    },
+    {
+      "id": "xbox-insider-remove", "name": "Remove Xbox Insider Hub", "feature": "Xbox Insider Hub",
+      "description": "Removes the Xbox Insider Hub app.",
+      "risk": "safe", "breaks": ["You can't join Xbox preview programs from this PC."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.XboxInsider" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.XboxInsider" } ]
+    },
+    {
+      "id": "edge-game-assist-remove", "name": "Remove Edge Game Assist", "feature": "Edge Game Assist",
+      "description": "Removes the in-game browser overlay from Game Bar.",
+      "risk": "safe", "breaks": ["The Edge browser panel in Game Bar is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.Edge.GameAssist" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.Edge.GameAssist" } ]
+    },
+    {
+      "id": "calculator-remove", "name": "Remove Calculator", "feature": "Calculator",
+      "description": "Removes the Calculator app.",
+      "risk": "caution", "breaks": ["Calculator is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "off" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.WindowsCalculator" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.WindowsCalculator" } ]
+    },
+    {
+      "id": "notepad-remove", "name": "Remove Notepad", "feature": "Notepad",
+      "description": "Removes the modern Notepad app.",
+      "risk": "caution", "breaks": ["Text files no longer open in Notepad."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "off" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.WindowsNotepad" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.WindowsNotepad" } ]
+    },
+    {
+      "id": "paint-remove", "name": "Remove Paint", "feature": "Paint",
+      "description": "Removes the Paint app.",
+      "risk": "caution", "breaks": ["Paint is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "off" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.Paint" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.Paint" } ]
+    },
+    {
+      "id": "photos-remove", "name": "Remove Photos", "feature": "Photos app",
+      "description": "Removes the Photos app.",
+      "risk": "caution", "breaks": ["Pictures no longer open in Photos; pick another viewer."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "off" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.Windows.Photos" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.Windows.Photos" } ]
+    },
+    {
+      "id": "terminal-remove", "name": "Remove Terminal", "feature": "Windows Terminal",
+      "description": "Removes Windows Terminal (PowerShell and Command Prompt stay).",
+      "risk": "caution", "breaks": ["Windows Terminal is gone; command windows open the old console."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "off" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.WindowsTerminal" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.WindowsTerminal" } ]
+    },
+    {
+      "id": "camera-remove", "name": "Remove Camera app", "feature": "Camera app",
+      "description": "Removes the Camera app (camera drivers stay).",
+      "risk": "caution", "breaks": ["The Camera app is gone; other apps can still use the camera."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.WindowsCamera" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.WindowsCamera" } ]
+    },
+    {
+      "id": "snipping-tool-remove", "name": "Remove Snipping Tool", "feature": "Snipping Tool",
+      "description": "Removes Snipping Tool and screen recording.",
+      "risk": "caution", "breaks": ["Print Screen and Win+Shift+S no longer take screenshots with Snipping Tool."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.ScreenSketch" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.ScreenSketch" } ]
+    },
+    {
+      "id": "app-installer-remove", "name": "Remove App Installer", "feature": "App Installer (winget)",
+      "description": "Removes App Installer and the winget command.",
+      "risk": "breaks", "breaks": ["winget stops working; .appx and .msix files no longer install by double-click."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "off" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.DesktopAppInstaller" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.DesktopAppInstaller" } ]
+    }
+  ]
+}

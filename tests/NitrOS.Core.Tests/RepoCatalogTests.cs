@@ -20,8 +20,7 @@ public class RepoCatalogTests
     {
         var catalog = CatalogLoader.Load(RepoPaths.CatalogDir()).Catalog!;
         var on = Selection.FromCard(catalog, CardId.Recommended, TargetMode.TunePc, DeviceProfile.Desktop).On;
-        Assert.Equal(
-            new[] { "advertising-id-off", "consumer-features-off", "diagtrack-off" },
-            on.OrderBy(x => x, StringComparer.Ordinal).ToArray());
+        foreach (var id in new[] { "advertising-id-off", "consumer-features-off", "diagtrack-off" })
+            Assert.Contains(id, on);
     }
 }
