@@ -155,4 +155,61 @@ public class CatalogValidatorTests
         AssertOne(One(Switches.Make("x", b =>
             b.Live = [new RegistrySet("HKLM", @"SOFTWARE\T", "V", (RegistryKind)99, "1")])), "Registry kind");
     }
+
+    private static SwitchDef WithAction(SwitchAction a) =>
+        a is PackageRemove
+            ? Switches.Make("x", b => { b.Modes = [Mode.Image]; b.Live = []; b.Image = [a]; b.Reversible = false; })
+            : Switches.Make("x", b => { b.Live = [a]; b.Reversible = false; });
+
+    public static TheoryData<string, SwitchDef> EmptyFieldCases => new()
+    {
+        { "name", Switches.Make("x") with { Name = "" } },
+        { "name", Switches.Make("x") with { Name = "  " } },
+        { "feature", Switches.Make("x") with { Feature = "" } },
+        { "feature", Switches.Make("x") with { Feature = " " } },
+        { "breaks", Switches.Make("x", b => b.Breaks = [" "]) },
+        { "breaks", Switches.Make("x", b => b.Breaks = [""]) },
+        { "registry key", WithAction(new RegistrySet("HKLM", "", "V", RegistryKind.Dword, "1")) },
+        { "registry key", WithAction(new RegistrySet("HKLM", " ", "V", RegistryKind.Dword, "1")) },
+        { "service", WithAction(new ServiceStart("", ServiceStartType.Disabled)) },
+        { "task.disable path", WithAction(new TaskDisable("")) },
+        { "appx.remove name", WithAction(new AppxRemove("")) },
+        { "capability.remove name", WithAction(new CapabilityRemove(" ")) },
+        { "feature.disable name", WithAction(new FeatureDisable("")) },
+        { "package.remove pattern", WithAction(new PackageRemove("")) },
+        { "file.remove path", WithAction(new FileRemove("")) },
+        { "script body", WithAction(new Script("", "undo")) },
+        { "windowsBuild", Switches.Make("x", b => b.Measured = new Measurement(1, 1, "", new DateOnly(2026, 10, 24))) },
+    };
+
+    [Theory]
+    [MemberData(nameof(EmptyFieldCases))]
+    public void EmptyRequiredFields_AreErrors(string field, SwitchDef sw)
+    {
+        var errors = One(sw);
+        Assert.Single(errors);
+        Assert.Contains(field, errors[0].Message);
+        Assert.Contains("must not be empty", errors[0].Message);
+    }
+
+    [Fact]
+    public void Modes_MustNotBeEmpty()
+    {
+        var errors = One(Switches.Make("x", b => { b.Modes = []; b.Live = []; }));
+        Assert.Single(errors);
+        Assert.Contains("at least one mode", errors[0].Message);
+    }
+
+    [Fact]
+    public void RegistryValueName_MayBeEmptyMeaningTheDefaultValue()
+    {
+        Assert.Empty(One(Switches.Make("x", b =>
+            b.Live = [new RegistrySet("HKLM", @"SOFTWARE\T", "", RegistryKind.String, "v")])));
+    }
+
+    [Fact]
+    public void Measured_NegativeMemoryIsAllowed()
+    {
+        Assert.Empty(One(Switches.Make("x", b => b.Measured = new Measurement(-20, 0, "26300", new DateOnly(2026, 10, 24)))));
+    }
 }

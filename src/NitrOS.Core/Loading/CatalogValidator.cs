@@ -25,6 +25,7 @@ public static partial class CatalogValidator
             {
                 CheckId(file, sw, errors);
                 CheckEnums(file, sw, errors);
+                CheckRequiredText(file, sw, errors);
                 CheckDescription(file, sw, errors);
                 CheckRequires(file, sw, allIds, errors);
                 CheckBreaks(file, sw, errors);
@@ -54,6 +55,39 @@ public static partial class CatalogValidator
     {
         if (!KebabCase().IsMatch(sw.Id))
             Add(errors, file, sw, $"Switch id '{sw.Id}' must be kebab-case (lowercase letters, digits, single dashes).");
+    }
+
+    private static void CheckRequiredText(string file, SwitchDef sw, List<CatalogError> errors)
+    {
+        void Need(string? value, string label)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                Add(errors, file, sw, $"The {label} must not be empty.");
+        }
+
+        Need(sw.Name, "name");
+        Need(sw.Feature, "feature");
+        foreach (var b in sw.Breaks) Need(b, "breaks sentence");
+        if (sw.Modes.Count == 0)
+            Add(errors, file, sw, "A switch needs at least one mode.");
+        if (sw.Measured is { } m)
+            Need(m.WindowsBuild, "measured windowsBuild");
+
+        foreach (var a in sw.Live.Concat(sw.Image))
+        {
+            switch (a)
+            {
+                case RegistrySet r: Need(r.Key, "registry key"); break; // an empty value name is the key's default value
+                case ServiceStart s: Need(s.Service, "service.start service"); break;
+                case TaskDisable t: Need(t.Path, "task.disable path"); break;
+                case AppxRemove x: Need(x.Name, "appx.remove name"); break;
+                case CapabilityRemove c: Need(c.Name, "capability.remove name"); break;
+                case FeatureDisable f: Need(f.Name, "feature.disable name"); break;
+                case PackageRemove p: Need(p.Pattern, "package.remove pattern"); break;
+                case FileRemove fr: Need(fr.Path, "file.remove path"); break;
+                case Script sc: Need(sc.Body, "script body"); break;
+            }
+        }
     }
 
     private static void CheckEnums(string file, SwitchDef sw, List<CatalogError> errors)
