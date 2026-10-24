@@ -47,6 +47,58 @@ internal static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool ChangeServiceConfig2(SafeServiceHandle service, uint infoLevel, ref SERVICE_DELAYED_AUTO_START_INFO info);
 
+    // ---- Device and session facts (kernel32, user32, advapi32) ----
+    public const int SM_MAXIMUMTOUCHES = 95;
+    public const byte BATTERY_FLAG_NO_BATTERY = 128;
+    public const uint SERVICE_QUERY_STATUS = 0x0004;
+    public const uint SERVICE_RUNNING = 4;
+    public const uint TOKEN_QUERY = 0x0008;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SYSTEM_POWER_STATUS
+    {
+        public byte ACLineStatus;
+        public byte BatteryFlag;
+        public byte BatteryLifePercent;
+        public byte SystemStatusFlag;
+        public uint BatteryLifeTime;
+        public uint BatteryFullLifeTime;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SERVICE_STATUS
+    {
+        public uint dwServiceType;
+        public uint dwCurrentState;
+        public uint dwControlsAccepted;
+        public uint dwWin32ExitCode;
+        public uint dwServiceSpecificExitCode;
+        public uint dwCheckPoint;
+        public uint dwWaitHint;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetSystemPowerStatus(out SYSTEM_POWER_STATUS status);
+
+    [DllImport("user32.dll")]
+    public static extern int GetSystemMetrics(int index);
+
+    [DllImport("kernel32.dll")]
+    public static extern uint WTSGetActiveConsoleSessionId();
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool OpenProcessToken(IntPtr process, uint desiredAccess, out IntPtr token);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool CloseHandle(IntPtr handle);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool QueryServiceStatus(SafeServiceHandle service, out SERVICE_STATUS status);
+
     // ---- WinVerifyTrust (wintrust) ----
     public static readonly Guid WINTRUST_ACTION_GENERIC_VERIFY_V2 = new("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
     public const uint WTD_UI_NONE = 2;
