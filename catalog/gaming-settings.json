@@ -1,0 +1,357 @@
+{
+  "group": "gaming-settings",
+  "title": "Gaming settings",
+  "switches": [
+    {
+      "id": "game-mode-on",
+      "name": "Keep Game Mode on",
+      "feature": "Game Mode",
+      "description": "Makes sure Game Mode is on, so Windows pauses background work while you play.",
+      "risk": "safe",
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\GameBar",
+          "name": "AutoGameModeEnabled",
+          "kind": "dword",
+          "data": "1"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\GameBar",
+          "name": "AutoGameModeEnabled",
+          "kind": "dword",
+          "data": "1"
+        }
+      ]
+    },
+    {
+      "id": "game-recording-background-off",
+      "name": "Turn off background game recording",
+      "feature": "Background game recording",
+      "description": "Stops Game Bar recording the last minutes of play in the background.",
+      "risk": "safe",
+      "breaks": [
+        "\"Record what happened\" clips and Game Bar capture are off."
+      ],
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "off",
+        "gamer": "on",
+        "streamer": "off",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "System\\GameConfigStore",
+          "name": "GameDVR_Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+          "name": "AppCaptureEnabled",
+          "kind": "dword",
+          "data": "0"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "System\\GameConfigStore",
+          "name": "GameDVR_Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+          "name": "AppCaptureEnabled",
+          "kind": "dword",
+          "data": "0"
+        }
+      ]
+    },
+    {
+      "id": "gpu-scheduling-on",
+      "name": "Turn on GPU scheduling",
+      "feature": "Hardware-accelerated GPU scheduling",
+      "description": "Lets the graphics card manage its own memory scheduling.",
+      "risk": "caution",
+      "breaks": [
+        "Some drivers glitch with it on; a restart is needed."
+      ],
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "off",
+        "gamer": "off",
+        "streamer": "off",
+        "maxLean": "off"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers",
+          "name": "HwSchMode",
+          "kind": "dword",
+          "data": "2"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers",
+          "name": "HwSchMode",
+          "kind": "dword",
+          "data": "2"
+        }
+      ]
+    },
+    {
+      "id": "high-performance-plan",
+      "name": "Use the High performance power plan",
+      "feature": "Power plan",
+      "description": "Switches desktops to the High performance power plan; never on battery devices.",
+      "risk": "safe",
+      "breaks": [
+        "The PC uses more power at idle."
+      ],
+      "modes": [
+        "live"
+      ],
+      "reversible": true,
+      "skipOn": [
+        "battery"
+      ],
+      "cards": {
+        "recommended": "off",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "power.scheme",
+          "scheme": "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
+        }
+      ]
+    },
+    {
+      "id": "cpu-boost-split",
+      "name": "Separate CPU boost for plugged in and battery",
+      "feature": "Processor boost",
+      "description": "Boosts the CPU fully when plugged in and less on battery.",
+      "risk": "safe",
+      "breaks": [
+        "More heat and fan noise when plugged in."
+      ],
+      "modes": [
+        "live"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "off",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "power.set",
+          "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+          "setting": "be337238-0d82-4146-a960-4f3749d470c7",
+          "ac": 2,
+          "dc": 1
+        }
+      ]
+    },
+    {
+      "id": "energy-preference-split",
+      "name": "Separate energy preference for plugged in and battery",
+      "feature": "Energy performance preference",
+      "description": "Favours speed when plugged in and saves power on battery.",
+      "risk": "safe",
+      "breaks": [
+        "More heat when plugged in."
+      ],
+      "modes": [
+        "live"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "off",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "power.set",
+          "subgroup": "54533251-82be-4824-96c1-47b60b740d00",
+          "setting": "36687f9e-e3a5-4dbf-b1dc-15eb381c6863",
+          "ac": 0,
+          "dc": 50
+        }
+      ]
+    },
+    {
+      "id": "usb-power-saving-split",
+      "name": "Separate USB power saving for plugged in and battery",
+      "feature": "USB power saving",
+      "description": "Keeps USB devices fully powered when plugged in and allows power saving on battery.",
+      "risk": "safe",
+      "breaks": [
+        "On battery, idle USB devices may take a moment to wake."
+      ],
+      "modes": [
+        "live"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "off",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "power.set",
+          "subgroup": "2a737441-1930-4402-8d77-b2bebba308a3",
+          "setting": "48e6b7a6-50f5-4782-a5d4-53bb8f07e226",
+          "ac": 0,
+          "dc": 1
+        }
+      ]
+    },
+    {
+      "id": "pcie-power-saving-split",
+      "name": "Separate PCIe power saving for plugged in and battery",
+      "feature": "PCIe link power saving",
+      "description": "Turns PCIe link power saving off when plugged in and to maximum on battery.",
+      "risk": "safe",
+      "modes": [
+        "live"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "off",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "power.set",
+          "subgroup": "501a4d13-42af-4429-9fd1-a8218c268e20",
+          "setting": "ee12f906-d277-404b-b6da-e5fa1a576df5",
+          "ac": 0,
+          "dc": 2
+        }
+      ]
+    },
+    {
+      "id": "mouse-acceleration-off",
+      "name": "Turn off mouse acceleration",
+      "feature": "Mouse acceleration",
+      "description": "Makes the pointer move the same distance however fast you move the mouse.",
+      "risk": "safe",
+      "breaks": [
+        "The pointer feels different; games using raw input are not affected."
+      ],
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "off",
+        "gamer": "off",
+        "streamer": "off",
+        "maxLean": "off"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Control Panel\\Mouse",
+          "name": "MouseSpeed",
+          "kind": "string",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Control Panel\\Mouse",
+          "name": "MouseThreshold1",
+          "kind": "string",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Control Panel\\Mouse",
+          "name": "MouseThreshold2",
+          "kind": "string",
+          "data": "0"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Control Panel\\Mouse",
+          "name": "MouseSpeed",
+          "kind": "string",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Control Panel\\Mouse",
+          "name": "MouseThreshold1",
+          "kind": "string",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Control Panel\\Mouse",
+          "name": "MouseThreshold2",
+          "kind": "string",
+          "data": "0"
+        }
+      ]
+    }
+  ]
+}

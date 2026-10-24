@@ -109,6 +109,1211 @@
           "data": "0"
         }
       ]
+    },
+    {
+      "id": "windows-ads-off",
+      "name": "Turn off Windows ads and suggestions",
+      "feature": "Windows suggestions",
+      "description": "Stops suggested apps, tips, lock-screen tips and \"finish setting up\" prompts.",
+      "risk": "safe",
+      "breaks": [
+        "Windows Spotlight lock-screen pictures may stop changing."
+      ],
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "ContentDeliveryAllowed",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContentEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "FeatureManagementEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SoftLandingEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "OemPreInstalledAppsEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "PreInstalledAppsEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "PreInstalledAppsEverEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SilentInstalledAppsEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SystemPaneSuggestionsEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "RotatingLockScreenOverlayEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-310093Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338387Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338388Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338389Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338393Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-353694Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-353696Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableConsumerAccountStateContent",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableCloudOptimizedContent",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\PushToInstall",
+          "name": "DisablePushToInstall",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\SystemSettings\\AccountNotifications",
+          "name": "EnableAccountNotifications",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "ShowSyncProviderNotifications",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\UserProfileEngagement",
+          "name": "ScoobeSystemSettingEnabled",
+          "kind": "dword",
+          "data": "0"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "ContentDeliveryAllowed",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContentEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "FeatureManagementEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SoftLandingEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "OemPreInstalledAppsEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "PreInstalledAppsEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "PreInstalledAppsEverEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SilentInstalledAppsEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SystemPaneSuggestionsEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "RotatingLockScreenOverlayEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-310093Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338387Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338388Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338389Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338393Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-353694Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-353696Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableConsumerAccountStateContent",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableCloudOptimizedContent",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\PushToInstall",
+          "name": "DisablePushToInstall",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\SystemSettings\\AccountNotifications",
+          "name": "EnableAccountNotifications",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "ShowSyncProviderNotifications",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\UserProfileEngagement",
+          "name": "ScoobeSystemSettingEnabled",
+          "kind": "dword",
+          "data": "0"
+        }
+      ]
+    },
+    {
+      "id": "start-recommendations-off",
+      "name": "Turn off Start menu recommendations",
+      "feature": "Start menu recommendations",
+      "description": "Stops the Start menu recommending apps and websites.",
+      "risk": "safe",
+      "breaks": [
+        "Start no longer shows recommended apps."
+      ],
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Start_IrisRecommendations",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Start_AccountNotifications",
+          "kind": "dword",
+          "data": "0"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Start_IrisRecommendations",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Start_AccountNotifications",
+          "kind": "dword",
+          "data": "0"
+        }
+      ]
+    },
+    {
+      "id": "tailored-experiences-off",
+      "name": "Turn off tailored experiences",
+      "feature": "Tailored experiences",
+      "description": "Stops Microsoft using your diagnostic data for tips and ads.",
+      "risk": "safe",
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Privacy",
+          "name": "TailoredExperiencesWithDiagnosticDataEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableTailoredExperiencesWithDiagnosticData",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableThirdPartySuggestions",
+          "kind": "dword",
+          "data": "1"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Privacy",
+          "name": "TailoredExperiencesWithDiagnosticDataEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableTailoredExperiencesWithDiagnosticData",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableThirdPartySuggestions",
+          "kind": "dword",
+          "data": "1"
+        }
+      ]
+    },
+    {
+      "id": "telemetry-required-only",
+      "name": "Send only required diagnostic data",
+      "feature": "Diagnostic data",
+      "description": "Limits diagnostic data sent to Microsoft to the required minimum.",
+      "risk": "safe",
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection",
+          "name": "AllowTelemetry",
+          "kind": "dword",
+          "data": "1"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection",
+          "name": "AllowTelemetry",
+          "kind": "dword",
+          "data": "1"
+        }
+      ]
+    },
+    {
+      "id": "feedback-prompts-off",
+      "name": "Turn off feedback requests",
+      "feature": "Feedback prompts",
+      "description": "Stops Windows asking for feedback.",
+      "risk": "safe",
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection",
+          "name": "DoNotShowFeedbackNotifications",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Siuf\\Rules",
+          "name": "NumberOfSIUFInPeriod",
+          "kind": "dword",
+          "data": "0"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection",
+          "name": "DoNotShowFeedbackNotifications",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Siuf\\Rules",
+          "name": "NumberOfSIUFInPeriod",
+          "kind": "dword",
+          "data": "0"
+        }
+      ]
+    },
+    {
+      "id": "activity-history-off",
+      "name": "Turn off activity history",
+      "feature": "Activity history",
+      "description": "Stops Windows recording and uploading what you do.",
+      "risk": "safe",
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "PublishUserActivities",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "UploadUserActivities",
+          "kind": "dword",
+          "data": "0"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "PublishUserActivities",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "UploadUserActivities",
+          "kind": "dword",
+          "data": "0"
+        }
+      ]
+    },
+    {
+      "id": "typing-speech-data-off",
+      "name": "Turn off typing and speech data collection",
+      "feature": "Typing and speech data",
+      "description": "Stops Windows collecting your typing, inking and voice to personalise input.",
+      "risk": "safe",
+      "breaks": [
+        "Online voice typing (cloud dictation) stops.",
+        "The touch keyboard keeps working."
+      ],
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\InputPersonalization",
+          "name": "RestrictImplicitInkCollection",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\InputPersonalization",
+          "name": "RestrictImplicitTextCollection",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\InputPersonalization\\TrainedDataStore",
+          "name": "HarvestContacts",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Personalization\\Settings",
+          "name": "AcceptedPrivacyPolicy",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Input\\TIPC",
+          "name": "Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Speech_OneCore\\Settings\\OnlineSpeechPrivacy",
+          "name": "HasAccepted",
+          "kind": "dword",
+          "data": "0"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\InputPersonalization",
+          "name": "RestrictImplicitInkCollection",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\InputPersonalization",
+          "name": "RestrictImplicitTextCollection",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\InputPersonalization\\TrainedDataStore",
+          "name": "HarvestContacts",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Personalization\\Settings",
+          "name": "AcceptedPrivacyPolicy",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Input\\TIPC",
+          "name": "Enabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Speech_OneCore\\Settings\\OnlineSpeechPrivacy",
+          "name": "HasAccepted",
+          "kind": "dword",
+          "data": "0"
+        }
+      ]
+    },
+    {
+      "id": "search-web-results-off",
+      "name": "Turn off web results in search",
+      "feature": "Web search in Start",
+      "description": "Stops Start menu search sending your typing to Bing and showing search highlights.",
+      "risk": "safe",
+      "breaks": [
+        "Start search no longer shows web results or daily highlights."
+      ],
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Policies\\Microsoft\\Windows\\Explorer",
+          "name": "DisableSearchBoxSuggestions",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "BingSearchEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search",
+          "name": "EnableDynamicContentInWSB",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search",
+          "name": "AllowCloudSearch",
+          "kind": "dword",
+          "data": "0"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Policies\\Microsoft\\Windows\\Explorer",
+          "name": "DisableSearchBoxSuggestions",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "BingSearchEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search",
+          "name": "EnableDynamicContentInWSB",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search",
+          "name": "AllowCloudSearch",
+          "kind": "dword",
+          "data": "0"
+        }
+      ]
+    },
+    {
+      "id": "app-launch-tracking-off",
+      "name": "Turn off app launch tracking",
+      "feature": "App launch tracking",
+      "description": "Stops Windows tracking which apps you open.",
+      "risk": "safe",
+      "breaks": [
+        "The Start menu's most-used list empties."
+      ],
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Start_TrackProgs",
+          "kind": "dword",
+          "data": "0"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Start_TrackProgs",
+          "kind": "dword",
+          "data": "0"
+        }
+      ]
+    },
+    {
+      "id": "edge-tracking-off",
+      "name": "Turn off Edge tracking and promos",
+      "feature": "Edge tracking",
+      "description": "Turns off Edge's data collection, shopping, rewards and first-run prompts by policy.",
+      "risk": "safe",
+      "breaks": [
+        "Edge shows \"managed by your organization\"."
+      ],
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\EdgeUpdate",
+          "name": "CreateDesktopShortcutDefault",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "PersonalizationReportingEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "ShowRecommendationsEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "HideFirstRunExperience",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "UserFeedbackAllowed",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "ConfigureDoNotTrack",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "AlternateErrorPagesEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "EdgeShoppingAssistantEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "MicrosoftEdgeInsiderPromotionEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "ShowMicrosoftRewards",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "DiagnosticData",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "EdgeAssetDeliveryServiceEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "DefaultBrowserSettingsCampaignEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "SpotlightExperiencesAndRecommendationsEnabled",
+          "kind": "dword",
+          "data": "0"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\EdgeUpdate",
+          "name": "CreateDesktopShortcutDefault",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "PersonalizationReportingEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "ShowRecommendationsEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "HideFirstRunExperience",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "UserFeedbackAllowed",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "ConfigureDoNotTrack",
+          "kind": "dword",
+          "data": "1"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "AlternateErrorPagesEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "EdgeShoppingAssistantEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "MicrosoftEdgeInsiderPromotionEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "ShowMicrosoftRewards",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "DiagnosticData",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "EdgeAssetDeliveryServiceEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "DefaultBrowserSettingsCampaignEnabled",
+          "kind": "dword",
+          "data": "0"
+        },
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "SpotlightExperiencesAndRecommendationsEnabled",
+          "kind": "dword",
+          "data": "0"
+        }
+      ]
+    },
+    {
+      "id": "onedrive-backup-prompt-off",
+      "name": "Stop OneDrive folder backup prompts",
+      "feature": "OneDrive backup prompts",
+      "description": "Stops OneDrive asking to back up your Desktop, Documents and Pictures.",
+      "risk": "safe",
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\OneDrive",
+          "name": "KFMBlockOptIn",
+          "kind": "dword",
+          "data": "1"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\OneDrive",
+          "name": "KFMBlockOptIn",
+          "kind": "dword",
+          "data": "1"
+        }
+      ]
     }
   ]
 }
