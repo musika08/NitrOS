@@ -84,6 +84,8 @@ public class CardsTableTests
     public void RemovingStoreWhileKeepingXbox_Warns()
     {
         var gamer = Pick(CardId.Gamer);
+        Assert.DoesNotContain(WarningEngine.For(gamer),
+            w => w.Kind == WarningKind.Dependency && w.RelatedId == "xbox-app-remove");
         var result = gamer.Toggle("store-remove");
         Assert.True(result.Changed);
         var warnings = WarningEngine.For(result.Selection);
@@ -99,19 +101,21 @@ public class CardsTableTests
     {
         var selection = Pick(card, new DeviceProfile(true, false, false));
         Assert.False(selection.IsOn("high-performance-plan"));
+        if (card != CardId.Recommended)
+            Assert.True(Pick(card).IsOn("high-performance-plan"));
     }
 
     [Fact]
     public void MaxLean_SaysWhatStopsWorking()
     {
         var catalog = Load();
+        Assert.NotEmpty(catalog.Get("defender-remove").Breaks);
+        Assert.NotEmpty(catalog.Get("memory-integrity-off").Breaks);
         var selection = Selection.FromCard(catalog, CardId.MaxLean, TargetMode.TunePc, DeviceProfile.Desktop);
         var messages = WarningEngine.For(selection)
             .Where(w => w.Kind == WarningKind.Breaks).Select(w => w.Message).ToList();
-        foreach (var sentence in catalog.Get("defender-remove").Breaks)
-            Assert.Contains(sentence, messages);
-        foreach (var sentence in catalog.Get("memory-integrity-off").Breaks)
-            Assert.Contains(sentence, messages);
+        Assert.Contains("No antivirus: nothing scans downloads or USB drives.", messages);
+        Assert.Contains("Valorant, FACEIT and Fortnite tournaments may refuse to start.", messages);
     }
 
     [Theory]
