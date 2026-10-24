@@ -44,7 +44,7 @@ public sealed class CatalogLoaderTests : IDisposable
     {
         WriteCards();
         WriteGroup("a.json", "a", Switches.Make("a.one"));
-        Write("b.json", "{\n  \"group\": \"b\"\n}\n}");
+        Write("b.json", "{\"group\":\"b\",\"title\":\"B\",\"switches\":[]}\n\n}");
 
         var result = CatalogLoader.Load(_dir);
 

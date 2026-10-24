@@ -24,11 +24,20 @@ public static class CatalogLoader
         else
             cards = TryRead(cardsPath, CardsFile, CatalogJson.ParseCards, errors);
 
-        var names = Directory.EnumerateFiles(directory, "*.json", SearchOption.TopDirectoryOnly)
-            .Select(p => Path.GetFileName(p))
-            .Where(n => !string.Equals(n, CardsFile, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(n => n, StringComparer.Ordinal)
-            .ToList();
+        List<string> names;
+        try
+        {
+            names = Directory.EnumerateFiles(directory, "*.json", SearchOption.TopDirectoryOnly)
+                .Select(p => Path.GetFileName(p))
+                .Where(n => !string.Equals(n, CardsFile, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(n => n, StringComparer.Ordinal)
+                .ToList();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            errors.Add(new CatalogError(directory, null, null, ex.Message));
+            return new CatalogLoadResult(null, errors);
+        }
 
         var files = new List<(string File, GroupFile Group)>();
         foreach (var name in names)
