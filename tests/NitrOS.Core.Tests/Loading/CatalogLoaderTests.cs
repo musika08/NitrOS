@@ -29,7 +29,7 @@ public sealed class CatalogLoaderTests : IDisposable
     public void Load_ValidDirectory_ReturnsCatalog()
     {
         WriteCards();
-        WriteGroup("a.json", "a", Switches.Make("a.one"));
+        WriteGroup("a.json", "a", Switches.Make("a-one"));
 
         var result = CatalogLoader.Load(_dir);
 
@@ -43,7 +43,7 @@ public sealed class CatalogLoaderTests : IDisposable
     public void Load_ReportsBrokenJsonWithFileAndLine()
     {
         WriteCards();
-        WriteGroup("a.json", "a", Switches.Make("a.one"));
+        WriteGroup("a.json", "a", Switches.Make("a-one"));
         Write("b.json", "{\"group\":\"b\",\"title\":\"B\",\"switches\":[]}\n\n}");
 
         var result = CatalogLoader.Load(_dir);
@@ -58,7 +58,7 @@ public sealed class CatalogLoaderTests : IDisposable
     public void Load_ReportsUnknownActionType()
     {
         WriteCards();
-        WriteGroup("a.json", "a", Switches.Make("a.one"));
+        WriteGroup("a.json", "a", Switches.Make("a-one"));
         var json = File.ReadAllText(Path.Combine(_dir, "a.json")).Replace("registry.set", "registry.nuke");
         Write("a.json", json);
 
@@ -72,7 +72,7 @@ public sealed class CatalogLoaderTests : IDisposable
     [Fact]
     public void Load_MissingCardsFile_IsError()
     {
-        WriteGroup("a.json", "a", Switches.Make("a.one"));
+        WriteGroup("a.json", "a", Switches.Make("a-one"));
 
         var result = CatalogLoader.Load(_dir);
 

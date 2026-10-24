@@ -1,0 +1,140 @@
+using NitrOS.Core.Loading;
+using NitrOS.Core.Model;
+using NitrOS.Core.Tests.TestSupport;
+
+namespace NitrOS.Core.Tests.Loading;
+
+public class CatalogValidatorTests
+{
+    private static IReadOnlyList<CatalogError> One(SwitchDef s, string file = "test.json", string group = "test") =>
+        CatalogValidator.Validate([(file, new GroupFile(group, "T", [s]))]);
+
+    private static IReadOnlyList<CatalogError> Many(params SwitchDef[] s) =>
+        CatalogValidator.Validate([("test.json", new GroupFile("test", "T", s))]);
+
+    private static void AssertOne(IReadOnlyList<CatalogError> errors, string contains)
+    {
+        Assert.Single(errors);
+        Assert.Contains(contains, errors[0].Message);
+        Assert.Null(errors[0].Line);
+    }
+
+    [Fact]
+    public void GroupName_MustMatchFileName()
+    {
+        var errors = One(Switches.Make("a-one"), "test.json", "other");
+        AssertOne(errors, "does not match file name");
+        Assert.Equal("test.json", errors[0].File);
+    }
+
+    [Fact]
+    public void Id_MustBeKebabCase()
+    {
+        var errors = One(Switches.Make("Bad_Id"));
+        AssertOne(errors, "kebab-case");
+        Assert.Equal("Bad_Id", errors[0].SwitchId);
+    }
+
+    [Fact]
+    public void DuplicateId_NamesBothFiles()
+    {
+        var errors = CatalogValidator.Validate([
+            ("a.json", new GroupFile("a", "A", [Switches.Make("dup")])),
+            ("b.json", new GroupFile("b", "B", [Switches.Make("dup")])),
+        ]);
+        Assert.Single(errors);
+        Assert.Contains("a.json", errors[0].Message);
+        Assert.Contains("b.json", errors[0].Message);
+        Assert.Equal("dup", errors[0].SwitchId);
+    }
+
+    [Fact]
+    public void Description_OneLineMax120()
+    {
+        AssertOne(One(Switches.Make("x") with { Description = new string('a', 121) }), "description");
+        AssertOne(One(Switches.Make("x") with { Description = "two\nlines" }), "description");
+        AssertOne(One(Switches.Make("x") with { Description = "" }), "description");
+        Assert.Empty(One(Switches.Make("x") with { Description = new string('a', 120) }));
+    }
+
+    [Fact]
+    public void Requires_MustExistAndNotSelf()
+    {
+        AssertOne(One(Switches.Make("x", b => b.Requires = ["ghost"])), "ghost");
+        AssertOne(One(Switches.Make("x", b => b.Requires = ["x"])), "itself");
+    }
+
+    [Fact]
+    public void Breaks_RequiredWhenRiskIsBreaks()
+    {
+        AssertOne(One(Switches.Make("x", b => b.Risk = Risk.Breaks)), "breaks");
+        Assert.Empty(One(Switches.Make("x", b => { b.Risk = Risk.Breaks; b.Breaks = ["Store"]; })));
+    }
+
+    [Fact]
+    public void Modes_MatchActionLists()
+    {
+        // listed live, no live actions
+        AssertOne(One(Switches.Make("x", b => b.Live = [])), "live");
+        // image actions present but image not listed
+        AssertOne(One(Switches.Make("x", b => b.Image = [new FileRemove(@"C:\x")])), "image");
+    }
+
+    [Fact]
+    public void PackageRemove_ImageOnly()
+    {
+        var s = Switches.Make("x", b =>
+        {
+            b.Modes = [Mode.Live, Mode.Image];
+            b.Reversible = false;
+            b.Live = [new PackageRemove("Foo*")];
+            b.Image = [new PackageRemove("Foo*")];
+        });
+        var errors = One(s);
+        Assert.Contains(errors, e => e.Message.Contains("package.remove"));
+    }
+
+    [Fact]
+    public void Reversible_HasNoDestructiveLiveAction()
+    {
+        var destructive = One(Switches.Make("x", b => b.Live = [new AppxRemove("Foo")]));
+        AssertOne(destructive, "reversible");
+
+        var script = One(Switches.Make("x", b => b.Live = [new Script("echo hi")]));
+        AssertOne(script, "reversible");
+
+        Assert.Empty(One(Switches.Make("x", b => b.Live = [new Script("echo hi", "echo undo")])));
+    }
+
+    [Fact]
+    public void RegistryData_ParsesForKind()
+    {
+        static SwitchDef Reg(string hive, RegistryKind kind, string data) =>
+            Switches.Make("x", b => b.Live = [new RegistrySet(hive, @"SOFTWARE\T", "V", kind, data)]);
+
+        Assert.Empty(One(Reg("HKLM", RegistryKind.Dword, "0x1")));
+        Assert.Empty(One(Reg("HKCU", RegistryKind.Dword, "42")));
+        AssertOne(One(Reg("HKLM", RegistryKind.Dword, "abc")), "data");
+        AssertOne(One(Reg("HKLM", RegistryKind.Dword, "4294967296")), "data");
+        AssertOne(One(Reg("HKCR", RegistryKind.Dword, "1")), "hive");
+        Assert.Empty(One(Reg("HKLM", RegistryKind.Qword, "0xFFFFFFFFFFFFFFFF")));
+        AssertOne(One(Reg("HKLM", RegistryKind.Qword, "18446744073709551616")), "data");
+        Assert.Empty(One(Reg("HKLM", RegistryKind.Binary, "0aFF")));
+        AssertOne(One(Reg("HKLM", RegistryKind.Binary, "abc")), "data");
+    }
+
+    [Fact]
+    public void PowerSet_GuidsAndAValue()
+    {
+        const string g = "54533251-82be-4824-96c1-47b60b740d00";
+        AssertOne(One(Switches.Make("x", b => b.Live = [new PowerSet("nope", g, 1)])), "power.set");
+        AssertOne(One(Switches.Make("x", b => b.Live = [new PowerSet(g, g)])), "power.set");
+        Assert.Empty(One(Switches.Make("x", b => b.Live = [new PowerSet(g, g, Dc: 5)])));
+    }
+
+    [Fact]
+    public void ValidCatalog_HasNoErrors()
+    {
+        Assert.Empty(Many(Switches.Make("one"), Switches.Make("two-b"), Switches.Make("three3")));
+    }
+}
