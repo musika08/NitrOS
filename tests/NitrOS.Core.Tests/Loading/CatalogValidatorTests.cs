@@ -137,4 +137,22 @@ public class CatalogValidatorTests
     {
         Assert.Empty(Many(Switches.Make("one"), Switches.Make("two-b"), Switches.Make("three3")));
     }
+
+    [Fact]
+    public void UndefinedEnumValues_AreErrors()
+    {
+        AssertOne(One(Switches.Make("x", b => b.Risk = (Risk)7)), "Risk value");
+        AssertOne(One(Switches.Make("x", b => b.Modes = [Mode.Live, (Mode)9])), "Mode value");
+        AssertOne(One(Switches.Make("x", b => b.SkipOn = [(DeviceTrait)9])), "skipOn");
+        AssertOne(One(Switches.Make("x", b => b.Cards = new CardDefaults
+        {
+            Recommended = (CardDefault)5,
+            Gamer = CardDefault.Off,
+            Streamer = CardDefault.Off,
+            MaxLean = CardDefault.Off,
+        })), "Card default");
+        AssertOne(One(Switches.Make("x", b => b.Live = [new ServiceStart("svc", (ServiceStartType)42)])), "Service start type");
+        AssertOne(One(Switches.Make("x", b =>
+            b.Live = [new RegistrySet("HKLM", @"SOFTWARE\T", "V", (RegistryKind)99, "1")])), "Registry kind");
+    }
 }

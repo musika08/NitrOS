@@ -24,6 +24,7 @@ public static partial class CatalogValidator
             foreach (var sw in group.Switches)
             {
                 CheckId(file, sw, errors);
+                CheckEnums(file, sw, errors);
                 CheckDescription(file, sw, errors);
                 CheckRequires(file, sw, allIds, errors);
                 CheckBreaks(file, sw, errors);
@@ -53,6 +54,27 @@ public static partial class CatalogValidator
     {
         if (!KebabCase().IsMatch(sw.Id))
             Add(errors, file, sw, $"Switch id '{sw.Id}' must be kebab-case (lowercase letters, digits, single dashes).");
+    }
+
+    private static void CheckEnums(string file, SwitchDef sw, List<CatalogError> errors)
+    {
+        if (!Enum.IsDefined(sw.Risk))
+            Add(errors, file, sw, $"Risk value {(int)sw.Risk} is not valid.");
+        foreach (var m in sw.Modes.Where(m => !Enum.IsDefined(m)))
+            Add(errors, file, sw, $"Mode value {(int)m} is not valid.");
+        foreach (var t in sw.SkipOn.Where(t => !Enum.IsDefined(t)))
+            Add(errors, file, sw, $"skipOn value {(int)t} is not valid.");
+        foreach (var (card, value) in new[]
+                 {
+                     ("recommended", sw.Cards.Recommended), ("gamer", sw.Cards.Gamer),
+                     ("streamer", sw.Cards.Streamer), ("maxLean", sw.Cards.MaxLean),
+                 })
+        {
+            if (!Enum.IsDefined(value))
+                Add(errors, file, sw, $"Card default {(int)value} for '{card}' is not valid.");
+        }
+        foreach (var s in sw.Live.Concat(sw.Image).OfType<ServiceStart>().Where(s => !Enum.IsDefined(s.Start)))
+            Add(errors, file, sw, $"Service start type {(int)s.Start} is not valid.");
     }
 
     private static void CheckDuplicates(IReadOnlyList<(string File, GroupFile Group)> files, List<CatalogError> errors)
@@ -131,12 +153,18 @@ public static partial class CatalogValidator
         {
             if (a.Hive is not ("HKLM" or "HKCU"))
                 Add(errors, file, sw, $"Registry hive '{a.Hive}' must be HKLM or HKCU.");
+            if (!Enum.IsDefined(a.Kind))
+            {
+                Add(errors, file, sw, $"Registry kind {(int)a.Kind} is not valid.");
+                continue;
+            }
             var ok = a.Kind switch
             {
                 RegistryKind.Dword => TryNumber(a.Data, 32),
                 RegistryKind.Qword => TryNumber(a.Data, 64),
                 RegistryKind.Binary => HexBytes().IsMatch(a.Data),
-                _ => true,
+                RegistryKind.String or RegistryKind.ExpandString or RegistryKind.MultiString => true,
+                _ => false,
             };
             if (!ok)
                 Add(errors, file, sw, $"Registry data '{a.Data}' is not valid for kind {a.Kind}.");

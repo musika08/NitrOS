@@ -126,4 +126,18 @@ public class CatalogJsonTests
         var s = JsonSerializer.Deserialize<SwitchAction>("""{"type":"script","body":"x"}""", CatalogJson.Options);
         Assert.Equal(new Script("x", null), s);
     }
+
+    [Theory]
+    [InlineData("\"risk\":\"safe\"", "\"risk\":2")]
+    [InlineData("\"risk\":\"safe\"", "\"risk\":\"2\"")]
+    [InlineData("\"modes\":[\"live\"]", "\"modes\":[1]")]
+    [InlineData("\"gamer\":\"off\"", "\"gamer\":1")]
+    public void Parse_RejectsNumbersForEnums(string from, string to) =>
+        Assert.Throws<JsonException>(() => CatalogJson.ParseGroup(GroupJson().Replace(from, to)));
+
+    [Theory]
+    [InlineData("""{"type":"registry.set","hive":"HKLM","key":"k","name":"n","kind":99,"data":"1"}""")]
+    [InlineData("""{"type":"service.start","service":"s","start":42}""")]
+    public void Parse_RejectsNumbersForActionEnums(string json) =>
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<SwitchAction>(json, CatalogJson.Options));
 }

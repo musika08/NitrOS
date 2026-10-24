@@ -18,7 +18,7 @@ public static class CatalogJson
             RespectNullableAnnotations = true,
             WriteIndented = true,
         };
-        o.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower));
+        o.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower, allowIntegerValues: false));
         return o;
     }
 
