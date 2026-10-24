@@ -15,7 +15,7 @@ public sealed class WinRegistry : IRegistry
     {
         using var b = Base(h, v);
         using var k = b.OpenSubKey(key);
-        return k is null ? null : Read(k, name);
+        return k is null ? null : Read(k, key, name);
     }
 
     public void SetValue(LiveHive h, string key, string name, RegValue value, RegView v)
@@ -69,7 +69,7 @@ public sealed class WinRegistry : IRegistry
     {
         var values = new List<RegNamedValue>();
         foreach (var n in k.GetValueNames())
-            if (Read(k, n) is { } rv) values.Add(new RegNamedValue(n, rv));
+            if (Read(k, path, n) is { } rv) values.Add(new RegNamedValue(n, rv));
         var subs = new List<RegTree>();
         foreach (var s in k.GetSubKeyNames())
         {
@@ -86,7 +86,7 @@ public sealed class WinRegistry : IRegistry
         foreach (var sub in tree.SubKeys) Import(root, sub);
     }
 
-    private static RegValue? Read(RegistryKey k, string name)
+    private static RegValue? Read(RegistryKey k, string keyPath, string name)
     {
         if (!k.GetValueNames().Contains(name, StringComparer.OrdinalIgnoreCase)) return null;
         var kind = k.GetValueKind(name);
@@ -100,7 +100,7 @@ public sealed class WinRegistry : IRegistry
             RegistryValueKind.ExpandString => new RegValue(RegistryKind.ExpandString, (string)data),
             RegistryValueKind.MultiString => new RegValue(RegistryKind.MultiString, string.Join("\n", (string[])data)),
             RegistryValueKind.Binary => new RegValue(RegistryKind.Binary, Convert.ToHexString((byte[])data)),
-            _ => null, // None / Unknown kinds are not representable in the catalog format
+            _ => throw new NotSupportedException($"Unsupported registry value kind {kind} at {keyPath}\\{name}"),
         };
     }
 
@@ -109,9 +109,9 @@ public sealed class WinRegistry : IRegistry
         switch (value.Kind)
         {
             case RegistryKind.Dword:
-                k.SetValue(name, unchecked((int)uint.Parse(value.Data, CultureInfo.InvariantCulture)), RegistryValueKind.DWord); break;
+                k.SetValue(name, unchecked((int)(uint)ParseNumber(value.Data, 32)), RegistryValueKind.DWord); break;
             case RegistryKind.Qword:
-                k.SetValue(name, unchecked((long)ulong.Parse(value.Data, CultureInfo.InvariantCulture)), RegistryValueKind.QWord); break;
+                k.SetValue(name, unchecked((long)ParseNumber(value.Data, 64)), RegistryValueKind.QWord); break;
             case RegistryKind.String:
                 k.SetValue(name, value.Data, RegistryValueKind.String); break;
             case RegistryKind.ExpandString:
@@ -123,5 +123,15 @@ public sealed class WinRegistry : IRegistry
             default:
                 throw new ArgumentOutOfRangeException(nameof(value), value.Kind, "Unknown registry kind");
         }
+    }
+
+    /// <summary>Decimal or 0x hex, the same rule as the catalog validator.</summary>
+    private static ulong ParseNumber(string s, int bits)
+    {
+        var ok = s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            ? ulong.TryParse(s.AsSpan(2), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var v)
+            : ulong.TryParse(s, NumberStyles.None, CultureInfo.InvariantCulture, out v);
+        if (!ok || (bits == 32 && v > uint.MaxValue)) throw new FormatException($"'{s}' is not a valid {bits}-bit number");
+        return v;
     }
 }

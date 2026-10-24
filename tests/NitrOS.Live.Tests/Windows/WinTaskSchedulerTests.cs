@@ -33,6 +33,38 @@ public sealed class WinTaskSchedulerTests : IDisposable
         Assert.Null(new WinTaskScheduler().Get(@"\NitrOS.Tests\DoesNotExist"));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("NoLeadingSlash")]
+    [InlineData("\\A\\")]
+    [InlineData("\\A\"B")]
+    public void BadTaskPaths_ThrowBeforeAnyProcessRuns(string path)
+    {
+        var sch = new WinTaskScheduler();
+        Assert.Throws<ArgumentException>(() => sch.Get(path));
+        Assert.Throws<ArgumentException>(() => sch.SetEnabled(path, false));
+    }
+
+    [Fact]
+    public void ParseEnabled_TrueFalseAndAbsent()
+    {
+        const string ns = "http://schemas.microsoft.com/windows/2004/02/mit/task";
+        string Xml(string settings) => $"<?xml version=\"1.0\" encoding=\"UTF-16\"?><Task xmlns=\"{ns}\"><Triggers><TimeTrigger><Enabled>false</Enabled></TimeTrigger></Triggers>{settings}</Task>";
+        Assert.False(WinTaskScheduler.ParseEnabled(Xml("<Settings><Enabled>false</Enabled></Settings>")));
+        Assert.True(WinTaskScheduler.ParseEnabled(Xml("<Settings><Enabled>true</Enabled></Settings>")));
+        Assert.True(WinTaskScheduler.ParseEnabled(Xml("<Settings></Settings>")));
+        Assert.True(WinTaskScheduler.ParseEnabled(Xml("")));
+    }
+
+    [Fact]
+    public void ClassifyQueryExit_SeparatesOkMissingAndFailure()
+    {
+        Assert.Equal(WinTaskScheduler.ExitClass.Ok, WinTaskScheduler.ClassifyQueryExit(0));
+        Assert.Equal(WinTaskScheduler.ExitClass.MaybeNotFound, WinTaskScheduler.ClassifyQueryExit(1));
+        Assert.Equal(WinTaskScheduler.ExitClass.Failed, WinTaskScheduler.ClassifyQueryExit(ProcessRunner.TimeoutExitCode));
+        Assert.Equal(WinTaskScheduler.ExitClass.Failed, WinTaskScheduler.ClassifyQueryExit(5));
+    }
+
     [Fact]
     public void ParseCsvLine_HandlesQuotesAndCommas()
     {

@@ -25,7 +25,10 @@ public class WinPowerConfigTests
         var lower = p.Get(active, UsbSub, UsbSetting);
         var viaUpper = p.Get(upper, UsbSub.ToUpperInvariant(), UsbSetting.ToUpperInvariant());
         Assert.Equal(lower, viaUpper);
-        if (lower is { } v) Assert.InRange(v.Ac, 0, 1);
+        // /q (or the /qh fallback for hidden settings) must show the USB selective suspend setting on this PC.
+        Assert.NotNull(lower);
+        Assert.InRange(lower!.Value.Ac, 0, 1);
+        Assert.InRange(lower.Value.Dc, 0, 1);
     }
 
     [Fact]
@@ -33,6 +36,37 @@ public class WinPowerConfigTests
     {
         var p = new WinPowerConfig();
         Assert.Null(p.Get(p.ActiveScheme(), "00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002"));
+    }
+
+    [Theory]
+    [InlineData("not-a-guid")]
+    [InlineData("")]
+    [InlineData("381b4222-f694-41f0-9685-ff5bb260df2e /setactive")]
+    public void BadGuids_ThrowBeforeAnyProcessRuns(string bad)
+    {
+        var p = new WinPowerConfig();
+        const string ok = "381b4222-f694-41f0-9685-ff5bb260df2e";
+        Assert.Throws<ArgumentException>(() => p.Get(bad, ok, ok));
+        Assert.Throws<ArgumentException>(() => p.Get(ok, bad, ok));
+        Assert.Throws<ArgumentException>(() => p.Get(ok, ok, bad));
+        Assert.Throws<ArgumentException>(() => p.SetAc(bad, ok, ok, 1));
+        Assert.Throws<ArgumentException>(() => p.SetDc(ok, bad, ok, 1));
+        Assert.Throws<ArgumentException>(() => p.SetActive(bad));
+    }
+
+    [Fact]
+    public void Normalise_LowercasesAndStripsBraces()
+    {
+        Assert.Equal("381b4222-f694-41f0-9685-ff5bb260df2e", WinPowerConfig.Normalise("{381B4222-F694-41F0-9685-FF5BB260DF2E}"));
+    }
+
+    [Fact]
+    public void IsNotFoundExit_OnlyForExitOne()
+    {
+        Assert.True(WinPowerConfig.IsNotFoundExit(1));
+        Assert.False(WinPowerConfig.IsNotFoundExit(0));
+        Assert.False(WinPowerConfig.IsNotFoundExit(ProcessRunner.TimeoutExitCode));
+        Assert.False(WinPowerConfig.IsNotFoundExit(5));
     }
 
     [Fact]

@@ -95,6 +95,7 @@ public sealed class WinRegistryTests : IDisposable
     [Fact]
     public void WinRegistry_Registry32View()
     {
+        // HKCU\Software is shared between the 32 and 64-bit views, so this proves the Registry32 round trip only, not separation.
         var h = LiveHive.CurrentUser;
         _reg.SetValue(h, _root, "v32", new RegValue(RegistryKind.Dword, "32"), RegView.Registry32);
         Assert.Equal(new RegValue(RegistryKind.Dword, "32"), _reg.GetValue(h, _root, "v32", RegView.Registry32));
@@ -109,5 +110,32 @@ public sealed class WinRegistryTests : IDisposable
         var v = _reg.GetValue(LiveHive.LocalMachine, @"SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", RegView.Default);
         Assert.NotNull(v);
         Assert.Equal(RegistryKind.String, v!.Kind);
+    }
+
+    [Fact]
+    public void WinRegistry_UnsupportedKindThrowsInsteadOfBeingDropped()
+    {
+        using (var b = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, Microsoft.Win32.RegistryView.Registry64))
+        using (var k = b.CreateSubKey(_root, writable: true))
+            k.SetValue("none", new byte[] { 1, 2 }, RegistryValueKind.None);
+
+        var ex = Assert.Throws<NotSupportedException>(() => _reg.GetValue(LiveHive.CurrentUser, _root, "none", RegView.Default));
+        Assert.Contains("None", ex.Message);
+        Assert.Contains(_root + "\\none", ex.Message);
+        Assert.Throws<NotSupportedException>(() => _reg.ExportKey(LiveHive.CurrentUser, _root, RegView.Default));
+    }
+
+    [Fact]
+    public void WinRegistry_WritesHexNumbersAndReadsDecimal()
+    {
+        var h = LiveHive.CurrentUser;
+        _reg.SetValue(h, _root, "d", new RegValue(RegistryKind.Dword, "0x10"), RegView.Default);
+        _reg.SetValue(h, _root, "big", new RegValue(RegistryKind.Dword, "0xFFFFFFFF"), RegView.Default);
+        _reg.SetValue(h, _root, "q", new RegValue(RegistryKind.Qword, "0X10"), RegView.Default);
+        Assert.Equal("16", _reg.GetValue(h, _root, "d", RegView.Default)!.Data);
+        Assert.Equal("4294967295", _reg.GetValue(h, _root, "big", RegView.Default)!.Data);
+        Assert.Equal("16", _reg.GetValue(h, _root, "q", RegView.Default)!.Data);
+        Assert.Throws<FormatException>(() => _reg.SetValue(h, _root, "bad", new RegValue(RegistryKind.Dword, "0x100000000"), RegView.Default));
+        Assert.Throws<FormatException>(() => _reg.SetValue(h, _root, "bad", new RegValue(RegistryKind.Dword, "12abc"), RegView.Default));
     }
 }
