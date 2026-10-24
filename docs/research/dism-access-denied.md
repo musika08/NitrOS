@@ -10,13 +10,14 @@ changed.
 DISM's Appx provider **probably** fails opening a registry key for writing.
 The log line is `Failed to create or open Software key. -
 CAppxManager::InitializeResources(hr:0x80070005)`, and it names neither the
-key nor the access asked for. Feature and capability queries do not reach
-that code, so they work. The same query still works when it runs as
-**SYSTEM** (Winhance's logon task), and fails for the elevated
-administrator. The elevated token also seemed to be refused write access to
-`HKLM\SOFTWARE` itself, where the permissions grant administrators full
-control and no integrity label applies. That refusal is inferred from a
-wrapped exception until the updated script is re-run (see 3).
+key nor the access asked for. Feature and capability queries work. That
+they never reach this code is inferred, because they never log the
+"Software key" step. The same query still works when it runs as **SYSTEM**
+(Winhance's logon task), and fails for the elevated administrator. The
+elevated token is also refused write access to `HKLM\SOFTWARE` itself
+(confirmed by a second elevated run, Win32 error 5), even though the
+permissions grant administrators full control and no integrity label applies.
+`HKLM\SOFTWARE\Policies` is writable (see 3).
 
 The likely cause is **Shadow Defender**, installed 2026-10-20 at 12:50,
 between the last logged admin success (10-20 03:23) and the first failure
@@ -65,25 +66,27 @@ All 0x80070005 lines in the log are from the elevated-admin runs.
 
 ### 3. Registry: which keys the elevated token may open for writing
 
-Source: `evidence/elevated-dism-evidence-2026-10-25.txt` for the open test.
+Source: `evidence/elevated-dism-evidence-2026-10-25-rerun.txt` (the
+controller's second elevated run of the updated script, 2026-10-25 02:24) and
+the first run in `evidence/elevated-dism-evidence-2026-10-25.txt`.
 `evidence/registry-sddl-labels.txt` has the permissions (SDDL) and integrity
 labels, read without elevation.
 
 The script opened each key with read, set-value and create-subkey rights and
-closed it without writing anything. **Caveat:** that run logged only
-`MethodInvocationException`, PowerShell's wrapper, for every refused key, not
-the real error. The verdicts below are therefore inferred. The script now
-logs the inner exception and HResult and also tries a direct `RegOpenKeyEx`
-that returns the Win32 error code. Re-run it elevated to confirm.
+closed it without writing anything. The first run logged only PowerShell's
+wrapper exception. The re-run logs the real error in two ways: the .NET
+inner exception, and a direct `RegOpenKeyExW` that returns the Win32 error
+code. The refusals are **confirmed**.
 
-| Key (HKLM) | Result (inferred) | Administrators in the permissions |
+| Key (HKLM) | Result (confirmed) | Administrators in the permissions |
 |---|---|---|
-| `SOFTWARE` | refused | Full control, this key and subkeys (`(A;CI;KA;;;BA)`) |
-| `...\CurrentVersion\Appx` | refused | Read only; owner TrustedInstaller |
+| `SOFTWARE` | refused: Win32 error 5 (Access is denied); .NET `SecurityException` 0x8013150A | Full control, this key and subkeys (`(A;CI;KA;;;BA)`) |
+| `SOFTWARE\Policies` | write OK (`RegOpenKeyExW`) | not read |
+| `...\CurrentVersion\Appx` | refused: Win32 error 5; `SecurityException` 0x8013150A | Read only; owner TrustedInstaller |
 | `...\Appx\AppxAllUserStore` | write OK | Full control; owner Administrators |
 | `...\AppxAllUserStore\Applications`, `Deprovisioned`, `Staged`, `Config` | write OK | Full control |
-| `...\AppxAllUserStore\InboxApplications` | refused | Read only; owner TrustedInstaller |
-| `...\CurrentVersion\AppModel` | refused | Read only; owner TrustedInstaller |
+| `...\AppxAllUserStore\InboxApplications` | refused: Win32 error 5; `SecurityException` 0x8013150A | Read only; owner TrustedInstaller |
+| `...\CurrentVersion\AppModel` | refused: Win32 error 5; `SecurityException` 0x8013150A | Read only; owner TrustedInstaller |
 | `...\CurrentVersion\AppReadiness` | write OK | not read |
 
 The refusals on `Appx`, `InboxApplications` and `AppModel` match their
@@ -92,9 +95,11 @@ permissions. Whether a clean Windows 11 sets them the same way is unverified
 
 The refusal on `HKLM\SOFTWARE` does not match its permissions:
 administrators have full control there, and the integrity label is
-`S:NO_ACCESS_CONTROL` (no label). If the re-run confirms it as an access
-denial, something below the permissions, such as a kernel registry filter,
-is refusing the request.
+`S:NO_ACCESS_CONTROL` (no label). Something below the permissions, such as
+a kernel registry filter, is refusing the request. Its subkey
+`HKLM\SOFTWARE\Policies` is writable, and that is where most catalog policy
+switches write. Plain `HKLM\SOFTWARE` values outside `Policies` may fail on
+this PC.
 
 The token is normal: Administrators enabled, High Mandatory Level, the usual
 admin privileges (`evidence/elevated-dism-evidence-2026-10-25.txt`, user name
@@ -123,11 +128,12 @@ volume" (`evidence/shadow-defender-manual.txt`). So it handles the registry
 itself, not only the disk. The manual says nothing about refusing access,
 DISM or Windows servicing.
 
-Also seen: a kernel driver named `D`, file `C:\WINDOWS\TEMP\D.sys`, was
-installed 1,395 times from 2026-10-20 03:02 to 2026-10-25 (the reviewer
-counted 1,342 earlier; the count keeps rising). Source:
-`evidence/system-7045-services.txt`. It was already being installed before
-the 03:23 admin run that worked, so it is a weaker suspect. Which program
+Also seen: a kernel driver named `D`, file `C:\WINDOWS\TEMP\D.sys`, had
+1,139 installs from 2026-10-20 03:02:16 to 2026-10-24 15:03:12 (inside this
+window), and 1,395 events for service `D` from 2026-10-19 17:51:23 to
+2026-10-24 23:03:07. Source: `evidence/system-7045-services.txt`. It was
+already being installed before the 10-20 03:23 admin run that worked, so it
+is a weaker suspect. Which program
 loads it is unknown (open question for the owner).
 
 ### 5. What was ruled out
@@ -146,8 +152,8 @@ loads it is unknown (open question for the owner).
 
 - Which key the Appx provider opens, and with what access. The log says only
   "Software key".
-- That the `HKLM\SOFTWARE` refusal is a real access denial (re-run the
-  updated script).
+- What refuses the `HKLM\SOFTWARE` write-open. The refusal itself is
+  confirmed (Win32 error 5).
 - That Shadow Defender is what refuses it. Ways to confirm: (a) on the plan 4
   VM, run the evidence script before and after installing Shadow Defender
   1.5.0.726; (b) on the Ally, the owner turns off or removes Shadow Defender

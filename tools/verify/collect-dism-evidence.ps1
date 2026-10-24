@@ -25,7 +25,9 @@ function W([string]$Title, [scriptblock]$Body) {
 W 'Elevation and token' {
     $p = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
     "Elevated admin: $($p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))"
-    whoami.exe /all
+    # Redact the account name and user SID so the output can be shared.
+    $id = [Security.Principal.WindowsIdentity]::GetCurrent()
+    (whoami.exe /all | Out-String) -replace [regex]::Escape($id.Name), '<machine>\<user>' -replace [regex]::Escape($id.User.Value), '<user SID redacted>'
 }
 
 W 'Shadow Defender: drives in Shadow Mode (CmdTool /list)' {

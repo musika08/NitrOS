@@ -398,13 +398,15 @@ updates screen.
 - On the owner's PC, `ExcludeWUDriversInQualityUpdate` = 1 is already set
   (by Winhance), so Windows Update offers no drivers. Device updates must
   cover drivers, or the owner clears the value.
-- On the owner's PC, the elevated admin appears to be refused write access to
-  `HKLM\SOFTWARE` itself, which its permissions allow (to be confirmed with
-  the updated `tools/verify/collect-dism-evidence.ps1`). NitrOS must
-  test-open HKLM target keys for writing before applying.
+- On the owner's PC, the elevated admin is refused write access to
+  `HKLM\SOFTWARE` itself, which its permissions allow. This was confirmed
+  2026-10-25 with Win32 error 5. `HKLM\SOFTWARE\Policies`, where most catalog
+  policy switches write, is writable. Plain `HKLM\SOFTWARE` values outside
+  `Policies` may fail there. NitrOS must test-open HKLM target keys for
+  writing before applying.
 - Open question for the owner: a kernel driver `C:\WINDOWS\TEMP\D.sys`
-  (service name `D`) has been installed over 1,300 times since 2026-10-20.
-  Which program loads it is unknown.
+  (service name `D`) had 1,139 installs from 2026-10-20 03:02:16 to
+  2026-10-24 15:03:12. Which program loads it is unknown.
 - What the Ally X controller, back buttons and power controls do without
   Armoury Crate, and how to change the GPU memory reserve without it.
 - Primary BattlEye, Easy Anti-Cheat and FACEIT requirement pages (the
