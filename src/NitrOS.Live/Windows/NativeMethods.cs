@@ -267,13 +267,58 @@ internal static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetFileInformationByHandle(SafeFileHandle file, out BY_HANDLE_FILE_INFORMATION info);
 
-    // ---- File security without propagation (advapi32) ----
+    // ---- Handle-based file security (advapi32 / kernel32) ----
     public const uint OWNER_SECURITY_INFORMATION = 0x00000001;
     public const uint DACL_SECURITY_INFORMATION = 0x00000004;
     public const uint PROTECTED_DACL_SECURITY_INFORMATION = 0x80000000;
+    public const int SE_FILE_OBJECT = 1;
 
-    /// <summary>Unlike SetNamedSecurityInfo, this does not push inheritable entries down to existing children.</summary>
-    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, EntryPoint = "SetFileSecurityW")]
+    public const uint READ_CONTROL = 0x00020000;
+    public const uint WRITE_DAC = 0x00040000;
+    public const uint WRITE_OWNER = 0x00080000;
+    public const uint FILE_READ_ATTRIBUTES = 0x0080;
+    public const uint FILE_SHARE_READ = 0x1, FILE_SHARE_WRITE = 0x2, FILE_SHARE_DELETE = 0x4;
+    public const uint OPEN_EXISTING = 3;
+    public const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+    public const uint FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000;
+    public const uint FILE_ATTRIBUTE_DIRECTORY = 0x10;
+    public const uint FILE_ATTRIBUTE_REPARSE_POINT = 0x400;
+    public const int ERROR_ALREADY_EXISTS = 183;
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true, EntryPoint = "CreateFileW")]
+    public static extern SafeFileHandle CreateFile(string fileName, uint desiredAccess, uint shareMode, IntPtr securityAttributes,
+        uint creationDisposition, uint flagsAndAttributes, IntPtr templateFile);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SECURITY_ATTRIBUTES
+    {
+        public int nLength;
+        public IntPtr lpSecurityDescriptor;
+        [MarshalAs(UnmanagedType.Bool)] public bool bInheritHandle;
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true, EntryPoint = "CreateDirectoryW")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool SetFileSecurity(string fileName, uint securityInformation, byte[] securityDescriptor);
+    public static extern bool CreateDirectory(string path, ref SECURITY_ATTRIBUTES securityAttributes);
+
+    /// <summary>Returns a Win32 error code (not a SetLastError API).</summary>
+    [DllImport("advapi32.dll", ExactSpelling = true)]
+    public static extern int SetSecurityInfo(SafeFileHandle handle, int objectType, uint securityInfo, byte[]? owner, IntPtr group, byte[]? dacl, IntPtr sacl);
+
+    /// <summary>Returns a Win32 error code; the descriptor is freed with LocalFree.</summary>
+    [DllImport("advapi32.dll", ExactSpelling = true)]
+    public static extern int GetSecurityInfo(SafeFileHandle handle, int objectType, uint securityInfo,
+        out IntPtr owner, out IntPtr group, out IntPtr dacl, out IntPtr sacl, out IntPtr securityDescriptor);
+
+    [DllImport("advapi32.dll", ExactSpelling = true)]
+    public static extern uint GetSecurityDescriptorLength(IntPtr securityDescriptor);
+
+    [DllImport("kernel32.dll", ExactSpelling = true)]
+    public static extern IntPtr LocalFree(IntPtr memory);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true, EntryPoint = "GetFinalPathNameByHandleW")]
+    public static extern uint GetFinalPathNameByHandle(SafeFileHandle file, [Out] char[] path, uint pathLength, uint flags);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true, EntryPoint = "GetLongPathNameW")]
+    public static extern uint GetLongPathName(string shortPath, [Out] char[]? longPath, uint bufferLength);
 }

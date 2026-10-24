@@ -1,65 +1,57 @@
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
 
 namespace NitrOS.Live.Windows;
 
 /// <summary>
-/// Locks the journal folder and its NitrOS parent (%ProgramData%\NitrOS and %ProgramData%\NitrOS\backups) so only
-/// Administrators and SYSTEM can write, and a standard user cannot plant a journal that an elevated undo would replay.
-/// Every component of the path must not be a junction or link. Each level, and everything already inside, gets owner
-/// Administrators and a protected DACL (Administrators + SYSTEM full control). Permissions are written with
-/// SetFileSecurityW, which does not propagate to children, and files with more than one hard link are skipped (and
-/// returned) so re-permissioning can never reach a file elsewhere on the disk.
+/// The journal folder and its NitrOS parent (%ProgramData%\NitrOS and %ProgramData%\NitrOS\backups), writable only by
+/// Administrators and SYSTEM, so a standard user cannot plant a journal that an elevated undo would replay.
+/// A level that already exists is used only if it is already secure (owner Administrators or SYSTEM, and no other SID
+/// than Administrators, SYSTEM or TrustedInstaller can write to it or take it over); otherwise Ensure throws and changes
+/// nothing. A missing level is created by this call with the protected ACL in place from the start (CreateDirectoryW with
+/// a security descriptor), then re-applied with SetSecurityInfo on a handle opened without following links, after
+/// checking the handle is that very directory. No path component may be a junction or link.
 /// </summary>
 public static class BackupFolder
 {
-    public static readonly SecurityIdentifier Administrators = new(WellKnownSidType.BuiltinAdministratorsSid, null);
-    public static readonly SecurityIdentifier LocalSystem = new(WellKnownSidType.LocalSystemSid, null);
+    public static readonly SecurityIdentifier Administrators = SecureFs.Administrators;
+    public static readonly SecurityIdentifier LocalSystem = SecureFs.LocalSystem;
 
     /// <summary>%ProgramData%\NitrOS\backups</summary>
     public static string DefaultPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NitrOS", "backups");
 
-    /// <summary>Secures the folder and its parent. Returns the hard-linked files that were skipped. Needs an elevated process.</summary>
-    public static IReadOnlyList<string> Ensure(string path) => Ensure(path, setOwner: true);
+    public static string InsecureMessage(string path) =>
+        $"The NitrOS data folder was created or changed by another account. Delete {path} as an administrator and run NitrOS again.";
+
+    /// <summary>Secures the folder and its parent. Needs an elevated process. Returns nothing to report (kept for callers): existing content is never re-permissioned.</summary>
+    public static IReadOnlyList<string> Ensure(string path) => Ensure(path, Administrators);
 
     /// <summary>
-    /// setOwner makes Administrators the owner (needs an elevated process). Tests on a non-elevated account pass false;
-    /// the owner then stays the current user, who keeps the owner's implicit right to read and change the ACL.
+    /// <paramref name="owner"/> is the SID that owns and fully controls the folders next to SYSTEM: BUILTIN\Administrators
+    /// in production. Tests on a non-elevated account pass their own SID, which stands in for Administrators.
     /// </summary>
-    internal static IReadOnlyList<string> Ensure(string path, bool setOwner)
+    internal static IReadOnlyList<string> Ensure(string path, SecurityIdentifier owner)
     {
-        if (!Path.IsPathFullyQualified(path)) throw new ArgumentException($"Backup folder '{path}' is not absolute", nameof(path));
+        if (!Path.IsPathFullyQualified(path) || SecureFs.IsNetworkOrDevice(path))
+            throw new ArgumentException($"Backup folder '{path}' must be an absolute local path", nameof(path));
         var full = Path.GetFullPath(path).TrimEnd('\\');
-        if (full.StartsWith(@"\\", StringComparison.Ordinal)) throw new ArgumentException($"Backup folder '{path}' is a network or device path", nameof(path));
         var parent = Path.GetDirectoryName(full) ?? throw new ArgumentException($"Backup folder '{path}' has no parent", nameof(path));
         if (Path.GetDirectoryName(parent) is null) throw new ArgumentException($"Backup folder '{path}' is too close to the drive root", nameof(path));
+        string[] levels = [parent, full];
 
         RefuseReparseComponents(full);
-        Directory.CreateDirectory(full);
-        RefuseReparseComponents(full);
+        // Check every existing level before changing anything.
+        foreach (var level in levels)
+            if (Directory.Exists(level) || File.Exists(level)) CheckSecure(level, owner);
 
-        // List first: once a level is locked, a non-elevated caller can no longer list it.
-        var children = new List<FileSystemInfo>();
-        foreach (var e in new DirectoryInfo(parent).EnumerateFileSystemInfos("*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = 0, IgnoreInaccessible = false }))
-        {
-            if ((e.Attributes & FileAttributes.ReparsePoint) != 0)
-                throw new InvalidOperationException($"NitrOS folder contains the junction or link '{e.FullName}'");
-            if (!string.Equals(e.FullName.TrimEnd('\\'), full, StringComparison.OrdinalIgnoreCase)) children.Add(e);
-        }
-        var skipped = children.OfType<FileInfo>().Where(f => LinkCount(f.FullName) > 1).Select(f => f.FullName).ToList();
+        foreach (var level in levels)
+            if (!Directory.Exists(level)) CreateSecure(level, owner);
 
-        Apply(parent, Descriptor(isDirectory: true, setOwner), setOwner);
-        Apply(full, Descriptor(isDirectory: true, setOwner), setOwner);
-        var dirSd = Descriptor(isDirectory: true, setOwner);
-        var fileSd = Descriptor(isDirectory: false, setOwner);
-        foreach (var c in children)
-        {
-            if (c is FileInfo && skipped.Contains(c.FullName, StringComparer.OrdinalIgnoreCase)) continue;
-            Apply(c.FullName, c is DirectoryInfo ? dirSd : fileSd, setOwner);
-        }
-        return skipped;
+        foreach (var level in levels) CheckSecure(level, owner);
+        return [];
     }
 
     /// <summary>Throws when the path or any existing parent up to the drive root is a junction or link.</summary>
@@ -74,24 +66,80 @@ public static class BackupFolder
         }
     }
 
-    /// <summary>Protected DACL: Administrators and SYSTEM full control (inheritable on folders); owner Administrators when asked.</summary>
-    private static byte[] Descriptor(bool isDirectory, bool setOwner)
+    /// <summary>The trusted SIDs: Administrators, SYSTEM, TrustedInstaller, plus the stand-in owner.</summary>
+    private static IReadOnlySet<string> Trusted(SecurityIdentifier owner) =>
+        new HashSet<string>(SecureFs.TrustedSids(), StringComparer.OrdinalIgnoreCase) { owner.Value };
+
+    /// <summary>Rights on a folder that let someone add, change, remove or take over what is in it.</summary>
+    public const int FolderWriteMask = SecureFs.WriteData | SecureFs.AppendData | SecureFs.WriteEa | SecureFs.DeleteChild
+        | SecureFs.WriteAttributes | SecureFs.DeleteRight | SecureFs.WriteDac | SecureFs.WriteOwner | SecureFs.GenericAll | SecureFs.GenericWrite;
+
+    /// <summary>
+    /// Secure means: owner is Administrators or SYSTEM (or the stand-in), there is a DACL, and no allow entry (inherit-only
+    /// included, as it shapes new journals) gives any other SID than Administrators, SYSTEM or TrustedInstaller a write right.
+    /// </summary>
+    public static bool IsSecure(DirectorySecurity security, SecurityIdentifier owner)
     {
-        var inherit = isDirectory ? InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit : InheritanceFlags.None;
-        FileSystemSecurity sec = isDirectory ? new DirectorySecurity() : new FileSecurity();
-        sec.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-        sec.AddAccessRule(new FileSystemAccessRule(Administrators, FileSystemRights.FullControl, inherit, PropagationFlags.None, AccessControlType.Allow));
-        sec.AddAccessRule(new FileSystemAccessRule(LocalSystem, FileSystemRights.FullControl, inherit, PropagationFlags.None, AccessControlType.Allow));
-        sec.SetOwner(setOwner ? Administrators : WindowsIdentity.GetCurrent().User!);
-        return sec.GetSecurityDescriptorBinaryForm();
+        if (security.GetOwner(typeof(SecurityIdentifier)) is not SecurityIdentifier o
+            || !(o == Administrators || o == LocalSystem || o == owner)) return false;
+        return !SecureFs.OthersCanWrite(security, Trusted(owner), FolderWriteMask, includeInheritOnly: true);
     }
 
-    private static void Apply(string path, byte[] descriptor, bool setOwner)
+    private static void CheckSecure(string level, SecurityIdentifier owner)
     {
-        var info = NativeMethods.DACL_SECURITY_INFORMATION | NativeMethods.PROTECTED_DACL_SECURITY_INFORMATION;
-        if (setOwner) info |= NativeMethods.OWNER_SECURITY_INFORMATION;
-        if (!NativeMethods.SetFileSecurity(path, info, descriptor))
-            throw new Win32Exception($"Could not secure '{path}'");
+        using var h = SecureFs.OpenNoFollow(level, NativeMethods.READ_CONTROL | NativeMethods.FILE_READ_ATTRIBUTES);
+        var attrs = SecureFs.Attributes(h);
+        if ((attrs & NativeMethods.FILE_ATTRIBUTE_REPARSE_POINT) != 0 || (attrs & NativeMethods.FILE_ATTRIBUTE_DIRECTORY) == 0
+            || !SecureFs.IsAt(h, level) || !IsSecure(SecureFs.ReadSecurity<DirectorySecurity>(h), owner))
+            throw new InvalidOperationException(InsecureMessage(level));
+    }
+
+    private static void CreateSecure(string level, SecurityIdentifier owner)
+    {
+        var sd = Descriptor(owner);
+        var pin = GCHandle.Alloc(sd, GCHandleType.Pinned);
+        try
+        {
+            var sa = new NativeMethods.SECURITY_ATTRIBUTES
+            {
+                nLength = Marshal.SizeOf<NativeMethods.SECURITY_ATTRIBUTES>(),
+                lpSecurityDescriptor = pin.AddrOfPinnedObject(),
+            };
+            if (!NativeMethods.CreateDirectory(level, ref sa))
+            {
+                var err = Marshal.GetLastPInvokeError();
+                // Someone else created it between the check and now: use it only if it is secure.
+                if (err == NativeMethods.ERROR_ALREADY_EXISTS) { CheckSecure(level, owner); return; }
+                throw new Win32Exception(err, $"Could not create '{level}'");
+            }
+        }
+        finally { pin.Free(); }
+
+        using var h = SecureFs.OpenNoFollow(level, NativeMethods.READ_CONTROL | NativeMethods.WRITE_DAC | NativeMethods.WRITE_OWNER | NativeMethods.FILE_READ_ATTRIBUTES);
+        var attrs = SecureFs.Attributes(h);
+        if ((attrs & NativeMethods.FILE_ATTRIBUTE_REPARSE_POINT) != 0 || (attrs & NativeMethods.FILE_ATTRIBUTE_DIRECTORY) == 0 || !SecureFs.IsAt(h, level))
+            throw new InvalidOperationException(InsecureMessage(level));
+        var raw = new RawSecurityDescriptor(sd, 0);
+        var ownerBytes = new byte[raw.Owner!.BinaryLength];
+        raw.Owner.GetBinaryForm(ownerBytes, 0);
+        var dacl = new byte[raw.DiscretionaryAcl!.BinaryLength];
+        raw.DiscretionaryAcl.GetBinaryForm(dacl, 0);
+        var rc = NativeMethods.SetSecurityInfo(h, NativeMethods.SE_FILE_OBJECT,
+            NativeMethods.OWNER_SECURITY_INFORMATION | NativeMethods.DACL_SECURITY_INFORMATION | NativeMethods.PROTECTED_DACL_SECURITY_INFORMATION,
+            ownerBytes, IntPtr.Zero, dacl, IntPtr.Zero);
+        if (rc != 0) throw new Win32Exception(rc, $"Could not secure '{level}'");
+    }
+
+    /// <summary>Protected DACL: the owner SID and SYSTEM full control, inherited by new files and folders; owner set.</summary>
+    private static byte[] Descriptor(SecurityIdentifier owner)
+    {
+        const InheritanceFlags inherit = InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
+        var sec = new DirectorySecurity();
+        sec.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        sec.AddAccessRule(new FileSystemAccessRule(owner, FileSystemRights.FullControl, inherit, PropagationFlags.None, AccessControlType.Allow));
+        sec.AddAccessRule(new FileSystemAccessRule(LocalSystem, FileSystemRights.FullControl, inherit, PropagationFlags.None, AccessControlType.Allow));
+        sec.SetOwner(owner);
+        return sec.GetSecurityDescriptorBinaryForm();
     }
 
     /// <summary>The number of hard links to the file (1 for an ordinary file).</summary>

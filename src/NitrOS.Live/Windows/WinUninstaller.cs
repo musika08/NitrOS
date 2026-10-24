@@ -63,14 +63,15 @@ public sealed class WinUninstaller : IUninstaller
         return result;
     }
 
-    /// <summary>HKCU\Software is shared between the views, so its two views get one label and are de-duplicated.</summary>
-    private static IEnumerable<(RegistryHive, RegistryView, string)> Roots()
-    {
-        yield return (RegistryHive.LocalMachine, RegistryView.Registry64, @"HKLM\" + UninstallKey);
-        yield return (RegistryHive.LocalMachine, RegistryView.Registry32, @"HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall");
-        yield return (RegistryHive.CurrentUser, RegistryView.Registry64, @"HKCU\" + UninstallKey);
-        yield return (RegistryHive.CurrentUser, RegistryView.Registry32, @"HKCU\" + UninstallKey);
-    }
+    /// <summary>
+    /// Only the machine-wide Uninstall keys (both views). HKCU entries are ignored: any standard user can write them, so a
+    /// planted per-user entry could point a trusted signed tool, or msiexec /X of another product, at its own arguments.
+    /// </summary>
+    internal static IReadOnlyList<(RegistryHive Hive, RegistryView View, string Label)> Roots() =>
+    [
+        (RegistryHive.LocalMachine, RegistryView.Registry64, @"HKLM\" + UninstallKey),
+        (RegistryHive.LocalMachine, RegistryView.Registry32, @"HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
+    ];
 
     /// <summary>
     /// False when the command cannot be parsed, the program is missing, or a signer does not match. Throws
@@ -121,17 +122,19 @@ public sealed class WinUninstaller : IUninstaller
             var exeHandle = OpenLocked(cmd.Executable);
             try
             {
+                RequireAt(exeHandle, cmd.Executable);
                 if (!cmd.IsMsiExec)
                 {
                     if (IsUserWritable(cmd.Executable)) throw new UninstallRefusedException(UserWritableDetail);
                     return new VerifiedFiles(cmd.Executable, exeHandle, null, null, false);
                 }
                 var package = LocalPackage(cmd.ProductCode!);
-                if (package is null || !Path.IsPathFullyQualified(package) || IsNetworkOrDevice(package) || !File.Exists(package))
+                if (package is null || !Path.IsPathFullyQualified(package) || SecureFs.IsNetworkOrDevice(package) || !File.Exists(package))
                     return new VerifiedFiles(cmd.Executable, exeHandle, null, null, true);
                 var packageHandle = OpenLocked(package);
                 try
                 {
+                    RequireAt(packageHandle, package);
                     if (IsUserWritable(package)) throw new UninstallRefusedException(UserWritableDetail);
                 }
                 catch { packageHandle.Dispose(); throw; }
@@ -166,8 +169,14 @@ public sealed class WinUninstaller : IUninstaller
     internal static SafeFileHandle OpenLocked(string path) =>
         File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-    private static bool IsNetworkOrDevice(string path) =>
-        path.StartsWith(@"\\", StringComparison.Ordinal) || path.StartsWith("//", StringComparison.Ordinal);
+    private static bool IsNetworkOrDevice(string path) => SecureFs.IsNetworkOrDevice(path);
+
+    /// <summary>The pinned handle must be the expected file itself, not something a junction, link or 8.3 alias leads to.</summary>
+    internal static void RequireAt(SafeFileHandle handle, string expected)
+    {
+        if (!SecureFs.IsAt(handle, expected))
+            throw new UninstallRefusedException($"uninstaller path resolves somewhere else: {expected} -> {SecureFs.FinalPath(handle)}");
+    }
 
     /// <summary>Refuses UNC and device paths, and any program inside %SystemRoot% other than System32/SysWOW64 msiexec.exe.</summary>
     internal static void CheckLocation(string exe, bool isMsiExec)
@@ -193,37 +202,35 @@ public sealed class WinUninstaller : IUninstaller
         return new string(buf, 0, (int)len);
     }
 
-    // ---- user-writable check ----
-
-    private const int WriteData = 0x2, AppendData = 0x4, DeleteChild = 0x40, DeleteRight = 0x10000, WriteDac = 0x40000, WriteOwner = 0x80000;
-    private const int GenericAll = 0x10000000, GenericWrite = 0x40000000;
+    // ---- user-writable check (allow-list) ----
 
     /// <summary>Rights that let someone replace the file itself.</summary>
-    public const int FileWriteMask = WriteData | AppendData | DeleteRight | WriteDac | WriteOwner | GenericAll | GenericWrite;
+    public const int FileWriteMask = SecureFs.WriteData | SecureFs.AppendData | SecureFs.DeleteRight | SecureFs.WriteDac
+        | SecureFs.WriteOwner | SecureFs.GenericAll | SecureFs.GenericWrite;
     /// <summary>Rights on the program's own folder that allow swapping it or planting a DLL next to it.</summary>
-    public const int FolderWriteMask = WriteData | DeleteChild | DeleteRight | WriteDac | WriteOwner | GenericAll | GenericWrite;
-    /// <summary>Rights on a folder further up that allow renaming the path away (creating new subfolders is harmless).</summary>
-    public const int AncestorWriteMask = DeleteChild | DeleteRight | WriteDac | WriteOwner | GenericAll;
+    public const int FolderWriteMask = SecureFs.WriteData | SecureFs.DeleteChild | SecureFs.DeleteRight | SecureFs.WriteDac
+        | SecureFs.WriteOwner | SecureFs.GenericAll | SecureFs.GenericWrite;
+    /// <summary>
+    /// Rights on a folder further up that allow renaming the path away or taking the folder over. Creating new
+    /// subfolders (AppendData, which Authenticated Users have on C:\ itself) cannot change an existing path, so it is not counted.
+    /// </summary>
+    public const int AncestorWriteMask = SecureFs.DeleteChild | SecureFs.DeleteRight | SecureFs.WriteDac | SecureFs.WriteOwner
+        | SecureFs.GenericAll | SecureFs.GenericWrite;
 
-    /// <summary>Everyone, Authenticated Users, BUILTIN\Users, INTERACTIVE and the current user.</summary>
-    internal static IReadOnlySet<string> NonAdminSids()
-    {
-        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "S-1-1-0", "S-1-5-11", "S-1-5-32-545", "S-1-5-4" };
-        if (WindowsIdentity.GetCurrent().User is { } me) set.Add(me.Value);
-        return set;
-    }
-
-    /// <summary>True when the file, its folder, or any folder up to the volume root can be changed by a non-admin user.</summary>
+    /// <summary>
+    /// True when any SID other than Administrators, SYSTEM and TrustedInstaller owns the file, its folder or any folder up
+    /// to the volume root, or has a write, delete, change-permission or take-ownership right on one of them.
+    /// </summary>
     internal static bool IsUserWritable(string file)
     {
-        var sids = NonAdminSids();
+        var trusted = SecureFs.TrustedSids();
         const AccessControlSections sections = AccessControlSections.Access | AccessControlSections.Owner;
-        if (Grants(new FileInfo(file).GetAccessControl(sections), sids, FileWriteMask)) return true;
+        if (OthersCanWrite(new FileInfo(file).GetAccessControl(sections), trusted, FileWriteMask)) return true;
         var dir = new FileInfo(file).Directory;
         var mask = FolderWriteMask;
         while (dir is not null)
         {
-            if (Grants(dir.GetAccessControl(sections), sids, mask)) return true;
+            if (OthersCanWrite(dir.GetAccessControl(sections), trusted, mask)) return true;
             mask = AncestorWriteMask;
             dir = dir.Parent;
         }
@@ -231,21 +238,11 @@ public sealed class WinUninstaller : IUninstaller
     }
 
     /// <summary>
-    /// Conservative: any allow entry (not inherit-only) for one of the SIDs with one of the rights counts, deny entries
-    /// are not subtracted, and an owner in the set counts (owners can always rewrite the permissions).
+    /// Allow-list: true when the owner is not trusted, or any allow entry (not inherit-only) for an untrusted SID has one
+    /// of the rights. Deny entries are not subtracted.
     /// </summary>
-    public static bool Grants(FileSystemSecurity security, IReadOnlySet<string> sids, int mask)
-    {
-        if (security.GetOwner(typeof(SecurityIdentifier)) is SecurityIdentifier owner && sids.Contains(owner.Value)) return true;
-        foreach (FileSystemAccessRule r in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
-        {
-            if (r.AccessControlType != AccessControlType.Allow) continue;
-            if ((r.PropagationFlags & PropagationFlags.InheritOnly) != 0) continue;
-            if (!sids.Contains(r.IdentityReference.Value)) continue;
-            if (((int)r.FileSystemRights & mask) != 0) return true;
-        }
-        return false;
-    }
+    public static bool OthersCanWrite(FileSystemSecurity security, IReadOnlySet<string> trusted, int mask) =>
+        SecureFs.OthersCanWrite(security, trusted, mask, includeInheritOnly: false);
 
     /// <summary>QuietUninstallString, else UninstallString, with the extra args appended after a space.</summary>
     public static string Compose(UninstallEntry entry, string? args)

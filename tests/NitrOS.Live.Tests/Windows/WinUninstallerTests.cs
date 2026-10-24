@@ -161,11 +161,15 @@ public sealed class WinUninstallerTests : IDisposable
         Assert.True(e is IOException or UnauthorizedAccessException, "expected the change to be blocked, got " + (e?.GetType().Name ?? "no exception"));
     }
 
-    // ---- Pure: write-permission rules ----
+    // ---- Pure: write-permission rules (allow-list) ----
 
-    private static readonly IReadOnlySet<string> Sids = new HashSet<string> { "S-1-1-0", "S-1-5-11", "S-1-5-32-545", "S-1-5-4", "S-1-5-21-1-2-3-1001" };
+    private static readonly IReadOnlySet<string> Trusted = new HashSet<string>
+    {
+        "S-1-5-32-544", "S-1-5-18", "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464",
+    };
     private static readonly SecurityIdentifier Admins = new(WellKnownSidType.BuiltinAdministratorsSid, null);
     private static readonly SecurityIdentifier Users = new(WellKnownSidType.BuiltinUsersSid, null);
+    private static readonly SecurityIdentifier SomeGroup = new("S-1-5-21-1-2-3-1500");
 
     private static FileSecurity Sec(params FileSystemAccessRule[] rules)
     {
@@ -176,50 +180,115 @@ public sealed class WinUninstallerTests : IDisposable
     }
 
     [Fact]
-    public void Grants_WriteRightsForNonAdmins()
+    public void OthersCanWrite_AnyUntrustedSidWithWriteRights()
     {
         var readOnly = Sec(new FileSystemAccessRule(Users, FileSystemRights.ReadAndExecute, AccessControlType.Allow),
-            new FileSystemAccessRule(Admins, FileSystemRights.FullControl, AccessControlType.Allow));
-        Assert.False(WinUninstaller.Grants(readOnly, Sids, WinUninstaller.FileWriteMask));
+            new FileSystemAccessRule(Admins, FileSystemRights.FullControl, AccessControlType.Allow),
+            new FileSystemAccessRule(new SecurityIdentifier("S-1-5-18"), FileSystemRights.FullControl, AccessControlType.Allow));
+        Assert.False(WinUninstaller.OthersCanWrite(readOnly, Trusted, WinUninstaller.FileWriteMask));
 
-        Assert.True(WinUninstaller.Grants(Sec(new FileSystemAccessRule(Users, FileSystemRights.Modify, AccessControlType.Allow)), Sids, WinUninstaller.FileWriteMask));
-        Assert.True(WinUninstaller.Grants(Sec(new FileSystemAccessRule(new SecurityIdentifier("S-1-5-21-1-2-3-1001"), FileSystemRights.WriteData, AccessControlType.Allow)), Sids, WinUninstaller.FileWriteMask));
-        Assert.True(WinUninstaller.Grants(Sec(new FileSystemAccessRule(new SecurityIdentifier("S-1-5-11"), FileSystemRights.ChangePermissions, AccessControlType.Allow)), Sids, WinUninstaller.FileWriteMask));
+        // Not just the well-known user groups: any other SID (a custom group here) counts.
+        Assert.True(WinUninstaller.OthersCanWrite(Sec(new FileSystemAccessRule(SomeGroup, FileSystemRights.Modify, AccessControlType.Allow)), Trusted, WinUninstaller.FileWriteMask));
+        Assert.True(WinUninstaller.OthersCanWrite(Sec(new FileSystemAccessRule(Users, FileSystemRights.WriteData, AccessControlType.Allow)), Trusted, WinUninstaller.FileWriteMask));
+        Assert.True(WinUninstaller.OthersCanWrite(Sec(new FileSystemAccessRule(SomeGroup, FileSystemRights.ChangePermissions, AccessControlType.Allow)), Trusted, WinUninstaller.FileWriteMask));
+        Assert.True(WinUninstaller.OthersCanWrite(Sec(new FileSystemAccessRule(SomeGroup, FileSystemRights.TakeOwnership, AccessControlType.Allow)), Trusted, WinUninstaller.FileWriteMask));
+        Assert.True(WinUninstaller.OthersCanWrite(Sec(new FileSystemAccessRule(SomeGroup, FileSystemRights.FullControl, AccessControlType.Allow)), Trusted, WinUninstaller.FileWriteMask));
+        // TrustedInstaller is trusted.
+        Assert.False(WinUninstaller.OthersCanWrite(Sec(new FileSystemAccessRule(new SecurityIdentifier("S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464"), FileSystemRights.FullControl, AccessControlType.Allow)), Trusted, WinUninstaller.FileWriteMask));
     }
 
     [Fact]
-    public void Grants_OwnerInSetCounts()
+    public void OthersCanWrite_UntrustedOwnerCounts()
     {
         var s = Sec(new FileSystemAccessRule(Admins, FileSystemRights.FullControl, AccessControlType.Allow));
-        s.SetOwner(new SecurityIdentifier("S-1-5-21-1-2-3-1001"));
-        Assert.True(WinUninstaller.Grants(s, Sids, WinUninstaller.FileWriteMask));
+        s.SetOwner(SomeGroup);
+        Assert.True(WinUninstaller.OthersCanWrite(s, Trusted, WinUninstaller.FileWriteMask));
+        s.SetOwner(new SecurityIdentifier("S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464"));
+        Assert.False(WinUninstaller.OthersCanWrite(s, Trusted, WinUninstaller.FileWriteMask));
     }
 
     [Fact]
-    public void Grants_AncestorMaskIgnoresCreatingSubfolders()
+    public void OthersCanWrite_AncestorMaskIgnoresCreatingSubfolders()
     {
         // C:\ lets Authenticated Users create folders (AppendData on the root itself): that alone cannot swap an existing path.
         var root = new DirectorySecurity();
         root.SetOwner(Admins);
         root.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier("S-1-5-11"), FileSystemRights.AppendData, AccessControlType.Allow));
-        Assert.False(WinUninstaller.Grants(root, Sids, WinUninstaller.AncestorWriteMask));
+        Assert.False(WinUninstaller.OthersCanWrite(root, Trusted, WinUninstaller.AncestorWriteMask));
         root.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier("S-1-5-11"), FileSystemRights.DeleteSubdirectoriesAndFiles, AccessControlType.Allow));
-        Assert.True(WinUninstaller.Grants(root, Sids, WinUninstaller.AncestorWriteMask));
+        Assert.True(WinUninstaller.OthersCanWrite(root, Trusted, WinUninstaller.AncestorWriteMask));
 
         // The program's own folder: creating a file there plants a DLL next to it.
         var own = new DirectorySecurity();
         own.SetOwner(Admins);
         own.AddAccessRule(new FileSystemAccessRule(Users, FileSystemRights.CreateFiles, AccessControlType.Allow));
-        Assert.True(WinUninstaller.Grants(own, Sids, WinUninstaller.FolderWriteMask));
+        Assert.True(WinUninstaller.OthersCanWrite(own, Trusted, WinUninstaller.FolderWriteMask));
     }
 
     [Fact]
-    public void Grants_SkipsInheritOnlyEntries()
+    public void OthersCanWrite_SkipsInheritOnlyEntries()
     {
         var d = new DirectorySecurity();
         d.SetOwner(Admins);
         d.AddAccessRule(new FileSystemAccessRule(Users, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.InheritOnly, AccessControlType.Allow));
-        Assert.False(WinUninstaller.Grants(d, Sids, WinUninstaller.FolderWriteMask));
+        Assert.False(WinUninstaller.OthersCanWrite(d, Trusted, WinUninstaller.FolderWriteMask));
+    }
+
+    [Fact]
+    public void IsUserWritable_TempFolderFileOwnedByTheTestUser()
+    {
+        // Temp-folder file: owned by (and writable for) the current user, who is not on the allow-list.
+        var f = Path.Combine(_dir, "a.exe");
+        File.WriteAllText(f, "x");
+        Assert.True(WinUninstaller.IsUserWritable(f));
+        // A system file is not.
+        Assert.False(WinUninstaller.IsUserWritable(Path.Combine(Sys32, "msiexec.exe")));
+    }
+
+    // ---- Registry roots and pinned paths ----
+
+    [Fact]
+    public void Roots_AreMachineWideOnly()
+    {
+        var roots = WinUninstaller.Roots();
+        Assert.Equal(2, roots.Count);
+        Assert.All(roots, r => Assert.Equal(RegistryHive.LocalMachine, r.Hive));
+        Assert.All(roots, r => Assert.StartsWith(@"HKLM\", r.Label));
+        Assert.Contains(roots, r => r.View == RegistryView.Registry64);
+        Assert.Contains(roots, r => r.View == RegistryView.Registry32);
+    }
+
+    [Fact]
+    public void Find_NeverReturnsPerUserEntries()
+    {
+        // Read-only: whatever is installed per user on this PC, Find only reports machine-wide keys.
+        Assert.All(new WinUninstaller().Find("*", "*"), e => Assert.StartsWith(@"HKLM\", e.KeyPath));
+        using var hkcu = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
+        foreach (var sub in hkcu?.GetSubKeyNames() ?? [])
+        {
+            using var k = hkcu!.OpenSubKey(sub);
+            if (k?.GetValue("DisplayName") is string name && k.GetValue("Publisher") is string pub && !string.IsNullOrWhiteSpace(name))
+                Assert.DoesNotContain(new WinUninstaller().Find(name.Replace("*", ""), pub), e => e.KeyPath.StartsWith(@"HKCU\", StringComparison.Ordinal));
+        }
+    }
+
+    [Fact]
+    public void RequireAt_RefusesAHandleReachedThroughAJunction()
+    {
+        var real = Path.Combine(_dir, "real");
+        Directory.CreateDirectory(real);
+        var exe = Path.Combine(real, "un.exe");
+        File.WriteAllText(exe, "x");
+        var link = Path.Combine(_dir, "link");
+        Assert.Equal(0, ProcessRunner.Run("cmd.exe", ["/c", "mklink", "/J", link, real], TimeSpan.FromSeconds(20)).ExitCode);
+        try
+        {
+            using (var direct = WinUninstaller.OpenLocked(exe)) WinUninstaller.RequireAt(direct, exe);
+            var viaLink = Path.Combine(link, "un.exe");
+            using var h = WinUninstaller.OpenLocked(viaLink);
+            Assert.Throws<UninstallRefusedException>(() => WinUninstaller.RequireAt(h, viaLink));
+        }
+        finally { Directory.Delete(link); }
     }
 
     // ---- Pure parsing ----
@@ -315,6 +384,8 @@ public sealed class WinUninstallerTests : IDisposable
     [InlineData("\"C:\\App\\un.exe\"/S")]
     [InlineData("\"\\\\server\\share\\un.exe\" /S")]
     [InlineData("\"\\\\?\\C:\\App\\un.exe\" /S")]
+    [InlineData("\"\\??\\C:\\App\\un.exe\" /S")]
+    [InlineData("\\??\\C:\\App\\un.exe /S")]
     public void Parse_UnsupportedThrows(string command)
     {
         Assert.Throws<NotSupportedException>(() => WinUninstaller.Parse(command));
