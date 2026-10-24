@@ -68,7 +68,8 @@ handhelds.
    usage reporting, fax, remote registry, maps updates and phone sync.
 5. **Privacy and ads:** tracking, Start menu ads, tips, suggested apps.
 6. **Gaming settings:** Game Mode, background game recording, GPU scheduling,
-   power plan, mouse acceleration off, network delay.
+   power plan, mouse acceleration off (a feel option, off on every card).
+   No network-delay tweaks: every one found is on the "not shipped" list.
 7. **Start-up:** optionally launch Steam Big Picture or Playnite full screen
    at boot (off unless chosen).
 
@@ -124,17 +125,17 @@ bottom updates live.
 | OneDrive | keep | remove | remove | remove |
 | Search indexing | keep | off | off | off |
 | Game Bar background recording | keep | off | keep | remove |
-| Camera and capture parts | keep | keep | keep | remove |
+| Camera and capture parts (Camera app, Snipping Tool) | keep | keep | keep | remove |
 | Microsoft Store | keep | keep | keep | remove |
 | Xbox app, Game Bar, Gaming Services, Xbox home | keep | keep | keep | remove |
-| Windows Update | keep | keep | keep | off |
+| Windows Update automatic downloads and installs | keep | keep | keep | off (owner 2026-10-24: the service stays available so Device updates can still check when the user presses Check) |
 | Defender | keep | keep | keep | remove |
 | Memory Integrity | unchanged | unchanged | unchanged | off |
 | Fewer service processes (grouping threshold) | no | decided by measurement | decided by measurement | yes |
 | Vendor GPU panel in background | keep | stop | stop | stop |
 | Start-up cleanup, background apps policy | yes | yes | yes | yes |
 | Windows AI parts (Copilot, Recall, AI Fabric) | remove | remove | remove | remove |
-| Virtual Machine Platform, Hyper-V | unchanged | off | off | off |
+| Virtual Machine Platform, Hyper-V | unchanged | unchanged | unchanged | off (owner 2026-10-24: Gamer and Streamer leave them, because Memory Integrity and anti-cheat use the hypervisor and the measuring VM runs on the owner's PC) |
 | Recovery tools (ISO mode only) | keep | keep | keep | remove |
 | Printing and Print to PDF | keep | keep | keep | remove |
 | Bluetooth, microphone, touch, rotation, battery, sleep | keep | keep | keep | keep |
@@ -218,8 +219,10 @@ Each switch is one JSON object:
 - `id`, `group`, `name`, `description` (one plain line)
 - `risk`: `safe`, `caution` or `breaks`
 - `breaks`: plain sentences shown as warnings ("Valorant will not start")
-- `requires`: switch ids that must stay kept for this one to work, and
-  `neededBy` is worked out by Core from those
+- `requires`: if switch S lists T, the feature S removes depends on the
+  feature T removes (the Xbox app switch lists the Store switch). Core warns
+  when T is on while S is off: "Microsoft Store is needed by Xbox app, which
+  you are keeping." `neededBy` is worked out by Core from those
 - `modes`: `live`, `image`, or both
 - `reversible`: true or false (false gets the "Can't be undone without
   reinstalling" badge and a second confirm)
@@ -231,7 +234,13 @@ Each switch is one JSON object:
 Action types: set registry value, set service start type, disable scheduled
 task, remove app (installed and provisioned), remove Windows capability,
 disable Windows feature, remove component package (image only), remove file
-or folder, set power option. A `script` action exists for rare cases and is
+or folder, set power option. Added 2026-10-24 for the catalog: uninstall a
+Win32 program (live only, not reversible), turn off a start-up entry
+(reversible), delete a registry key or value after exporting it
+(reversible), make a power plan active (live only, reversible) and start a
+program at sign-in (live only, reversible). Blocking Windows Update from
+reinstalling maker apps is still an open question (section 11) and waits
+for plan 3. No switch ships with an identifier that has not been checked. A `script` action exists for rare cases and is
 flagged in review.
 
 Core rejects any entry missing a description, risk, undo information for a
