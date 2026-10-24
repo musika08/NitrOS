@@ -10,7 +10,7 @@
         "Game Pass PC games can't be browsed or installed.",
         "Xbox full-screen mode is gone."
       ],
-      "requires": ["gaming-services-remove", "xbox-sign-in-remove"],
+      "requires": ["store-remove", "gaming-services-remove", "xbox-sign-in-remove"],
       "modes": ["live", "image"], "reversible": false,
       "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
       "live": [ { "type": "appx.remove", "name": "Microsoft.GamingApp" } ],

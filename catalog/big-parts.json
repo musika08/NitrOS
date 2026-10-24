@@ -1,0 +1,115 @@
+{
+  "group": "big-parts",
+  "title": "Big Windows parts",
+  "switches": [
+    {
+      "id": "search-indexing-off", "name": "Turn off search indexing", "feature": "Search indexing",
+      "description": "Stops Windows indexing your files in the background.",
+      "risk": "caution",
+      "breaks": [
+        "Start menu and File Explorer file search are slower and less complete.",
+        "Outlook search may fail."
+      ],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "WSearch", "start": "disabled" } ],
+      "image": [ { "type": "service.start", "service": "WSearch", "start": "disabled" } ]
+    },
+    {
+      "id": "search-web-engine-off", "name": "Turn off Search's web engine", "feature": "Search web view",
+      "description": "Stops Windows Search running a hidden Edge web view for its results panel.",
+      "risk": "caution",
+      "breaks": ["The search panel may look different."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "name": "EnabledState", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "name": "EnabledStateOptions", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "name": "Variant", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "name": "VariantPayload", "kind": "dword", "data": "0" }
+      ],
+      "image": [
+        { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "name": "EnabledState", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "name": "EnabledStateOptions", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "name": "Variant", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "name": "VariantPayload", "kind": "dword", "data": "0" }
+      ]
+    },
+    {
+      "id": "store-remove", "name": "Remove Microsoft Store", "feature": "Microsoft Store",
+      "description": "Removes the Microsoft Store app.",
+      "risk": "breaks",
+      "breaks": [
+        "You can't install or update Store apps or Game Pass games.",
+        "The Xbox app stops working."
+      ],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.WindowsStore" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.WindowsStore" } ]
+    },
+    {
+      "id": "printing-off", "name": "Turn off printing", "feature": "Printing and Print to PDF",
+      "description": "Turns off the print service and the XPS and PDF printers.",
+      "risk": "breaks",
+      "breaks": ["You can't print or save as PDF through the printer list."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [
+        { "type": "service.start", "service": "Spooler", "start": "disabled" },
+        { "type": "feature.disable", "name": "Printing-XPSServices-Features" },
+        { "type": "feature.disable", "name": "Printing-PrintToPDFServices-Features" }
+      ],
+      "image": [
+        { "type": "service.start", "service": "Spooler", "start": "disabled" },
+        { "type": "feature.disable", "name": "Printing-XPSServices-Features" },
+        { "type": "feature.disable", "name": "Printing-PrintToPDFServices-Features" }
+      ]
+    },
+    {
+      "id": "recovery-remove", "name": "Leave out recovery tools", "feature": "Windows recovery",
+      "description": "Leaves the recovery environment out of the slim ISO.",
+      "risk": "breaks",
+      "breaks": ["Reset this PC and the recovery boot menu don't work; you need a USB stick to repair Windows."],
+      "modes": ["image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "image": [ { "type": "file.remove", "path": "%SystemRoot%\\System32\\Recovery\\winre.wim" } ]
+    },
+    {
+      "id": "virtualization-off", "name": "Turn off virtual machine features", "feature": "Virtual Machine Platform and Hyper-V",
+      "description": "Turns off Hyper-V and the Virtual Machine Platform unless you need WSL or virtual machines.",
+      "risk": "caution",
+      "breaks": ["WSL 2 Linux, Hyper-V virtual machines and Windows Sandbox stop working."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [
+        { "type": "feature.disable", "name": "VirtualMachinePlatform" },
+        { "type": "feature.disable", "name": "Microsoft-Hyper-V-All" }
+      ],
+      "image": [
+        { "type": "feature.disable", "name": "VirtualMachinePlatform" },
+        { "type": "feature.disable", "name": "Microsoft-Hyper-V-All" }
+      ]
+    },
+    {
+      "id": "bluetooth-off", "name": "Turn off Bluetooth", "feature": "Bluetooth",
+      "description": "Turns off the Bluetooth services so no Bluetooth device can connect.",
+      "risk": "breaks",
+      "breaks": ["Wireless controllers, headsets and earbuds stop working."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "off" },
+      "live": [
+        { "type": "service.start", "service": "bthserv", "start": "disabled" },
+        { "type": "service.start", "service": "BTAGService", "start": "disabled" },
+        { "type": "service.start", "service": "BthAvctpSvc", "start": "disabled" },
+        { "type": "service.start", "service": "BluetoothUserService", "start": "disabled" }
+      ],
+      "image": [
+        { "type": "service.start", "service": "bthserv", "start": "disabled" },
+        { "type": "service.start", "service": "BTAGService", "start": "disabled" },
+        { "type": "service.start", "service": "BthAvctpSvc", "start": "disabled" },
+        { "type": "service.start", "service": "BluetoothUserService", "start": "disabled" }
+      ]
+    }
+  ]
+}

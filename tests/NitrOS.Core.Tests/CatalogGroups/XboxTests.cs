@@ -37,6 +37,14 @@ public class XboxTests
     }
 
     [Fact]
+    public void Xbox_AppRemoveRequiresStoreGamingServicesAndSignIn()
+    {
+        Assert.Equal(
+            new[] { "store-remove", "gaming-services-remove", "xbox-sign-in-remove" },
+            Sw("xbox-app-remove").Requires);
+    }
+
+    [Fact]
     public void Xbox_SpotCheck()
     {
         var sw = Sw("xbox-app-remove");

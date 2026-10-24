@@ -1,0 +1,240 @@
+{
+  "group": "background-services",
+  "title": "Background services",
+  "switches": [
+    {
+      "id": "svchost-grouping-on", "name": "Fewer service processes", "feature": "Service host grouping",
+      "description": "Groups Windows services into fewer host processes.",
+      "risk": "caution",
+      "breaks": [
+        "One crashing service can take others down with it.",
+        "Xbox services may misbehave."
+      ],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "pending", "streamer": "pending", "maxLean": "on" },
+      "live": [ { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control", "name": "SvcHostSplitThresholdInKB", "kind": "dword", "data": "4294967295" } ],
+      "image": [ { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control", "name": "SvcHostSplitThresholdInKB", "kind": "dword", "data": "4294967295" } ]
+    },
+    {
+      "id": "fax-off", "name": "Turn off Fax", "feature": "Fax service",
+      "description": "Turns off the fax service.",
+      "risk": "safe",
+      "breaks": ["Faxing from this PC stops."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "Fax", "start": "disabled" } ],
+      "image": [ { "type": "service.start", "service": "Fax", "start": "disabled" } ]
+    },
+    {
+      "id": "remote-registry-off", "name": "Turn off Remote Registry", "feature": "Remote Registry",
+      "description": "Stops other PCs editing this PC's registry over the network.",
+      "risk": "safe",
+      "breaks": ["Remote admin tools can't read this PC's registry."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "RemoteRegistry", "start": "disabled" } ],
+      "image": [ { "type": "service.start", "service": "RemoteRegistry", "start": "disabled" } ]
+    },
+    {
+      "id": "maps-updates-off", "name": "Turn off map updates", "feature": "Offline maps",
+      "description": "Stops the offline maps service and its update task.",
+      "risk": "safe",
+      "breaks": ["Offline maps stop updating."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "service.start", "service": "MapsBroker", "start": "disabled" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Maps\\MapsUpdateTask" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\Maps", "name": "AutoDownloadAndUpdateMapData", "kind": "dword", "data": "0" }
+      ],
+      "image": [
+        { "type": "service.start", "service": "MapsBroker", "start": "disabled" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Maps\\MapsUpdateTask" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\Maps", "name": "AutoDownloadAndUpdateMapData", "kind": "dword", "data": "0" }
+      ]
+    },
+    {
+      "id": "phone-service-off", "name": "Turn off Phone Service", "feature": "Phone service",
+      "description": "Turns off the phone call and telephony state service.",
+      "risk": "safe",
+      "breaks": ["Calls through a linked phone stop."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "PhoneSvc", "start": "disabled" } ],
+      "image": [ { "type": "service.start", "service": "PhoneSvc", "start": "disabled" } ]
+    },
+    {
+      "id": "connected-devices-off", "name": "Turn off Connected Devices Platform", "feature": "Connected Devices Platform",
+      "description": "Sets the cross-device platform services to start only when needed.",
+      "risk": "caution",
+      "breaks": ["Nearby Sharing, Phone Link and cross-device clipboard may stop working."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "service.start", "service": "CDPSvc", "start": "manual" },
+        { "type": "service.start", "service": "CDPUserSvc", "start": "manual" }
+      ],
+      "image": [
+        { "type": "service.start", "service": "CDPSvc", "start": "manual" },
+        { "type": "service.start", "service": "CDPUserSvc", "start": "manual" }
+      ]
+    },
+    {
+      "id": "geolocation-off", "name": "Turn off location service", "feature": "Location service",
+      "description": "Turns off the location service and location access for apps.",
+      "risk": "caution",
+      "breaks": [
+        "Apps can't find your location.",
+        "Find My Device stops working."
+      ],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "service.start", "service": "lfsvc", "start": "disabled" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location", "name": "Value", "kind": "string", "data": "Deny" }
+      ],
+      "image": [
+        { "type": "service.start", "service": "lfsvc", "start": "disabled" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location", "name": "Value", "kind": "string", "data": "Deny" }
+      ]
+    },
+    {
+      "id": "insider-service-off", "name": "Turn off Insider service", "feature": "Windows Insider service",
+      "description": "Turns off the Windows Insider preview service.",
+      "risk": "safe",
+      "breaks": ["You can't join or manage Windows Insider preview builds."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "wisvc", "start": "disabled" } ],
+      "image": [ { "type": "service.start", "service": "wisvc", "start": "disabled" } ]
+    },
+    {
+      "id": "retail-demo-off", "name": "Turn off Retail Demo", "feature": "Retail Demo service",
+      "description": "Turns off the shop demo service.",
+      "risk": "safe",
+      "breaks": ["Nothing for a normal PC."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "RetailDemo", "start": "disabled" } ],
+      "image": [ { "type": "service.start", "service": "RetailDemo", "start": "disabled" } ]
+    },
+    {
+      "id": "wap-push-off", "name": "Turn off WAP push service", "feature": "Device push messages",
+      "description": "Turns off the device management push service.",
+      "risk": "safe",
+      "breaks": ["Work or school device management that relies on push messages may be slower."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "dmwappushservice", "start": "disabled" } ],
+      "image": [ { "type": "service.start", "service": "dmwappushservice", "start": "disabled" } ]
+    },
+    {
+      "id": "media-sharing-off", "name": "Turn off media library sharing", "feature": "Media sharing",
+      "description": "Turns off sharing your media library on the network.",
+      "risk": "safe",
+      "breaks": ["Other devices can't play this PC's media library over the network."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "WMPNetworkSvc", "start": "disabled" } ],
+      "image": [ { "type": "service.start", "service": "WMPNetworkSvc", "start": "disabled" } ]
+    },
+    {
+      "id": "offline-files-off", "name": "Turn off Offline Files", "feature": "Offline Files",
+      "description": "Turns off the Offline Files service for network folders.",
+      "risk": "safe",
+      "breaks": ["Network folders are no longer kept offline."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "CscService", "start": "disabled" } ],
+      "image": [ { "type": "service.start", "service": "CscService", "start": "disabled" } ]
+    },
+    {
+      "id": "storage-service-manual", "name": "Start Storage Service only when needed", "feature": "Storage Service",
+      "description": "Lets the storage service start only when needed.",
+      "risk": "safe",
+      "breaks": ["Storage Sense may run less often."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "StorSvc", "start": "manual" } ],
+      "image": [ { "type": "service.start", "service": "StorSvc", "start": "manual" } ]
+    },
+    {
+      "id": "remote-desktop-off", "name": "Turn off incoming Remote Desktop", "feature": "Remote Desktop host",
+      "description": "Sets the Remote Desktop host services to start only when needed.",
+      "risk": "caution",
+      "breaks": ["Connecting to this PC with Remote Desktop may not work."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "service.start", "service": "TermService", "start": "manual" },
+        { "type": "service.start", "service": "SessionEnv", "start": "manual" },
+        { "type": "service.start", "service": "UmRdpService", "start": "manual" }
+      ],
+      "image": [
+        { "type": "service.start", "service": "TermService", "start": "manual" },
+        { "type": "service.start", "service": "SessionEnv", "start": "manual" },
+        { "type": "service.start", "service": "UmRdpService", "start": "manual" }
+      ]
+    },
+    {
+      "id": "compatibility-assistant-off", "name": "Start compatibility assistant only when needed", "feature": "Program Compatibility Assistant",
+      "description": "Lets the compatibility assistant start only when needed.",
+      "risk": "caution",
+      "breaks": ["Windows may not offer automatic fixes for old programs and games."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "PcaSvc", "start": "manual" } ],
+      "image": [ { "type": "service.start", "service": "PcaSvc", "start": "manual" } ]
+    },
+    {
+      "id": "telemetry-tasks-off", "name": "Turn off usage reporting tasks", "feature": "Usage reporting tasks",
+      "description": "Turns off scheduled tasks that collect usage and compatibility data.",
+      "risk": "safe",
+      "breaks": ["Windows upgrade-readiness and feedback data are no longer collected."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser Exp" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Application Experience\\StartupAppTask" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Application Experience\\MareBackup" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\DiskDiagnostic\\Microsoft-Windows-DiskDiagnosticDataCollector" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Feedback\\Siuf\\DmClient" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Feedback\\Siuf\\DmClientOnScenarioDownload" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\PI\\Sqm-Tasks" }
+      ],
+      "image": [
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser Exp" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Application Experience\\StartupAppTask" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Application Experience\\MareBackup" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\DiskDiagnostic\\Microsoft-Windows-DiskDiagnosticDataCollector" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Feedback\\Siuf\\DmClient" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\Feedback\\Siuf\\DmClientOnScenarioDownload" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\PI\\Sqm-Tasks" }
+      ]
+    },
+    {
+      "id": "power-diagnostics-task-off", "name": "Turn off power efficiency diagnostics", "feature": "Power diagnostics task",
+      "description": "Turns off the task that analyses power use in the background.",
+      "risk": "safe",
+      "breaks": ["Windows energy reports are no longer created on their own."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "task.disable", "path": "\\Microsoft\\Windows\\Power Efficiency Diagnostics\\AnalyzeSystem" } ],
+      "image": [ { "type": "task.disable", "path": "\\Microsoft\\Windows\\Power Efficiency Diagnostics\\AnalyzeSystem" } ]
+    },
+    {
+      "id": "delivery-optimization-off", "name": "No peer-to-peer update sharing", "feature": "Delivery Optimization",
+      "description": "Stops Windows uploading updates to other PCs on the internet or your network.",
+      "risk": "safe",
+      "breaks": ["Updates download only from Microsoft, not from nearby PCs."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization", "name": "DODownloadMode", "kind": "dword", "data": "99" } ],
+      "image": [ { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization", "name": "DODownloadMode", "kind": "dword", "data": "99" } ]
+    }
+  ]
+}
