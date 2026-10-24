@@ -146,15 +146,33 @@ public sealed class StartupDisableHandler : IActionHandler
             var (kind, hive, key, name) = (parts[0], parts[1], parts[2], parts[3]);
             if (kind == "task")
             {
-                s.Tasks.SetEnabled(name, bool.Parse(e.Data));
+                var enabled = bool.Parse(e.Data);
+                if (s.Tasks.Get(name) is { } now && now.Enabled != enabled) s.Tasks.SetEnabled(name, enabled);
                 continue;
             }
+            // Only entries that differ from their prior are written back.
             var h = HiveMap.Parse(hive);
-            if (e.Data.Length == 0) s.Registry.DeleteValue(h, key, name, RegView.Default);
-            else s.Registry.SetValue(h, key, name,
-                new RegValue(kind == "appx" ? RegistryKind.Dword : RegistryKind.Binary, e.Data), RegView.Default);
+            var cur = s.Registry.GetValue(h, key, name, RegView.Default);
+            if (e.Data.Length == 0)
+            {
+                if (cur is not null) s.Registry.DeleteValue(h, key, name, RegView.Default);
+                continue;
+            }
+            var old = new RegValue(kind == "appx" ? RegistryKind.Dword : RegistryKind.Binary, e.Data);
+            if (cur != old) s.Registry.SetValue(h, key, name, old, RegView.Default);
         }
     }
+
+    /// <summary>
+    /// The HKLM keys this action may write, for the engine's pre-flight: the StartupApproved Run and Run32 keys for an HKLM Run
+    /// entry, the StartupApproved StartupFolder key for the all-users Startup folder. Other sources write only HKCU or tasks.
+    /// </summary>
+    internal static IReadOnlyList<string> HklmKeysWritten(StartupDisable a) => a.Source switch
+    {
+        StartupSource.Run when a.Hive is { } h && HiveMap.Parse(h) == LiveHive.LocalMachine => [ApprovedRoot + "Run", ApprovedRoot + "Run32"],
+        StartupSource.StartupFolder => [ApprovedRoot + "StartupFolder"],
+        _ => [],
+    };
 
     public bool IsInEffect(SwitchAction action, LiveSystems s)
     {

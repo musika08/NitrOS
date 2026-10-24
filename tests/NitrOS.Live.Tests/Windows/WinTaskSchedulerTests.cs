@@ -2,12 +2,68 @@ using NitrOS.Live.Windows;
 
 namespace NitrOS.Live.Tests.Windows;
 
-/// <summary>Creates and deletes only the task \NitrOS.Tests\Dummy.</summary>
+/// <summary>Creates and deletes only the task \NitrOS.Tests\Dummy, and the \NitrOS.Tests folder once it is empty.</summary>
 public sealed class WinTaskSchedulerTests : IDisposable
 {
     private const string Task = @"\NitrOS.Tests\Dummy";
+    private const string Folder = "NitrOS.Tests";
 
-    public void Dispose() => ProcessRunner.Run("schtasks.exe", $"/Delete /TN \"{Task}\" /F", TimeSpan.FromSeconds(30));
+    public void Dispose()
+    {
+        ProcessRunner.Run("schtasks.exe", $"/Delete /TN \"{Task}\" /F", TimeSpan.FromSeconds(30));
+        DeleteSandboxFolderIfEmpty();
+    }
+
+    /// <summary>Deletes \NitrOS.Tests when it holds no task (hidden ones included) and no subfolder. No other folder is touched.</summary>
+    private static void DeleteSandboxFolderIfEmpty()
+    {
+        try
+        {
+            if (SandboxFolder() is not { } folder) return;
+            const int TaskEnumHidden = 1;
+            var tasks = Get(Call(folder, "GetTasks", TaskEnumHidden)!, "Count");
+            var subfolders = Get(Call(folder, "GetFolders", 0)!, "Count");
+            if (Convert.ToInt32(tasks) != 0 || Convert.ToInt32(subfolders) != 0) return;
+            var root = Call(Scheduler(), "GetFolder", @"\")!;
+            Call(root, "DeleteFolder", Folder, 0);
+        }
+        catch (Exception e) when (e is System.Reflection.TargetInvocationException or System.Runtime.InteropServices.COMException)
+        {
+            // best effort: a folder that cannot be deleted is left as it is
+        }
+    }
+
+    /// <summary>The Task Scheduler COM object (Schedule.Service), connected to this PC.</summary>
+    private static object Scheduler()
+    {
+        var type = Type.GetTypeFromProgID("Schedule.Service", throwOnError: true)!;
+        var service = Activator.CreateInstance(type)!;
+        Call(service, "Connect");
+        return service;
+    }
+
+    private static object? Call(object target, string method, params object[] args) =>
+        target.GetType().InvokeMember(method, System.Reflection.BindingFlags.InvokeMethod, null, target, args);
+
+    private static object? Get(object target, string property) =>
+        target.GetType().InvokeMember(property, System.Reflection.BindingFlags.GetProperty, null, target, null);
+
+    /// <summary>The \NitrOS.Tests folder, or null when it does not exist.</summary>
+    private static object? SandboxFolder()
+    {
+        try { return Call(Scheduler(), "GetFolder", @"\" + Folder); }
+        catch (Exception e) when (e is System.Reflection.TargetInvocationException or System.Runtime.InteropServices.COMException)
+        {
+            return null;
+        }
+    }
+
+    [Fact]
+    public void Dispose_RemovesTheEmptySandboxFolder()
+    {
+        new WinTaskSchedulerTests().Dispose();
+        Assert.Null(SandboxFolder());
+    }
 
     [Fact]
     public void WinTaskScheduler_TogglesSandboxTask()

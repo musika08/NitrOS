@@ -37,7 +37,7 @@ public sealed class ServiceStartHandler : IActionHandler
     {
         if (prior is not ServicePrior p) return;
         foreach (var e in p.Services)
-            if (s.Services.Get(e.Name) is not null) s.Services.Set(e.Name, e.Start);
+            if (s.Services.Get(e.Name) is { } now && now.Start != e.Start) s.Services.Set(e.Name, e.Start);
     }
 
     public bool IsInEffect(SwitchAction action, LiveSystems s)

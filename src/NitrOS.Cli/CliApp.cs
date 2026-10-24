@@ -8,7 +8,8 @@ using NitrOS.Live.Systems;
 namespace NitrOS.Cli;
 
 /// <summary>
-/// The testable entry point of the nitros command-line runner. Exit codes: 0 OK, 1 refused or partly failed, 2 bad arguments.
+/// The testable entry point of the nitros command-line runner. Exit codes: 0 OK, 1 refused or partly failed, 2 bad arguments
+/// (including a journal that belongs to another account, for undo and drift).
 /// plan, detect, health and journals never call <see cref="CliEnvironment.Systems"/>; apply and undo refuse without --yes and run
 /// the session guard before they do.
 /// </summary>
@@ -47,6 +48,11 @@ public static class CliApp
         {
             output.WriteLine($"Error: {e.Message}");
             output.WriteLine(Usage);
+            return BadArguments;
+        }
+        catch (JournalOwnerException e)
+        {
+            output.WriteLine($"Refused: {e.Message}");
             return BadArguments;
         }
         catch (Exception e)
@@ -161,6 +167,12 @@ public static class CliApp
             o.WriteLine("Nothing to apply.");
             return Refused;
         }
+        var breaks = WarningEngine.For(sel).Where(w => w.Kind == WarningKind.Breaks).ToList();
+        if (breaks.Count > 0)
+        {
+            o.WriteLine("Warnings:");
+            foreach (var w in breaks) o.WriteLine($"  {w.SwitchId}: {w.Message}");
+        }
 
         var store = OpenStore(o, env);
         if (store is null) return Refused;
@@ -176,9 +188,15 @@ public static class CliApp
             return Refused;
         }
 
-        o.WriteLine($"Restore point: {result.RestorePoint}");
-        foreach (var (id, r) in result.Switches) o.WriteLine($"  {id}: {r}");
-        if (result.LeftChanged.Count > 0) o.WriteLine($"Still changed: {string.Join(", ", result.LeftChanged)}");
+        o.WriteLine(result.RestorePoint == RestorePointOutcome.CreatedUnknown
+            ? "Restore point: CreatedUnknown (Windows took the request, but the new point could not be confirmed)"
+            : $"Restore point: {result.RestorePoint}");
+        foreach (var (id, r) in result.Switches)
+        {
+            o.WriteLine($"  {id}: {r}");
+            foreach (var (_, detail) in result.Problems.Where(x => x.SwitchId == id)) o.WriteLine($"      {detail}");
+        }
+        if (result.MayBeChanged.Count > 0) o.WriteLine($"May still be changed: {string.Join(", ", result.MayBeChanged)}");
         o.WriteLine($"Journal: {result.JournalPath}");
         if (ct.IsCancellationRequested)
         {
@@ -213,7 +231,7 @@ public static class CliApp
         }
 
         var engine = new TuneEngine(env.Systems(), store);
-        var r = engine.Undo(path, p.Ids);
+        var r = engine.Undo(path, p.Ids, env.Session.ProcessUserSid);
         foreach (var id in r.Undone) o.WriteLine($"Undone: {id}");
         foreach (var (id, reason) in r.CannotUndo) o.WriteLine($"Cannot undo: {id}: {reason}");
         foreach (var id in r.NothingToUndo) o.WriteLine($"Nothing to undo: {id}");
@@ -233,7 +251,7 @@ public static class CliApp
         }
         var journal = store.Load(path);
         var checker = new DriftChecker(env.Systems());
-        var drifted = checker.Check(journal);
+        var drifted = checker.Check(journal, env.Session.ProcessUserSid);
         foreach (var (id, err) in checker.LastErrors) o.WriteLine($"Could not check: {id}: {err}");
         if (drifted.Count == 0)
         {

@@ -89,12 +89,20 @@ public sealed class WinAppx : IAppx
                 extended = failed?.ExtendedErrorCode?.HResult;
             }
             catch (Exception) { /* no result available: report the exception alone */ }
-            throw new InvalidOperationException(Describe(what, inner.HResult, text ?? inner.Message, extended), inner);
+            throw Failure(Describe(what, inner.HResult, text ?? inner.Message, extended), inner, inner.HResult, extended);
         }
         var r = task.Result;
         if (r.ExtendedErrorCode is { HResult: not 0 } err)
-            throw new InvalidOperationException(Describe(what, err.HResult, r.ErrorText, err.HResult), err);
+            throw Failure(Describe(what, err.HResult, r.ErrorText, err.HResult), err, err.HResult, err.HResult);
     }
+
+    /// <summary>Access denied (0x80070005, as the result or the extended code) becomes UnauthorizedAccessException so callers can tell it apart.</summary>
+    internal static Exception Failure(string message, Exception inner, int hresult, int? extended) =>
+        hresult == AccessDenied || extended == AccessDenied
+            ? new UnauthorizedAccessException(message, inner)
+            : new InvalidOperationException(message, inner);
+
+    private const int AccessDenied = unchecked((int)0x80070005);
 
     /// <summary>"Failed removing X: text (HRESULT 0x80073CF1, extended 0x80070005)".</summary>
     public static string Describe(string what, int hresult, string? errorText, int? extended)

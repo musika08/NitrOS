@@ -92,7 +92,7 @@ public sealed class WinUninstaller : IUninstaller
     /// </summary>
     public int Run(UninstallEntry entry, string? args)
     {
-        var cmd = Parse(Compose(entry, args));
+        var cmd = CommandFor(entry, args);
         using var files = VerifiedFiles.Open(cmd) ?? throw new FileNotFoundException($"Uninstaller for '{entry.DisplayName}' not found", cmd.Executable);
         if (!files.Matches(entry, entry.Publisher))
             throw new UninstallRefusedException($"{entry.DisplayName}: signature check failed");
@@ -243,6 +243,24 @@ public sealed class WinUninstaller : IUninstaller
     /// </summary>
     public static bool OthersCanWrite(FileSystemSecurity security, IReadOnlySet<string> trusted, int mask) =>
         SecureFs.OthersCanWrite(security, trusted, mask, includeInheritOnly: false);
+
+    /// <summary>msiexec user-interface levels; with no action args they are replaced by /qn.</summary>
+    private static readonly HashSet<string> MsiUiOptions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "/qn", "/quiet", "/passive", "/qb", "/qb!", "/qb-", "/norestart",
+    };
+
+    /// <summary>
+    /// The command <see cref="Run"/> starts for this entry and these args. An msiexec uninstall given no args is always quiet:
+    /// its own UI options are replaced by /qn /norestart, so no msiexec window waits for a click.
+    /// </summary>
+    public static UninstallCommand CommandFor(UninstallEntry entry, string? args)
+    {
+        var cmd = Parse(Compose(entry, args));
+        if (!cmd.IsMsiExec || !string.IsNullOrWhiteSpace(args)) return cmd;
+        var kept = cmd.Arguments.Where(a => !MsiUiOptions.Contains(a));
+        return cmd with { Arguments = kept.Concat(["/qn", "/norestart"]).ToList() };
+    }
 
     /// <summary>QuietUninstallString, else UninstallString, with the extra args appended after a space.</summary>
     public static string Compose(UninstallEntry entry, string? args)

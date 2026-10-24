@@ -115,4 +115,12 @@ public class RegistryDeleteHandlerTests
             Assert.False(h.IsInEffect(a, f.ToLive()));
         }
     }
+
+    [Fact]
+    public void RegistryDelete_NamedValueCountsAsDeletedWhenItsKeyIsGone()
+    {
+        var f = WithTree();
+        f.Registry.DeleteKey(LiveHive.CurrentUser, Key, RegView.Default);
+        Assert.True(Handler(ValueAction).IsInEffect(ValueAction, f.ToLive()));
+    }
 }

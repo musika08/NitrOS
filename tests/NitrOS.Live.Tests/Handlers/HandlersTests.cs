@@ -30,5 +30,12 @@ public class HandlersTests
         Assert.Throws<NotSupportedException>(() => NitrOS.Live.Handlers.Handlers.For(new UnknownAction()));
     }
 
+    [Fact]
+    public void Handlers_PackageRemoveIsImageOnly()
+    {
+        // package.remove services an offline image; the PC tuner has no handler for it.
+        Assert.Throws<NotSupportedException>(() => NitrOS.Live.Handlers.Handlers.For(new PackageRemove("Microsoft-Windows-Foo*")));
+    }
+
     private sealed record UnknownAction : SwitchAction;
 }

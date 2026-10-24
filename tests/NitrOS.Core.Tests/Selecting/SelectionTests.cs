@@ -72,6 +72,24 @@ public class SelectionTests
     }
 
     [Fact]
+    public void FromCard_ListsCardSwitchesLeftOffAsDropped()
+    {
+        var catalog = Switches.CatalogOf(
+            GamerSwitch("on", CardDefault.On),
+            ImageOnly("image", CardDefault.On),
+            GamerSwitch("battery", CardDefault.On, b => b.SkipOn = [DeviceTrait.Battery]),
+            ImageOnly("not-on-card", CardDefault.Off));
+        var sel = Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, new DeviceProfile(true, false, false));
+
+        Assert.Equal(new[] { "on" }, sel.On.ToArray());
+        Assert.Equal(
+            [("image", "Only available when building an ISO."), ("battery", "Kept on this device because it runs on battery.")],
+            sel.Dropped);
+        Assert.DoesNotContain(Selection.FromCard(catalog, CardId.Gamer, TargetMode.BuildIso, DeviceProfile.Desktop).Dropped,
+            d => d.Id == "image");
+    }
+
+    [Fact]
     public void Toggle_RefusesUnavailableWithReason()
     {
         var catalog = Switches.CatalogOf(

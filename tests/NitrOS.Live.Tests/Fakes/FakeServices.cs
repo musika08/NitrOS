@@ -9,6 +9,10 @@ public sealed class FakeServices : IServiceConfig
     /// <summary>Template name to its per-user instance names.</summary>
     public Dictionary<string, List<string>> Instances { get; } = new(StringComparer.OrdinalIgnoreCase);
     public string? FailOn { get; set; }
+    /// <summary>When true every Set throws UnauthorizedAccessException (reads still work).</summary>
+    public bool RefuseWrites { get; set; }
+    /// <summary>Names written by Set.</summary>
+    public List<string> Writes { get; } = [];
 
     private void Check(string name)
     {
@@ -25,6 +29,8 @@ public sealed class FakeServices : IServiceConfig
     public void Set(string name, ServiceStartType start)
     {
         Check(name);
+        if (RefuseWrites) throw new UnauthorizedAccessException($"Access to the service '{name}' is denied.");
+        Writes.Add(name);
         Starts[name] = start;
     }
 

@@ -94,6 +94,20 @@ public class RegistrySetHandlerTests
         Assert.False(h.IsInEffect(Action, f.ToLive()));
     }
 
+    [Theory]
+    [InlineData(RegistryKind.Dword, "0x10", RegistryKind.Dword, "16")]
+    [InlineData(RegistryKind.Dword, "0xFFFFFFFF", RegistryKind.Dword, "4294967295")]
+    [InlineData(RegistryKind.Qword, "0x100", RegistryKind.Qword, "256")]
+    [InlineData(RegistryKind.Binary, "0a0b", RegistryKind.Binary, "0A0B")]
+    public void RegistrySet_IsInEffectNormalisesCatalogData(RegistryKind kind, string catalog, RegistryKind storedKind, string stored)
+    {
+        // The adapter returns dwords and qwords in decimal and binary as uppercase hex, whatever the catalog wrote.
+        var f = new FakeSystems();
+        f.Registry.SetValue(LiveHive.LocalMachine, Key, "Flag", new RegValue(storedKind, stored), RegView.Default);
+        var a = new RegistrySet("HKLM", Key, "Flag", kind, catalog);
+        Assert.True(Handler(a).IsInEffect(a, f.ToLive()));
+    }
+
     [Fact]
     public void RegistrySet_UnknownHiveThrows()
     {

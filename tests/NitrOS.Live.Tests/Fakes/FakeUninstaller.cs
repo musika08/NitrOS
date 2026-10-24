@@ -12,6 +12,8 @@ public sealed class FakeUninstaller : IUninstaller
     public List<(UninstallEntry Entry, string? Args)> Runs { get; } = [];
     /// <summary>Matches a KeyPath or a DisplayName.</summary>
     public string? FailOn { get; set; }
+    /// <summary>Called on every Run after it is recorded, for example to remove other entries the way a suite uninstaller does.</summary>
+    public Action<UninstallEntry>? OnRun { get; set; }
 
     private void Check(UninstallEntry e)
     {
@@ -27,6 +29,7 @@ public sealed class FakeUninstaller : IUninstaller
     public bool SignerMatches(UninstallEntry entry, string publisher)
     {
         Check(entry);
+        if (!Entries.Contains(entry)) return false; // the entry's key is gone, so its uninstaller cannot be checked
         return !BadSigners.Contains(entry.KeyPath);
     }
 
@@ -34,6 +37,7 @@ public sealed class FakeUninstaller : IUninstaller
     {
         Check(entry);
         Runs.Add((entry, args));
+        OnRun?.Invoke(entry);
         return ExitCode;
     }
 }

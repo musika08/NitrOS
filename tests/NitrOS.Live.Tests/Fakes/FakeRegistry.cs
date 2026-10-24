@@ -2,12 +2,19 @@ using NitrOS.Live.Systems;
 
 namespace NitrOS.Live.Tests.Fakes;
 
-/// <summary>In-memory registry. Keys and names compare case-insensitively. FailOn matches a key path or a value name.</summary>
+/// <summary>
+/// In-memory registry. Keys and names compare case-insensitively. FailOn matches a key path or a value name.
+/// RefusedKeys are keys Windows refuses to change: writes to them (or to a missing key whose nearest existing parent is
+/// refused) throw UnauthorizedAccessException, reads still work, and CanWrite reports false.
+/// </summary>
 public sealed class FakeRegistry : IRegistry
 {
     public Dictionary<(LiveHive Hive, string Key, string Name, RegView View), RegValue> Values { get; } = new(new Cmp());
     public HashSet<(LiveHive Hive, string Key, RegView View)> Keys { get; } = new(new KeyCmp());
     public string? FailOn { get; set; }
+    public HashSet<(LiveHive Hive, string Key)> RefusedKeys { get; } = new(new RefusedCmp());
+    /// <summary>Every write that reached the store (SetValue, DeleteValue, DeleteKey, ImportKey), as "Op key|name".</summary>
+    public List<string> Writes { get; } = [];
 
     private void Check(string key, string? name = null)
     {
@@ -25,6 +32,8 @@ public sealed class FakeRegistry : IRegistry
     public void SetValue(LiveHive h, string key, string name, RegValue value, RegView v)
     {
         Check(key, name);
+        Guard(h, key, v);
+        Writes.Add($"Set {key}|{name}");
         AddWithAncestors(h, key, v);
         Values[(h, key, name, v)] = value;
     }
@@ -32,6 +41,8 @@ public sealed class FakeRegistry : IRegistry
     public void DeleteValue(LiveHive h, string key, string name, RegView v)
     {
         Check(key, name);
+        Guard(h, key, v);
+        Writes.Add($"DeleteValue {key}|{name}");
         Values.Remove((h, key, name, v));
     }
 
@@ -63,6 +74,8 @@ public sealed class FakeRegistry : IRegistry
     public void ImportKey(LiveHive h, RegTree tree, RegView v)
     {
         Check(tree.Key);
+        Guard(h, tree.Key, v);
+        Writes.Add($"Import {tree.Key}");
         AddWithAncestors(h, tree.Key, v);
         foreach (var nv in tree.Values) Values[(h, tree.Key, nv.Name, v)] = nv.Value;
         foreach (var sub in tree.SubKeys) ImportKey(h, sub, v);
@@ -87,6 +100,8 @@ public sealed class FakeRegistry : IRegistry
     public void DeleteKey(LiveHive h, string key, RegView v)
     {
         Check(key);
+        Guard(h, key, v);
+        Writes.Add($"DeleteKey {key}");
         var prefix = key + "\\";
         bool Under(string k) => Eq(k, key) || k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
         foreach (var k in Keys.Where(k => k.Hive == h && k.View == v && Under(k.Key)).ToList()) Keys.Remove(k);
@@ -99,6 +114,30 @@ public sealed class FakeRegistry : IRegistry
         return Exists(h, key, v);
     }
 
+    public bool CanWrite(LiveHive h, string key, RegView v)
+    {
+        Check(key);
+        return !IsRefused(h, key, v);
+    }
+
+    /// <summary>The key and, while it is missing, each parent up to the nearest existing one are checked against RefusedKeys.</summary>
+    private bool IsRefused(LiveHive h, string key, RegView v)
+    {
+        for (var k = key; k.Length > 0;)
+        {
+            if (RefusedKeys.Contains((h, k))) return true;
+            if (Exists(h, k, v)) return false;
+            var cut = k.LastIndexOf('\\');
+            k = cut < 0 ? "" : k[..cut];
+        }
+        return false;
+    }
+
+    private void Guard(LiveHive h, string key, RegView v)
+    {
+        if (IsRefused(h, key, v)) throw new UnauthorizedAccessException($"Access to the registry key '{key}' is denied.");
+    }
+
     private static bool Eq(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 
     private sealed class Cmp : IEqualityComparer<(LiveHive Hive, string Key, string Name, RegView View)>
@@ -107,6 +146,12 @@ public sealed class FakeRegistry : IRegistry
             x.Hive == y.Hive && x.View == y.View && Eq(x.Key, y.Key) && Eq(x.Name, y.Name);
         public int GetHashCode((LiveHive Hive, string Key, string Name, RegView View) o) =>
             HashCode.Combine(o.Hive, o.View, o.Key.ToLowerInvariant(), o.Name.ToLowerInvariant());
+    }
+
+    private sealed class RefusedCmp : IEqualityComparer<(LiveHive Hive, string Key)>
+    {
+        public bool Equals((LiveHive Hive, string Key) x, (LiveHive Hive, string Key) y) => x.Hive == y.Hive && Eq(x.Key, y.Key);
+        public int GetHashCode((LiveHive Hive, string Key) o) => HashCode.Combine(o.Hive, o.Key.ToLowerInvariant());
     }
 
     private sealed class KeyCmp : IEqualityComparer<(LiveHive Hive, string Key, RegView View)>

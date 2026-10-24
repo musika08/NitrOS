@@ -4,8 +4,21 @@ using NitrOS.Live.Tests.Fakes;
 
 namespace NitrOS.Live.Tests;
 
+[Collection(TuneLockCollection.Name)]
 public sealed class DriftCheckerTests : IDisposable
 {
+    [Fact]
+    public void Drift_RefusesJournalOfAnotherUser()
+    {
+        var journal = Run(Tune.Sw("sw.a", Tune.Set("A")));
+        Tune.Put(_f, "A", "0"); // drifted, but the journal is not this account's to check
+
+        var e = Assert.Throws<JournalOwnerException>(() => new DriftChecker(_f.ToLive()).Check(journal, "S-1-5-21-2"));
+
+        Assert.Equal("This journal belongs to another account.", e.Message);
+        Assert.Equal(["sw.a"], new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
+    }
+
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "nitros-drift-" + Guid.NewGuid().ToString("N"));
     private readonly FakeSystems _f = new();
     private readonly JournalStore _store;
@@ -30,12 +43,12 @@ public sealed class DriftCheckerTests : IDisposable
             Tune.Sw("sw.kept", Tune.Set("A")),
             Tune.Sw("sw.turned", Tune.Set("B"), Tune.Set("C")),
             Tune.Sw("sw.deleted", Tune.Set("D")));
-        Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal));
+        Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
 
         Tune.Put(_f, "C", "0");
         _f.Registry.DeleteValue(Systems.LiveHive.LocalMachine, Tune.Key, "D", Systems.RegView.Default);
 
-        Assert.Equal(["sw.turned", "sw.deleted"], new DriftChecker(_f.ToLive()).Check(journal));
+        Assert.Equal(["sw.turned", "sw.deleted"], new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
     }
 
     [Fact]
@@ -53,7 +66,7 @@ public sealed class DriftCheckerTests : IDisposable
         _f.Appx.Installed.Add("Missing.App"); // and a skipped target appeared
         Tune.Put(_f, "A", "1");
 
-        Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal));
+        Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
     }
 
     [Fact]
@@ -68,11 +81,11 @@ public sealed class DriftCheckerTests : IDisposable
 
         _f.Power.Active = Other; // the user picked another plan later; the tuned plan still holds its value
         var checker = new DriftChecker(_f.ToLive());
-        Assert.Empty(checker.Check(journal));
+        Assert.Empty(checker.Check(journal, Tune.Options.UserSid));
         Assert.Empty(checker.LastErrors);
 
         _f.Power.Settings[(Balanced, "sub", "set")] = (10, 0); // Windows reset the tuned plan
-        Assert.Equal(["sw.power"], checker.Check(journal));
+        Assert.Equal(["sw.power"], checker.Check(journal, Tune.Options.UserSid));
     }
 
     [Fact]
@@ -83,13 +96,13 @@ public sealed class DriftCheckerTests : IDisposable
         _f.Registry.FailOn = "A";
 
         var checker = new DriftChecker(_f.ToLive());
-        Assert.Equal(["sw.other"], checker.Check(journal));
+        Assert.Equal(["sw.other"], checker.Check(journal, Tune.Options.UserSid));
         var error = Assert.Single(checker.LastErrors);
         Assert.Equal("sw.reg", error.SwitchId);
         Assert.Contains("FakeRegistry failure", error.Error);
 
         _f.Registry.FailOn = null;
-        checker.Check(journal);
+        checker.Check(journal, Tune.Options.UserSid);
         Assert.Empty(checker.LastErrors);
     }
 
@@ -97,10 +110,10 @@ public sealed class DriftCheckerTests : IDisposable
     public void Drift_IgnoresRolledBackEntries()
     {
         var journal = Run(Tune.Sw("sw.reg", Tune.Set("A")));
-        new TuneEngine(_f.ToLive(), _store).Undo(_store.List()[0], null);
+        new TuneEngine(_f.ToLive(), _store).Undo(_store.List()[0], null, Tune.Options.UserSid);
         var undone = _store.Load(_store.List()[0]);
 
-        Assert.Empty(new DriftChecker(_f.ToLive()).Check(undone));
-        Assert.Equal(["sw.reg"], new DriftChecker(_f.ToLive()).Check(journal));
+        Assert.Empty(new DriftChecker(_f.ToLive()).Check(undone, Tune.Options.UserSid));
+        Assert.Equal(["sw.reg"], new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
     }
 }

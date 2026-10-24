@@ -65,6 +65,37 @@ public sealed class WinRegistry : IRegistry
         return k is not null;
     }
 
+    /// <summary>
+    /// Opens the key (or, when it is missing, its nearest existing parent) with SetValue and CreateSubKey rights and closes it
+    /// again; nothing is written. Access denied means Windows refuses changes there.
+    /// </summary>
+    public bool CanWrite(LiveHive h, string key, RegView v)
+    {
+        using var b = Base(h, v);
+        var path = key.Trim('\\');
+        while (path.Length > 0)
+        {
+            bool exists;
+            using (var probe = b.OpenSubKey(path)) exists = probe is not null;
+            if (exists)
+            {
+                try
+                {
+                    using var k = b.OpenSubKey(path, RegistryKeyPermissionCheck.ReadWriteSubTree,
+                        System.Security.AccessControl.RegistryRights.SetValue | System.Security.AccessControl.RegistryRights.CreateSubKey);
+                    return k is not null;
+                }
+                catch (Exception e) when (e is System.Security.SecurityException or UnauthorizedAccessException)
+                {
+                    return false;
+                }
+            }
+            var cut = path.LastIndexOf('\\');
+            path = cut < 0 ? "" : path[..cut];
+        }
+        return false; // nothing on the way exists: no top-level key can be created under a hive root
+    }
+
     private static RegTree Export(RegistryKey k, string path)
     {
         var values = new List<RegNamedValue>();

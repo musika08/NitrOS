@@ -9,11 +9,21 @@ public sealed class FakePower : IPowerConfig
     public Dictionary<(string Scheme, string Subgroup, string Setting), (int Ac, int Dc)> Settings { get; } = new(new Cmp());
     /// <summary>Matches a scheme GUID or a setting GUID.</summary>
     public string? FailOn { get; set; }
+    /// <summary>When true SetAc, SetDc and SetActive throw UnauthorizedAccessException (reads still work).</summary>
+    public bool RefuseWrites { get; set; }
+    /// <summary>Each write as "ac setting", "dc setting" or "active scheme".</summary>
+    public List<string> Writes { get; } = [];
 
     private void Check(params string[] names)
     {
         if (FailOn is not null && names.Any(n => string.Equals(FailOn, n, StringComparison.OrdinalIgnoreCase)))
             throw new InvalidOperationException($"FakePower failure on {FailOn}");
+    }
+
+    private void Write(string what)
+    {
+        if (RefuseWrites) throw new UnauthorizedAccessException($"Access to the power setting {what} is denied.");
+        Writes.Add(what);
     }
 
     public string ActiveScheme() => Active;
@@ -29,6 +39,7 @@ public sealed class FakePower : IPowerConfig
     public void SetAc(string scheme, string subgroup, string setting, int value)
     {
         Check(scheme, setting);
+        Write("ac " + setting);
         var k = (scheme, subgroup, setting);
         Settings[k] = (value, Settings.TryGetValue(k, out var o) ? o.Dc : 0);
     }
@@ -36,6 +47,7 @@ public sealed class FakePower : IPowerConfig
     public void SetDc(string scheme, string subgroup, string setting, int value)
     {
         Check(scheme, setting);
+        Write("dc " + setting);
         var k = (scheme, subgroup, setting);
         Settings[k] = (Settings.TryGetValue(k, out var o) ? o.Ac : 0, value);
     }
@@ -45,6 +57,7 @@ public sealed class FakePower : IPowerConfig
         Check(scheme);
         if (!SchemeList.Contains(scheme, StringComparer.OrdinalIgnoreCase))
             throw new InvalidOperationException($"Unknown scheme {scheme}");
+        Write("active " + scheme);
         Active = scheme;
     }
 

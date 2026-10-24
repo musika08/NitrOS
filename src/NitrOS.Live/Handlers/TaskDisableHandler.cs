@@ -22,7 +22,7 @@ public sealed class TaskDisableHandler : IActionHandler
     {
         if (prior is not TaskPrior p) return;
         var path = ((TaskDisable)action).Path;
-        if (s.Tasks.Get(path) is null) return;
+        if (s.Tasks.Get(path) is not { } now || now.Enabled == p.Enabled) return;
         s.Tasks.SetEnabled(path, p.Enabled);
     }
 

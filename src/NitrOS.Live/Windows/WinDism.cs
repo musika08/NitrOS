@@ -13,7 +13,7 @@ public sealed class DismAccessDeniedException() : InvalidOperationException(WinD
 /// </summary>
 public sealed class WinDism : IDism
 {
-    public const string AccessDeniedDetail = "DISM access denied (see notes-for-later-plans)";
+    public const string AccessDeniedDetail = "Windows refused this DISM change (access denied).";
     public const int RestartExitCode = 3010;
     private static readonly TimeSpan QueryTimeout = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan ChangeTimeout = TimeSpan.FromMinutes(30);

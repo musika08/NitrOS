@@ -32,8 +32,13 @@ public sealed class ProgramUninstallHandler : IActionHandler
 
         var failures = new List<string>();
         var restart = false;
-        foreach (var e in found)
+        for (var i = 0; i < found.Count; i++)
         {
+            var e = found[i];
+            // A suite's first uninstaller often removes its other parts too: a later match that is gone is already removed.
+            if (i > 0 && !s.Uninstaller.Find(a.DisplayName, a.Publisher)
+                    .Any(x => string.Equals(x.KeyPath, e.KeyPath, StringComparison.OrdinalIgnoreCase)))
+                continue;
             if (!s.Uninstaller.SignerMatches(e, a.Publisher))
             {
                 failures.Add($"{e.DisplayName}: signature check failed");

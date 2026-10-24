@@ -6,6 +6,7 @@ using NitrOS.Live.Windows;
 
 namespace NitrOS.Live.Tests;
 
+[Collection(TuneLockCollection.Name)]
 public class CliTests : IDisposable
 {
     private sealed record Device(bool HasBattery, int MaxTouches, string Manufacturer, string Model) : IDeviceFacts;
@@ -23,9 +24,12 @@ public class CliTests : IDisposable
     private readonly FakeSystems _fake = new();
     private int _systemsCalls;
 
+    private readonly string _out = Path.Combine(Path.GetTempPath(), "nitros-cli-out-" + Guid.NewGuid().ToString("N"));
+
     public void Dispose()
     {
         if (Directory.Exists(_journals)) Directory.Delete(_journals, true);
+        if (Directory.Exists(_out)) Directory.Delete(_out, true);
     }
 
     private static string RepoCatalog()
@@ -216,7 +220,59 @@ public class CliTests : IDisposable
         var (code, text) = Run(real, "plan", "--card", "gamer");
         Assert.Equal(0, code);
         Assert.Contains("Plan", text);
-        File.WriteAllText(Path.Combine(Path.GetTempPath(), "nitros-plan-gamer.txt"), text);
+        // The output is kept only inside this test's own temp folder, which Dispose deletes.
+        Directory.CreateDirectory(_out);
+        File.WriteAllText(Path.Combine(_out, "nitros-plan-gamer.txt"), text);
+        Assert.False(File.Exists(Path.Combine(Path.GetTempPath(), "nitros-plan-gamer.txt")));
+    }
+
+    [Fact]
+    public void PlanCard_ListsCardSwitchesDroppedOnThisDevice()
+    {
+        // On a battery device the gamer card's high-performance-plan is left off, and plan says so.
+        var (code, text) = Run(HandheldEnv(), "plan", "--card", "gamer");
+        Assert.Equal(0, code);
+        Assert.Contains("Dropped:", text);
+        Assert.Contains("high-performance-plan: Kept on this device because it runs on battery.", text);
+    }
+
+    [Fact]
+    public void Apply_PrintsBreaksWarningsBeforeRunningAndFailureDetailsAfter()
+    {
+        var catalog = NitrOS.Core.Loading.CatalogLoader.Load(RepoCatalog()).Catalog!;
+        var breaking = catalog.Switches.First(s => s.Breaks.Count > 0 && s.SkipOn.Count == 0
+            && s.Modes.Contains(NitrOS.Core.Model.Mode.Live));
+        _fake.Registry.FailOn = "AutoGameModeEnabled"; // game-mode-on's only action fails
+
+        var (code, text) = Run(Env(), "apply", "--ids", $"{breaking.Id},game-mode-on", "--yes");
+
+        Assert.Equal(1, code);
+        var warnings = text.IndexOf("Warnings:", StringComparison.Ordinal);
+        Assert.True(warnings >= 0, text);
+        Assert.Contains($"{breaking.Id}: {breaking.Breaks[0]}", text);
+        Assert.True(warnings < text.IndexOf("Restore point:", StringComparison.Ordinal), text);
+        Assert.Contains("game-mode-on: Failed", text);
+        Assert.Contains("FakeRegistry failure on AutoGameModeEnabled", text);
+        Assert.True(text.IndexOf("game-mode-on: Failed", StringComparison.Ordinal)
+            < text.LastIndexOf("FakeRegistry failure on AutoGameModeEnabled", StringComparison.Ordinal), text);
+    }
+
+    [Fact]
+    public void Undo_And_Drift_RefuseJournalOfAnotherAccount_Exit2()
+    {
+        var (aCode, _) = Run(Env(), "apply", "--ids", "game-mode-on", "--yes");
+        Assert.Equal(0, aCode);
+        var path = Directory.GetFiles(_journals, "*.json").Single();
+        var other = Env(session: new Session("S-1-5-21-2", "S-1-5-21-2", true, 26200));
+
+        var (uCode, uText) = Run(other, "undo", path, "--yes");
+        Assert.Equal(2, uCode);
+        Assert.Contains("This journal belongs to another account.", uText);
+        Assert.NotEmpty(_fake.Registry.Values); // nothing was undone
+
+        var (dCode, dText) = Run(other, "drift", path);
+        Assert.Equal(2, dCode);
+        Assert.Contains("This journal belongs to another account.", dText);
     }
 
     private CliEnvironment HandheldEnv() => Env() with { Device = new Device(true, 10, "ASUS", "RC73XA") };

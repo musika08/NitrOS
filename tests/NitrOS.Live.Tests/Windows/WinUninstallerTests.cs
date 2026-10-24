@@ -350,6 +350,28 @@ public sealed class WinUninstallerTests : IDisposable
     }
 
     [Theory]
+    [InlineData("MsiExec.exe /X" + Guid1, null, new[] { "/X" + Guid1, "/qn", "/norestart" })]
+    [InlineData("MsiExec.exe /I" + Guid1, "  ", new[] { "/X" + Guid1, "/qn", "/norestart" })]
+    [InlineData("MsiExec.exe /X" + Guid1 + " /qb", null, new[] { "/X" + Guid1, "/qn", "/norestart" })]
+    [InlineData("MsiExec.exe /X" + Guid1 + " /quiet /norestart", null, new[] { "/X" + Guid1, "/qn", "/norestart" })]
+    [InlineData("MsiExec.exe /X" + Guid1 + " REBOOT=ReallySuppress", null, new[] { "/X" + Guid1, "REBOOT=ReallySuppress", "/qn", "/norestart" })]
+    [InlineData("MsiExec.exe /X" + Guid1, "/passive", new[] { "/X" + Guid1, "/passive" })]
+    public void CommandFor_MsiExecWithoutArgsIsAlwaysQuiet(string uninstall, string? args, string[] expected)
+    {
+        var c = WinUninstaller.CommandFor(Entry(null, uninstall), args);
+        Assert.True(c.IsMsiExec);
+        Assert.Equal(expected, c.Arguments);
+    }
+
+    [Fact]
+    public void CommandFor_OtherUninstallersGetNoAddedArgs()
+    {
+        var c = WinUninstaller.CommandFor(Entry(null, @"""C:\Program Files\Contoso\uninst.exe"""), null);
+        Assert.False(c.IsMsiExec);
+        Assert.Empty(c.Arguments);
+    }
+
+    [Theory]
     [InlineData("MsiExec.exe /X" + Guid1 + " /i" + Guid1)]
     [InlineData("MsiExec.exe /X" + Guid1 + " /X" + Guid1)]
     [InlineData("MsiExec.exe /X")]

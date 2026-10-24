@@ -27,6 +27,7 @@ public sealed class PowerSchemeHandler : IActionHandler
     public void Undo(SwitchAction action, PriorState prior, LiveSystems s)
     {
         if (prior is not SchemePrior p || !Has(s, p.PreviousScheme)) return;
+        if (string.Equals(s.Power.ActiveScheme(), p.PreviousScheme, StringComparison.OrdinalIgnoreCase)) return; // already active
         s.Power.SetActive(p.PreviousScheme);
     }
 

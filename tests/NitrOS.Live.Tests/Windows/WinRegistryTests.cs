@@ -138,4 +138,20 @@ public sealed class WinRegistryTests : IDisposable
         Assert.Throws<FormatException>(() => _reg.SetValue(h, _root, "bad", new RegValue(RegistryKind.Dword, "0x100000000"), RegView.Default));
         Assert.Throws<FormatException>(() => _reg.SetValue(h, _root, "bad", new RegValue(RegistryKind.Dword, "12abc"), RegView.Default));
     }
+
+    /// <summary>Read-only apart from the sandbox key: CanWrite only opens keys for writing and closes them again.</summary>
+    [Fact]
+    public void WinRegistry_CanWrite_TestsKeyOrNearestParentAndWritesNothing()
+    {
+        var h = LiveHive.CurrentUser;
+        _reg.SetValue(h, _root, "x", new RegValue(RegistryKind.String, "1"), RegView.Default);
+
+        Assert.True(_reg.CanWrite(h, _root, RegView.Default));
+        Assert.True(_reg.CanWrite(h, _root + @"\Missing\Deeper", RegView.Default)); // tests the sandbox key, the nearest existing parent
+        Assert.False(_reg.KeyExists(h, _root + @"\Missing", RegView.Default)); // nothing was created
+        Assert.Equal(["x"], _reg.GetValueNames(h, _root, RegView.Default));
+
+        // Refused on this PC even from an elevated process (Win32 error 5, checked by the controller on 2026-10-25).
+        Assert.False(_reg.CanWrite(LiveHive.LocalMachine, "SOFTWARE", RegView.Default));
+    }
 }

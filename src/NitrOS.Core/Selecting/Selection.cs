@@ -31,7 +31,10 @@ public sealed class Selection
     public DeviceProfile Device { get; }
     public IReadOnlySet<string> On => _on;
 
-    /// <summary>Ids given to <see cref="FromIds"/> that were left off because they are unavailable, with the reason.</summary>
+    /// <summary>
+    /// Switches left off because they are unavailable in this mode or on this device, with the reason: ids given to
+    /// <see cref="FromIds"/>, or the card's switches for <see cref="FromCard"/>. Empty after a toggle.
+    /// </summary>
     public IReadOnlyList<(string Id, string Reason)> Dropped { get; }
 
     public bool IsOn(string id) => _on.Contains(id);
@@ -39,15 +42,18 @@ public sealed class Selection
     public static Selection FromCard(Catalog catalog, CardId card, TargetMode mode, DeviceProfile device)
     {
         var on = new HashSet<string>();
+        var dropped = new List<(string Id, string Reason)>();
         if (card != CardId.Custom)
         {
             foreach (var def in catalog.Switches)
             {
-                if (DefaultFor(def, card) == CardDefault.On && AvailabilityOf(def, mode, device).Available)
-                    on.Add(def.Id);
+                if (DefaultFor(def, card) != CardDefault.On) continue;
+                var availability = AvailabilityOf(def, mode, device);
+                if (availability.Available) on.Add(def.Id);
+                else dropped.Add((def.Id, availability.Reason ?? "Unavailable."));
             }
         }
-        return new Selection(catalog, mode, device, on.ToFrozenSet());
+        return new Selection(catalog, mode, device, on.ToFrozenSet(), dropped);
     }
 
     /// <summary>Unknown ids throw KeyNotFoundException; unavailable ids are left off and listed in Dropped.</summary>

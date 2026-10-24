@@ -13,11 +13,13 @@ public sealed class DriftChecker(LiveSystems systems)
     /// <summary>
     /// Switch ids, in journal order, where an Applied, reversible action no longer holds the state it set. Skipped, failed and
     /// rolled-back entries, irreversible entries and scripts (which have no state to inspect) are ignored. A power.set is checked
-    /// on the scheme it wrote to (from its prior), so switching power plans later is not drift.
+    /// on the scheme it wrote to (from its prior), so switching power plans later is not drift. A journal written by another
+    /// Windows account than <paramref name="userSid"/> throws <see cref="JournalOwnerException"/>.
     /// </summary>
-    public IReadOnlyList<string> Check(RunJournal journal)
+    public IReadOnlyList<string> Check(RunJournal journal, string userSid)
     {
         ArgumentNullException.ThrowIfNull(journal);
+        TuneEngine.RequireOwner(journal, userSid);
         var drifted = new List<string>();
         var errors = new List<(string SwitchId, string Error)>();
         foreach (var e in journal.Entries)

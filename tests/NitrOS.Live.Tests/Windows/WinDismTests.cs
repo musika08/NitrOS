@@ -37,7 +37,7 @@ public class WinDismTests
         try { state = new WinDism().FeatureState("Printing-PrintToPDFServices-Features"); }
         catch (DismAccessDeniedException e)
         {
-            Assert.Equal("DISM access denied (see notes-for-later-plans)", e.Message);
+            Assert.Equal("Windows refused this DISM change (access denied).", e.Message);
             return;
         }
         Assert.Contains(state, new[] { "Enabled", "Disabled", "EnablePending", "DisablePending", "DisabledWithPayloadRemoved" });
@@ -104,6 +104,7 @@ public class WinDismTests
     {
         var e = Assert.Throws<DismAccessDeniedException>(() => WinDism.ParseQuery(code, output));
         Assert.Equal(WinDism.AccessDeniedDetail, e.Message);
+        Assert.Equal("Windows refused this DISM change (access denied).", e.Message); // user-facing: no internal file names
         Assert.Throws<DismAccessDeniedException>(() => WinDism.ClassifyChange(code, output));
     }
 

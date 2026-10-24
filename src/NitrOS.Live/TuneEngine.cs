@@ -17,8 +17,12 @@ public sealed record TuneProgress(string SwitchId, int Done, int Total);
 
 /// <summary>
 /// The outcome of a run. Switches holds only the switches the run reached; a cancelled run leaves the rest out.
-/// JournalPath is empty when the run was refused. LeftChanged lists, in run order, every switch with an entry still
-/// Applied after the run: a Failed switch that is not in it was cleanly rolled back.
+/// JournalPath is empty when the run was refused; a run refused because another one holds the lock never tried a restore
+/// point and reports RestorePoint Unavailable. MayBeChanged lists, in run order, every switch that may still have
+/// changed something on this PC: one with an entry still Applied after the run, or with a failed irreversible action or
+/// script whose Apply ran (it may have changed part of what it touches and cannot be rolled back). A Failed switch that is
+/// not in it had every change it made rolled back. Problems holds, per switch in run order, the detail of each failed
+/// action, failed rollback or refused pre-flight.
 /// </summary>
 public sealed record TuneResult(
     string JournalPath,
@@ -26,7 +30,16 @@ public sealed record TuneResult(
     IReadOnlyDictionary<string, SwitchResult> Switches,
     bool Refused,
     string? RefusedReason,
-    IReadOnlyList<string> LeftChanged);
+    IReadOnlyList<string> MayBeChanged)
+{
+    public IReadOnlyList<(string SwitchId, string Detail)> Problems { get; init; } = [];
+}
+
+/// <summary>Undo or drift was given a journal written by another Windows account.</summary>
+public sealed class JournalOwnerException() : InvalidOperationException(TuneEngine.OtherAccountReason);
+
+/// <summary>Another Apply or Undo holds the run lock.</summary>
+public sealed class TuneBusyException() : InvalidOperationException(TuneEngine.BusyReason);
 
 /// <summary>
 /// Undone: switches with at least one entry undone in this call and nothing left that cannot be undone.
@@ -47,6 +60,12 @@ public sealed class TuneEngine
     public const string NoRestorePointReason = "System Restore is off on this PC.";
     public const string RestorePointDescription = "NitrOS: before tuning this PC";
     public const string CancelledDetail = "cancelled";
+    public const string OtherAccountReason = "This journal belongs to another account.";
+    public const string BusyReason = "Another NitrOS change is already running.";
+    public const string FailedScriptReason = "The script failed part-way; NitrOS does not run its undo after a failure";
+
+    /// <summary>System-wide lock held for the whole of Apply and Undo, so two runs never change the PC at the same time.</summary>
+    public const string RunMutexName = @"Global\NitrOS.Tune";
 
     /// <summary>Detail on an entry saved before its Apply ran. A crash leaves it; Undo treats it as applied, which is safe because the prior was read first.</summary>
     public const string PendingDetail = "Not finished: the run stopped before this action reported back.";
@@ -72,6 +91,10 @@ public sealed class TuneEngine
         if (selection.Mode != TargetMode.TunePc)
             throw new ArgumentException("The tune engine only applies selections made for tuning this PC.", nameof(selection));
 
+        using var runLock = RunLock.TryAcquire();
+        if (runLock is null)
+            return new TuneResult("", RestorePointOutcome.Unavailable, new Dictionary<string, SwitchResult>(), true, BusyReason, []);
+
         var restorePoint = CreateRestorePoint();
         if (restorePoint == RestorePointOutcome.Unavailable && !options.AllowWithoutRestorePoint)
             return new TuneResult("", restorePoint, new Dictionary<string, SwitchResult>(), true, NoRestorePointReason, []);
@@ -87,6 +110,7 @@ public sealed class TuneEngine
 
         var path = Save();
         var results = new Dictionary<string, SwitchResult>();
+        var refusals = new Dictionary<string, string>(StringComparer.Ordinal);
         var total = plan.Sum(d => d.Live.Count);
         var done = 0;
 
@@ -96,6 +120,18 @@ public sealed class TuneEngine
             var first = entries.Count;
             var failed = false;
             var cancelled = false;
+
+            if (Preflight(def) is { } refusal)
+            {
+                // Windows refuses a key this switch writes: skip the whole switch before any of its actions runs.
+                for (var i = 0; i < def.Live.Count; i++)
+                    entries.Add(new JournalEntry(def.Id, i, def.Live[i], new MissingPrior(), ActionOutcome.Skipped, refusal, Now()));
+                path = Save();
+                for (var i = 0; i < def.Live.Count; i++) Report(progress, def.Id, ++done, total);
+                refusals[def.Id] = refusal;
+                results[def.Id] = SwitchResult.Skipped;
+                continue;
+            }
 
             for (var i = 0; i < def.Live.Count; i++)
             {
@@ -167,18 +203,110 @@ public sealed class TuneEngine
                 : SwitchResult.PartlyApplied;
         }
 
-        var leftChanged = entries.Where(e => e.Outcome == ActionOutcome.Applied).Select(e => e.SwitchId).Distinct().ToList();
-        return new TuneResult(path, restorePoint, results, false, null, leftChanged);
+        var mayBeChanged = entries.Where(MayHaveChanged).Select(e => e.SwitchId).Distinct().ToList();
+        return new TuneResult(path, restorePoint, results, false, null, mayBeChanged) { Problems = ProblemsOf(entries, refusals) };
+    }
+
+    /// <summary>
+    /// An entry still Applied, or a failed irreversible action or script: its Apply ran and may have changed part of what it
+    /// touches, and nothing rolls it back.
+    /// </summary>
+    private static bool MayHaveChanged(JournalEntry e) =>
+        e.Outcome == ActionOutcome.Applied
+        || (e.Outcome == ActionOutcome.Failed && e.Prior is IrreversiblePrior or ScriptPrior);
+
+    /// <summary>In run order: each failed action's detail, each failed rollback, and each pre-flight refusal (once per switch).</summary>
+    private static IReadOnlyList<(string SwitchId, string Detail)> ProblemsOf(List<JournalEntry> entries, Dictionary<string, string> refusals)
+    {
+        var problems = new List<(string SwitchId, string Detail)>();
+        foreach (var e in entries)
+        {
+            (string, string)? p = e.Outcome == ActionOutcome.Failed ? (e.SwitchId, e.Detail ?? "failed")
+                : e.Detail is { } d && d.StartsWith(RollbackFailedPrefix, StringComparison.Ordinal) ? (e.SwitchId, d)
+                : refusals.TryGetValue(e.SwitchId, out var r) ? (e.SwitchId, r)
+                : null;
+            if (p is { } problem && !problems.Contains(problem)) problems.Add(problem);
+        }
+        return problems;
+    }
+
+    private const string RollbackFailedPrefix = "Rollback failed: ";
+
+    /// <summary>
+    /// Spec 11 pre-flight: the detail to skip the switch with when Windows refuses changes to an HKLM key that one of its
+    /// registry.set, registry.delete or HKLM startup.disable actions writes; null when every such key can be written. Nothing is
+    /// written: the key (or its nearest existing parent) is only opened for writing and closed.
+    /// </summary>
+    private string? Preflight(SwitchDef def)
+    {
+        foreach (var key in HklmKeysWritten(def))
+        {
+            bool ok;
+            try { ok = _s.Registry.CanWrite(LiveHive.LocalMachine, key, RegView.Default); }
+            catch (Exception ex) { return $@"Could not check whether Windows allows changes to HKLM\{key}: {ex.Message}"; }
+            if (!ok) return $@"Windows refuses changes to HKLM\{key} on this PC";
+        }
+        return null;
+    }
+
+    internal static IReadOnlyList<string> HklmKeysWritten(SwitchDef def)
+    {
+        static bool Hklm(string hive) => string.Equals(hive, "HKLM", StringComparison.OrdinalIgnoreCase);
+        return def.Live.SelectMany(a => a switch
+            {
+                RegistrySet r when Hklm(r.Hive) => [r.Key],
+                RegistryDelete r when Hklm(r.Hive) => [r.Key],
+                StartupDisable sd => StartupDisableHandler.HklmKeysWritten(sd),
+                _ => (IReadOnlyList<string>)[],
+            })
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    /// <summary>Throws <see cref="JournalOwnerException"/> when the journal was written by another Windows account (SIDs compare case-insensitively).</summary>
+    internal static void RequireOwner(RunJournal journal, string userSid)
+    {
+        if (!string.Equals(journal.UserSid, userSid, StringComparison.OrdinalIgnoreCase)) throw new JournalOwnerException();
+    }
+
+    /// <summary>The system-wide run lock, or null when another run holds it. A lock left by a crashed run is taken over.</summary>
+    private sealed class RunLock : IDisposable
+    {
+        private readonly Mutex _mutex;
+
+        private RunLock(Mutex mutex) => _mutex = mutex;
+
+        public static RunLock? TryAcquire()
+        {
+            var mutex = new Mutex(false, RunMutexName);
+            bool owned;
+            try { owned = mutex.WaitOne(0); }
+            catch (AbandonedMutexException) { owned = true; }
+            if (owned) return new RunLock(mutex);
+            mutex.Dispose();
+            return null;
+        }
+
+        public void Dispose()
+        {
+            _mutex.ReleaseMutex();
+            _mutex.Dispose();
+        }
     }
 
     /// <summary>
     /// Undoes a run in reverse journal order. <paramref name="switchIds"/> null means every switch. Applied, reversible entries are
-    /// put back to their prior state (even if Windows changed them since) and marked RolledBack; irreversible ones are reported
-    /// with their reinstall hint. The journal at <paramref name="journalPath"/> is saved after each undone entry.
+    /// put back to their prior state (even if Windows changed them since; a target already at its prior is not written) and marked
+    /// RolledBack; irreversible ones, applied or failed after their Apply ran, are reported with their reinstall hint, and so is a
+    /// failed script. The journal at <paramref name="journalPath"/> is saved after each undone entry. Throws
+    /// <see cref="JournalOwnerException"/> when the journal belongs to another account than <paramref name="userSid"/>, and
+    /// <see cref="TuneBusyException"/> while another Apply or Undo runs.
     /// </summary>
-    public UndoResult Undo(string journalPath, IReadOnlyCollection<string>? switchIds)
+    public UndoResult Undo(string journalPath, IReadOnlyCollection<string>? switchIds, string userSid)
     {
+        using var runLock = RunLock.TryAcquire() ?? throw new TuneBusyException();
         var journal = _store.Load(journalPath);
+        RequireOwner(journal, userSid);
         var wanted = switchIds is null ? null : new HashSet<string>(switchIds, StringComparer.Ordinal);
         var entries = journal.Entries.ToList();
         var touched = new List<string>();
@@ -190,7 +318,17 @@ public sealed class TuneEngine
             var e = entries[i];
             if (wanted is not null && !wanted.Contains(e.SwitchId)) continue;
             if (!touched.Contains(e.SwitchId)) touched.Add(e.SwitchId);
-            if (e.Outcome != ActionOutcome.Applied) continue; // Skipped, Failed and already undone entries are no-ops
+            if (e.Outcome == ActionOutcome.Failed && e.Prior is IrreversiblePrior failedOneWay)
+            {
+                cannot.Add((e.SwitchId, failedOneWay.ReinstallHint)); // its Apply ran part-way
+                continue;
+            }
+            if (e.Outcome == ActionOutcome.Failed && e.Prior is ScriptPrior)
+            {
+                cannot.Add((e.SwitchId, FailedScriptReason));
+                continue;
+            }
+            if (e.Outcome != ActionOutcome.Applied) continue; // Skipped, other Failed and already undone entries are no-ops
 
             if (e.Prior is IrreversiblePrior irreversible)
             {

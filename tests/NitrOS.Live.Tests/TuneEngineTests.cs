@@ -49,6 +49,17 @@ internal static class Tune
     }
 }
 
+/// <summary>
+/// Test classes that run the engine share the system-wide run lock (Global\NitrOS.Tune), so they are kept in one collection
+/// and never run at the same time as each other.
+/// </summary>
+[CollectionDefinition(Name)]
+public sealed class TuneLockCollection
+{
+    public const string Name = "Tune run lock";
+}
+
+[Collection(TuneLockCollection.Name)]
 public sealed class TuneEngineTests : IDisposable
 {
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "nitros-tune-" + Guid.NewGuid().ToString("N"));
@@ -103,7 +114,8 @@ public sealed class TuneEngineTests : IDisposable
         Assert.Equal(ActionOutcome.Failed, byKey[("sw.fails", 1)].Outcome);
         Assert.Contains("exit code 1", byKey[("sw.fails", 1)].Detail);
         Assert.DoesNotContain("undo", _f.Scripts.Bodies); // a failed script's undo body never runs
-        Assert.Empty(result.LeftChanged.Intersect(["sw.throws", "sw.fails"]));
+        Assert.DoesNotContain("sw.throws", result.MayBeChanged); // its read failed before anything ran
+        Assert.Contains("sw.fails", result.MayBeChanged); // the script ran and may have changed part of the PC
     }
 
     [Fact]
@@ -122,7 +134,7 @@ public sealed class TuneEngineTests : IDisposable
         Assert.Equal(ActionOutcome.RolledBack, entries[0].Outcome);
         Assert.Equal(ActionOutcome.Failed, entries[1].Outcome);
         Assert.Contains("FakeScripts failure", entries[1].Detail);
-        Assert.Empty(result.LeftChanged);
+        Assert.Equal(["sw.x"], result.MayBeChanged); // the script's Apply ran, so it may have changed something
     }
 
     [Fact]
@@ -140,7 +152,7 @@ public sealed class TuneEngineTests : IDisposable
         var result = engine.Apply(Tune.Select(Tune.Sw("sw.x", Tune.Set("A"), Tune.Set("B"))), Tune.Options, null, CancellationToken.None);
 
         Assert.Equal(SwitchResult.Failed, result.Switches["sw.x"]);
-        Assert.Equal(["sw.x"], result.LeftChanged);
+        Assert.Equal(["sw.x"], result.MayBeChanged);
         var entries = _store.Load(result.JournalPath).Entries;
         Assert.Equal(ActionOutcome.RolledBack, entries[0].Outcome);
         Assert.Equal(ActionOutcome.Applied, entries[1].Outcome);
@@ -148,7 +160,7 @@ public sealed class TuneEngineTests : IDisposable
 
         _f.Registry.FailOn = null;
         Tune.Put(_f, "B", "1"); // pretend the failed Apply half-landed
-        var undo = Engine().Undo(result.JournalPath, null);
+        var undo = Engine().Undo(result.JournalPath, null, Tune.Options.UserSid);
         Assert.Equal(["sw.x"], undo.Undone);
         Assert.Equal(Tune.Dword("0"), Tune.Get(_f, "B"));
     }
@@ -169,7 +181,7 @@ public sealed class TuneEngineTests : IDisposable
 
         var path = Assert.Single(_store.List());
         Assert.Equal(TuneEngine.PendingDetail, Assert.Single(_store.Load(path).Entries).Detail);
-        var undo = Engine().Undo(path, null);
+        var undo = Engine().Undo(path, null, Tune.Options.UserSid);
 
         Assert.Equal(["sw.a"], undo.Undone);
         Assert.Equal(Tune.Dword("0"), Tune.Get(_f, "A"));
@@ -187,7 +199,7 @@ public sealed class TuneEngineTests : IDisposable
         Assert.Equal(SwitchResult.Failed, result.Switches["sw.two"]);
         Assert.Equal(Tune.Dword("0"), Tune.Get(_f, "A"));
         Assert.Null(Tune.Get(_f, "B"));
-        Assert.Empty(result.LeftChanged);
+        Assert.Empty(result.MayBeChanged);
         var entry = Assert.Single(_store.Load(result.JournalPath).Entries);
         Assert.Equal(ActionOutcome.RolledBack, entry.Outcome);
         Assert.Equal("cancelled", entry.Detail);
@@ -204,7 +216,7 @@ public sealed class TuneEngineTests : IDisposable
         Assert.Equal(SwitchResult.Applied, result.Switches["sw.a"]);
         Assert.Equal(SwitchResult.Applied, result.Switches["sw.b"]);
         Assert.Equal(Tune.Dword("1"), Tune.Get(_f, "B"));
-        Assert.Equal(["sw.a", "sw.b"], result.LeftChanged);
+        Assert.Equal(["sw.a", "sw.b"], result.MayBeChanged);
     }
 
     [Fact]
@@ -215,7 +227,7 @@ public sealed class TuneEngineTests : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(elsewhere)!);
         File.Copy(result.JournalPath, elsewhere);
 
-        Engine().Undo(elsewhere, null);
+        Engine().Undo(elsewhere, null, Tune.Options.UserSid);
 
         Assert.Equal(ActionOutcome.RolledBack, Assert.Single(_store.Load(elsewhere).Entries).Outcome);
         Assert.Equal(ActionOutcome.Applied, Assert.Single(_store.Load(result.JournalPath).Entries).Outcome);
@@ -226,11 +238,11 @@ public sealed class TuneEngineTests : IDisposable
     {
         var result = Apply(Tune.Select(Tune.Sw("sw.a", Tune.Set("A")), Tune.Sw("sw.skip", new AppxRemove("Missing.App"))));
 
-        var first = Engine().Undo(result.JournalPath, null);
+        var first = Engine().Undo(result.JournalPath, null, Tune.Options.UserSid);
         Assert.Equal(["sw.a"], first.Undone);
         Assert.Equal(["sw.skip"], first.NothingToUndo);
 
-        var second = Engine().Undo(result.JournalPath, ["sw.a", "sw.unknown"]);
+        var second = Engine().Undo(result.JournalPath, ["sw.a", "sw.unknown"], Tune.Options.UserSid);
         Assert.Empty(second.Undone);
         Assert.Empty(second.CannotUndo);
         Assert.Equal(["sw.a", "sw.unknown"], second.NothingToUndo);
@@ -293,6 +305,19 @@ public sealed class TuneEngineTests : IDisposable
         var skipped = journal.Entries.Where(e => e.Outcome == ActionOutcome.Skipped).ToList();
         Assert.Equal(3, skipped.Count);
         Assert.All(skipped, e => Assert.IsType<MissingPrior>(e.Prior));
+
+        // Undoing the switch whose targets were all missing changes nothing and keeps its entries as they were.
+        var activeBefore = _f.Power.Active;
+        var undo = Engine().Undo(result.JournalPath, ["sw.missing"], Tune.Options.UserSid);
+        Assert.Empty(undo.Undone);
+        Assert.Empty(undo.CannotUndo);
+        Assert.Equal(["sw.missing"], undo.NothingToUndo);
+        Assert.Empty(_f.Registry.Writes.Skip(1)); // only Apply's own write of A
+        Assert.Empty(_f.Power.Writes);
+        Assert.Equal(activeBefore, _f.Power.Active);
+        Assert.Equal(Tune.Dword("1"), Tune.Get(_f, "A"));
+        Assert.Empty(_f.Appx.Installed);
+        Assert.Equal(journal.Entries, _store.Load(result.JournalPath).Entries);
     }
 
     [Fact]
@@ -302,7 +327,7 @@ public sealed class TuneEngineTests : IDisposable
         var result = Apply(Tune.Select(Tune.Sw("sw.a", Tune.Set("A")), Tune.Sw("sw.b", Tune.Set("B"))));
         Tune.Put(_f, "A", "7"); // Windows changed it again after the run
 
-        var undo = Engine().Undo(result.JournalPath, null);
+        var undo = Engine().Undo(result.JournalPath, null, Tune.Options.UserSid);
 
         Assert.Equal(Tune.Dword("0"), Tune.Get(_f, "A"));
         Assert.Null(Tune.Get(_f, "B"));
@@ -317,7 +342,7 @@ public sealed class TuneEngineTests : IDisposable
     {
         var result = Apply(Tune.Select(Tune.Sw("sw.a", Tune.Set("A")), Tune.Sw("sw.b", Tune.Set("B"))));
 
-        var undo = Engine().Undo(result.JournalPath, ["sw.b"]);
+        var undo = Engine().Undo(result.JournalPath, ["sw.b"], Tune.Options.UserSid);
 
         Assert.Equal(["sw.b"], undo.Undone);
         Assert.Equal(Tune.Dword("1"), Tune.Get(_f, "A"));
@@ -336,7 +361,7 @@ public sealed class TuneEngineTests : IDisposable
         var plain = Tune.Sw("sw.plain", Tune.Set("B"));
         var result = Apply(Tune.Select(mixed, plain));
 
-        var undo = Engine().Undo(result.JournalPath, null);
+        var undo = Engine().Undo(result.JournalPath, null, Tune.Options.UserSid);
 
         Assert.Equal(Tune.Dword("0"), Tune.Get(_f, "A"));
         Assert.Null(Tune.Get(_f, "B"));
@@ -428,7 +453,7 @@ public sealed class TuneEngineTests : IDisposable
         Assert.Equal(ActionOutcome.Applied, entry.Outcome);
 
         // The saved journal is good enough to undo from.
-        var undo = Engine().Undo(result.JournalPath, null);
+        var undo = Engine().Undo(result.JournalPath, null, Tune.Options.UserSid);
         Assert.Equal(["sw.one"], undo.Undone);
         Assert.Null(Tune.Get(_f, "A"));
     }
@@ -445,5 +470,194 @@ public sealed class TuneEngineTests : IDisposable
         Assert.Equal(3, names.Distinct().Count());
         Assert.Matches(@"^\d{8}-\d{6}(-\d+)?$", names[0]);
         Assert.All(names, n => Assert.Matches(@"^\d{8}-\d{6}(-[23])?$", n));
+    }
+
+    // ---- I1: failed irreversible actions stay visible ----
+
+    [Fact]
+    public void Apply_FailedIrreversibleAction_IsMayBeChangedAndUndoGivesItsHint()
+    {
+        _f.Appx.Installed.Add("Some.App");
+        _f.Appx.Provisioned.Add("Some.App");
+        _f.Appx.DeprovisionThrows = new InvalidOperationException("deprovision broke");
+        Tune.Put(_f, "A", "0");
+        var sw = Tune.Sw("sw.appx", Tune.Set("A"), new AppxRemove("Some.App"));
+
+        var result = Apply(Tune.Select(sw));
+
+        Assert.Equal(SwitchResult.Failed, result.Switches["sw.appx"]);
+        Assert.Equal(["sw.appx"], result.MayBeChanged);
+        Assert.Empty(_f.Appx.Installed); // the removal for all users ran before the deprovision failed
+        Assert.Equal(Tune.Dword("0"), Tune.Get(_f, "A")); // the reversible part was rolled back
+        Assert.Contains(result.Problems, p => p.SwitchId == "sw.appx" && p.Detail.Contains("deprovision broke"));
+
+        var undo = Engine().Undo(result.JournalPath, null, Tune.Options.UserSid);
+        Assert.Equal(("sw.appx", "Reinstall from the Microsoft Store"), Assert.Single(undo.CannotUndo));
+        Assert.Empty(undo.Undone);
+        Assert.Empty(undo.NothingToUndo);
+    }
+
+    [Fact]
+    public void Undo_FailedScriptIsReportedAsCannotUndo()
+    {
+        _f.Scripts.ExitCode = 1;
+        var result = Apply(Tune.Select(Tune.Sw("sw.script", new Script("run", "undo"))));
+
+        var undo = Engine().Undo(result.JournalPath, null, Tune.Options.UserSid);
+
+        var (id, reason) = Assert.Single(undo.CannotUndo);
+        Assert.Equal("sw.script", id);
+        Assert.Contains("script", reason);
+        Assert.DoesNotContain("undo", _f.Scripts.Bodies);
+    }
+
+    // ---- I2: undo is idempotent ----
+
+    [Fact]
+    public void Apply_RefusedBeforeChangingAnything_RollsBackCleanly()
+    {
+        const string UserKey = @"Software\NitrOS.Tests\Refused";
+        _f.Registry.SetValue(LiveHive.CurrentUser, UserKey, "V", Tune.Dword("0"), RegView.Default);
+        _f.Registry.RefusedKeys.Add((LiveHive.CurrentUser, UserKey)); // HKCU is not pre-flighted, so Apply meets the refusal
+        _f.Services.Starts["Svc"] = ServiceStartType.Automatic;
+        _f.Services.RefuseWrites = true;
+        var reg = Tune.Sw("sw.reg", new RegistrySet("HKCU", UserKey, "V", RegistryKind.Dword, "1"));
+        var svc = Tune.Sw("sw.svc", new ServiceStart("Svc", ServiceStartType.Disabled));
+
+        var result = Apply(Tune.Select(reg, svc));
+
+        Assert.Equal(SwitchResult.Failed, result.Switches["sw.reg"]);
+        Assert.Equal(SwitchResult.Failed, result.Switches["sw.svc"]);
+        Assert.Empty(result.MayBeChanged);
+        var journal = _store.Load(result.JournalPath);
+        Assert.All(journal.Entries, e =>
+        {
+            Assert.Equal(ActionOutcome.Failed, e.Outcome);
+            Assert.DoesNotContain("Rollback failed", e.Detail);
+        });
+        Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
+        var undo = Engine().Undo(result.JournalPath, null, Tune.Options.UserSid);
+        Assert.Empty(undo.CannotUndo);
+        Assert.Equal(Tune.Dword("0"), _f.Registry.GetValue(LiveHive.CurrentUser, UserKey, "V", RegView.Default));
+        Assert.Equal(ServiceStartType.Automatic, _f.Services.Starts["Svc"]);
+    }
+
+    // ---- I3: a journal belongs to one account ----
+
+    [Fact]
+    public void Undo_RefusesJournalOfAnotherUser()
+    {
+        var result = Apply(Tune.Select(Tune.Sw("sw.a", Tune.Set("A"))));
+        var before = File.ReadAllText(result.JournalPath);
+
+        var e = Assert.Throws<JournalOwnerException>(() => Engine().Undo(result.JournalPath, null, "S-1-5-21-2"));
+
+        Assert.Equal("This journal belongs to another account.", e.Message);
+        Assert.Equal(Tune.Dword("1"), Tune.Get(_f, "A"));
+        Assert.Equal(before, File.ReadAllText(result.JournalPath));
+        Assert.Equal(["sw.a"], Engine().Undo(result.JournalPath, null, "s-1-5-21-1").Undone); // SIDs compare case-insensitively
+    }
+
+    // ---- I4: pre-flight for refused registry writes ----
+
+    [Fact]
+    public void Apply_SkipsWholeSwitchWhenWindowsRefusesItsHklmKey()
+    {
+        _f.Registry.RefusedKeys.Add((LiveHive.LocalMachine, Tune.Key));
+        _f.Services.Starts["Svc"] = ServiceStartType.Automatic;
+        var refused = Tune.Sw("sw.refused", new ServiceStart("Svc", ServiceStartType.Disabled), Tune.Set("A"));
+        var fine = Tune.Sw("sw.fine", new RegistrySet("HKCU", @"Software\NitrOS.Tests\Fine", "V", RegistryKind.Dword, "1"));
+
+        var result = Apply(Tune.Select(refused, fine));
+
+        var detail = $@"Windows refuses changes to HKLM\{Tune.Key} on this PC";
+        Assert.Equal(SwitchResult.Skipped, result.Switches["sw.refused"]);
+        Assert.Equal(SwitchResult.Applied, result.Switches["sw.fine"]);
+        Assert.Empty(_f.Services.Writes); // no action of the refused switch ran
+        Assert.Equal(ServiceStartType.Automatic, _f.Services.Starts["Svc"]);
+        Assert.Null(Tune.Get(_f, "A"));
+        Assert.Equal(["sw.fine"], result.MayBeChanged);
+        Assert.Contains(("sw.refused", detail), result.Problems);
+        var mine = _store.Load(result.JournalPath).Entries.Where(e => e.SwitchId == "sw.refused").ToList();
+        Assert.Equal(2, mine.Count);
+        Assert.All(mine, e =>
+        {
+            Assert.Equal(ActionOutcome.Skipped, e.Outcome);
+            Assert.Equal(detail, e.Detail);
+        });
+    }
+
+    [Fact]
+    public void Apply_PreflightTestsNearestExistingParentAndDeleteAndStartupKeys()
+    {
+        const string Parent = @"SOFTWARE\NitrOS";
+        _f.Registry.SetValue(LiveHive.LocalMachine, Parent, "Marker", Tune.Dword("1"), RegView.Default);
+        _f.Registry.RefusedKeys.Add((LiveHive.LocalMachine, Parent));
+        const string Approved = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
+        _f.Registry.SetValue(LiveHive.LocalMachine, Approved, "Other", new RegValue(RegistryKind.Binary, "020000000000000000000000"), RegView.Default);
+        _f.Registry.RefusedKeys.Add((LiveHive.LocalMachine, Approved));
+        _f.Registry.SetValue(LiveHive.LocalMachine, @"Software\Microsoft\Windows\CurrentVersion\Run", "Tool", new RegValue(RegistryKind.String, "tool.exe"), RegView.Default);
+
+        var missingKey = Tune.Sw("sw.missing-key", Tune.Set("A")); // SOFTWARE\NitrOS\Tune does not exist yet
+        var delete = Tune.Sw("sw.delete", new RegistryDelete("HKLM", Parent, "Marker"));
+        var startup = Tune.Sw("sw.startup", new StartupDisable(StartupSource.Run, "Tool", "HKLM"));
+
+        var result = Apply(Tune.Select(missingKey, delete, startup));
+
+        Assert.Equal(SwitchResult.Skipped, result.Switches["sw.missing-key"]);
+        Assert.Equal(SwitchResult.Skipped, result.Switches["sw.delete"]);
+        Assert.Equal(SwitchResult.Skipped, result.Switches["sw.startup"]);
+        Assert.Contains(("sw.missing-key", $@"Windows refuses changes to HKLM\{Tune.Key} on this PC"), result.Problems);
+        Assert.Contains(("sw.startup", $@"Windows refuses changes to HKLM\{Approved} on this PC"), result.Problems);
+        Assert.Equal(Tune.Dword("1"), _f.Registry.GetValue(LiveHive.LocalMachine, Parent, "Marker", RegView.Default));
+        Assert.Empty(result.MayBeChanged);
+    }
+
+    // ---- M6: one run at a time ----
+
+    [Fact]
+    public void Apply_SecondConcurrentRunIsRefused()
+    {
+        var seed = Apply(Tune.Select(Tune.Sw("sw.seed", Tune.Set("S"))));
+        TuneResult? inner = null;
+        Exception? innerUndo = null;
+        var engine = new TuneEngine(_f.ToLive(), _store, j =>
+        {
+            if (inner is null)
+            {
+                // A separate thread (a Task could be inlined on this one), so the mutex this thread holds is not re-entered.
+                var other = new Thread(() =>
+                {
+                    inner = Engine().Apply(Tune.Select(Tune.Sw("sw.b", Tune.Set("B"))), Tune.Options, null, CancellationToken.None);
+                    innerUndo = Record.Exception(() => Engine().Undo(seed.JournalPath, null, Tune.Options.UserSid));
+                });
+                other.Start();
+                Assert.True(other.Join(TimeSpan.FromSeconds(30)));
+            }
+            return _store.Save(j);
+        });
+
+        var outer = engine.Apply(Tune.Select(Tune.Sw("sw.a", Tune.Set("A"))), Tune.Options, null, CancellationToken.None);
+
+        Assert.True(inner!.Refused);
+        Assert.Equal("Another NitrOS change is already running.", inner.RefusedReason);
+        Assert.Null(Tune.Get(_f, "B"));
+        Assert.IsType<TuneBusyException>(innerUndo);
+        Assert.Equal(Tune.Dword("1"), Tune.Get(_f, "S"));
+        Assert.False(outer.Refused);
+        Assert.Equal(Tune.Dword("1"), Tune.Get(_f, "A"));
+        Assert.False(Apply(Tune.Select(Tune.Sw("sw.c", Tune.Set("C")))).Refused); // the lock is free again
+    }
+
+    // ---- M7 (engine side): an unconfirmed restore point is not "System Restore is off" ----
+
+    [Fact]
+    public void Apply_UnconfirmedRestorePointGoesAhead()
+    {
+        _f.RestorePoint.Outcome = RestorePointOutcome.CreatedUnknown;
+        var result = Apply(Tune.Select(Tune.Sw("sw.a", Tune.Set("A"))));
+        Assert.False(result.Refused);
+        Assert.Equal(RestorePointOutcome.CreatedUnknown, result.RestorePoint);
+        Assert.Equal(Tune.Dword("1"), Tune.Get(_f, "A"));
     }
 }

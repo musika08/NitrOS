@@ -27,6 +27,17 @@ public class WinRestorePointTests
     }
 
     [Fact]
+    public void Finish_UnreadableRestorePointListIsCreatedUnknownNotOff()
+    {
+        var t = new DateTime(2026, 10, 24, 8, 0, 0, DateTimeKind.Utc);
+        Assert.Equal(RestorePointOutcome.CreatedUnknown,
+            WinRestorePoint.Finish(t, true, () => throw new InvalidOperationException("Reading restore points failed (exit 1)")));
+        Assert.Equal(RestorePointOutcome.CreatedUnknown, WinRestorePoint.Finish(null, false, () => t));
+        Assert.Equal(RestorePointOutcome.Created, WinRestorePoint.Finish(t, true, () => t.AddMinutes(1)));
+        Assert.Equal(RestorePointOutcome.SkippedRecent, WinRestorePoint.Finish(t, true, () => t));
+    }
+
+    [Fact]
     public void RestorePointStructs_MatchPackedNativeLayout()
     {
         // srrestoreptapi.h uses pack(1): 4 + 4 + 8 + 256 * 2 and 4 + 8.

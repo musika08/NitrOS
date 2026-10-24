@@ -32,6 +32,7 @@ public sealed class LaunchAtLogonHandler : IActionHandler
     public void Undo(SwitchAction action, PriorState prior, LiveSystems s)
     {
         if (prior is not LaunchPrior p) return;
+        if (s.Registry.GetValue(LiveHive.CurrentUser, RunKey, ValueName, RegView.Default) == p.Value) return; // already the prior
         if (p.Value is null) s.Registry.DeleteValue(LiveHive.CurrentUser, RunKey, ValueName, RegView.Default);
         else s.Registry.SetValue(LiveHive.CurrentUser, RunKey, ValueName, p.Value, RegView.Default);
     }

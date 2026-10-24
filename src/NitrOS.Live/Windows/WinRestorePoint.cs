@@ -25,7 +25,11 @@ public sealed class WinRestorePoint : IRestorePoint
     {
         if (string.IsNullOrWhiteSpace(description)) throw new ArgumentException("A restore point needs a description", nameof(description));
         var text = description.Length > 255 ? description[..255] : description;
-        var before = NewestPointTime();
+        // A failed read of the restore point list never stops the run or counts as "System Restore is off".
+        DateTime? before = null;
+        var beforeKnown = true;
+        try { before = NewestPointTime(); }
+        catch (Exception) { beforeKnown = false; }
 
         var begin = new NativeMethods.RESTOREPOINTINFOW
         {
@@ -50,7 +54,19 @@ public sealed class WinRestorePoint : IRestorePoint
         if (!NativeMethods.SRSetRestorePointW(ref end, out var endStatus))
             throw new Win32Exception((int)endStatus.nStatus, "SRSetRestorePointW (end) failed");
 
-        return Classify(before, NewestPointTime());
+        return Finish(before, beforeKnown, NewestPointTime);
+    }
+
+    /// <summary>
+    /// The outcome once Windows accepted the request. <paramref name="before"/> is the newest point time read beforehand, or
+    /// null with <paramref name="beforeKnown"/> false when that read failed.
+    /// </summary>
+    internal static RestorePointOutcome Finish(DateTime? before, bool beforeKnown, Func<DateTime?> readAfter)
+    {
+        DateTime? after;
+        try { after = readAfter(); }
+        catch (Exception) { return RestorePointOutcome.CreatedUnknown; } // the request went through; only the check failed
+        return beforeKnown ? Classify(before, after) : RestorePointOutcome.CreatedUnknown;
     }
 
     /// <summary>A newer point after the call means one was made; otherwise Windows skipped it (one per 24 hours).</summary>

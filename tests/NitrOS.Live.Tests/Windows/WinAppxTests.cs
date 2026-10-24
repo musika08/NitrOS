@@ -52,4 +52,13 @@ public class WinAppxTests
         Assert.False(appx.IsInstalled(name));
         Assert.False(appx.IsProvisioned(name));
     }
+
+    [Fact]
+    public void Failure_AccessDeniedBecomesUnauthorizedAccess()
+    {
+        var inner = new Exception("x");
+        Assert.IsType<UnauthorizedAccessException>(WinAppx.Failure("m", inner, unchecked((int)0x80070005), null));
+        Assert.IsType<UnauthorizedAccessException>(WinAppx.Failure("m", inner, unchecked((int)0x80073CF1), unchecked((int)0x80070005)));
+        Assert.IsType<InvalidOperationException>(WinAppx.Failure("m", inner, unchecked((int)0x80073CF1), unchecked((int)0x80070490)));
+    }
 }

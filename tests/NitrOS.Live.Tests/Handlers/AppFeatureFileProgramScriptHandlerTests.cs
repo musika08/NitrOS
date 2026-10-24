@@ -541,4 +541,112 @@ public class AppFeatureFileProgramScriptHandlerTests
         var f = new FakeSystems();
         Assert.True(H(Scr).IsInEffect(Scr, f.ToLive()));
     }
+
+    // ---- I4: appx removal when Windows refuses the built-in app list ----
+
+    [Fact]
+    public void AppxRemove_ProvisionedQueryRefused_RemovesForUsersAndSkipsDeprovision()
+    {
+        var f = new FakeSystems();
+        f.Appx.Installed.Add("Microsoft.BingNews");
+        f.Appx.ProvisionedThrows = new UnauthorizedAccessException("Access is denied. (0x80070005)");
+        var live = f.ToLive();
+
+        Assert.IsType<IrreversiblePrior>(H(Appx).Read(Appx, live));
+        var r = H(Appx).Apply(Appx, live);
+
+        Assert.Equal(ActionOutcome.Applied, r.Outcome);
+        Assert.Equal(AppxRemoveHandler.ProvisionRefusedDetail, r.Detail);
+        Assert.Equal("Windows refused to change the built-in app list", AppxRemoveHandler.ProvisionRefusedDetail);
+        Assert.Empty(f.Appx.Installed);
+        Assert.Empty(f.Appx.Deprovisioned);
+    }
+
+    [Fact]
+    public void AppxRemove_DeprovisionAccessDenied_IsAppliedWithDetail()
+    {
+        var f = new FakeSystems();
+        f.Appx.Installed.Add("Microsoft.BingNews");
+        f.Appx.Provisioned.Add("Microsoft.BingNews");
+        f.Appx.DeprovisionThrows = new InvalidOperationException("Failed deprovisioning X (HRESULT 0x80070005)",
+            new UnauthorizedAccessException("Access is denied."));
+
+        var r = H(Appx).Apply(Appx, f.ToLive());
+
+        Assert.Equal(ActionOutcome.Applied, r.Outcome);
+        Assert.Equal(AppxRemoveHandler.ProvisionRefusedDetail, r.Detail);
+        Assert.Empty(f.Appx.Installed);
+        Assert.Contains("Microsoft.BingNews", f.Appx.Provisioned);
+    }
+
+    [Fact]
+    public void AppxRemove_DeprovisionAccessDeniedByHResult_IsAppliedWithDetail()
+    {
+        var f = new FakeSystems();
+        f.Appx.Installed.Add("Microsoft.BingNews");
+        f.Appx.Provisioned.Add("Microsoft.BingNews");
+        f.Appx.DeprovisionThrows = new System.Runtime.InteropServices.COMException("Access is denied.", unchecked((int)0x80070005));
+
+        var r = H(Appx).Apply(Appx, f.ToLive());
+
+        Assert.Equal(ActionOutcome.Applied, r.Outcome);
+        Assert.Equal(AppxRemoveHandler.ProvisionRefusedDetail, r.Detail);
+    }
+
+    [Fact]
+    public void AppxRemove_ProvisionedOnlyAndRefused_IsSkippedWithDetail()
+    {
+        var f = new FakeSystems();
+        f.Appx.ProvisionedThrows = new UnauthorizedAccessException("Access is denied.");
+        var r = H(Appx).Apply(Appx, f.ToLive());
+        Assert.Equal(ActionOutcome.Skipped, r.Outcome);
+        Assert.Contains(AppxRemoveHandler.ProvisionRefusedDetail, r.Detail);
+        Assert.Empty(f.Appx.Removed);
+    }
+
+    [Fact]
+    public void AppxRemove_OtherDeprovisionErrorStillThrows()
+    {
+        var f = new FakeSystems();
+        f.Appx.Installed.Add("Microsoft.BingNews");
+        f.Appx.Provisioned.Add("Microsoft.BingNews");
+        f.Appx.DeprovisionThrows = new InvalidOperationException("disk full");
+        Assert.Throws<InvalidOperationException>(() => H(Appx).Apply(Appx, f.ToLive()));
+    }
+
+    // ---- I5: a later match that an earlier uninstaller already removed ----
+
+    [Fact]
+    public void ProgramUninstall_LaterMatchRemovedByEarlierRun_IsSkippedAsAlreadyRemoved()
+    {
+        var f = new FakeSystems();
+        var first = Entry("k1", "Contoso Helper");
+        var second = Entry("k2", "Contoso Helper Plus");
+        f.Uninstaller.Entries.Add(first);
+        f.Uninstaller.Entries.Add(second);
+        f.Uninstaller.OnRun = e => { if (e == first) f.Uninstaller.Entries.Remove(second); };
+
+        var r = H(Prog).Apply(Prog, f.ToLive());
+
+        Assert.Equal(ActionOutcome.Applied, r.Outcome);
+        Assert.Equal(["k1"], f.Uninstaller.Runs.Select(x => x.Entry.KeyPath));
+        Assert.DoesNotContain("signature", r.Detail ?? "");
+    }
+
+    // ---- I7: a feature already off is skipped without DISM ----
+
+    [Theory]
+    [InlineData("Disabled")]
+    [InlineData("DisablePending")]
+    [InlineData("DisabledWithPayloadRemoved")]
+    public void FeatureDisable_AlreadyOff_IsSkippedWithoutDism(string state)
+    {
+        var f = new FakeSystems();
+        f.Dism.Features[Feat.Name] = state;
+        var r = H(Feat).Apply(Feat, f.ToLive());
+        Assert.Equal(ActionOutcome.Skipped, r.Outcome);
+        Assert.Equal("already off", r.Detail);
+        Assert.Empty(f.Dism.Changes);
+        Assert.Equal(state, f.Dism.Features[Feat.Name]);
+    }
 }
