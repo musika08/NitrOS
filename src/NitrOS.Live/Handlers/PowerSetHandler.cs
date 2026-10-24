@@ -32,6 +32,7 @@ public sealed class PowerSetHandler : IActionHandler
     {
         if (prior is not PowerPrior p) return;
         var a = (PowerSet)action;
+        if (!s.Power.Schemes().Contains(p.Scheme, StringComparer.OrdinalIgnoreCase)) return;
         if (p.Ac is { } ac) s.Power.SetAc(p.Scheme, a.Subgroup, a.Setting, ac);
         if (p.Dc is { } dc) s.Power.SetDc(p.Scheme, a.Subgroup, a.Setting, dc);
     }

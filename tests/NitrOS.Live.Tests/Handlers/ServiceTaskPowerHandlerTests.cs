@@ -59,6 +59,54 @@ public class ServiceTaskPowerHandlerTests
     }
 
     [Fact]
+    public void ServiceStart_UndoSkipsVanishedInstanceAndRestoresOthers()
+    {
+        var f = WithTemplate();
+        var live = f.ToLive();
+        var prior = H(Tmpl).Read(Tmpl, live);
+        H(Tmpl).Apply(Tmpl, live);
+        f.Services.Starts.Remove("CDPUserSvc_1a2b");
+        f.Services.Instances["CDPUserSvc"] = ["CDPUserSvc_3c4d"];
+        H(Tmpl).Undo(Tmpl, prior, live);
+        Assert.Equal(ServiceStartType.Automatic, f.Services.Starts["CDPUserSvc"]);
+        Assert.Equal(ServiceStartType.Manual, f.Services.Starts["CDPUserSvc_3c4d"]);
+        Assert.False(f.Services.Starts.ContainsKey("CDPUserSvc_1a2b"));
+    }
+
+    [Fact]
+    public void ServiceStart_IsNotInEffectForMissingService()
+    {
+        var f = new FakeSystems();
+        Assert.False(H(Svc).IsInEffect(Svc, f.ToLive()));
+    }
+
+    [Fact]
+    public void PowerSet_UndoSkipsDeletedScheme()
+    {
+        var f = new FakeSystems();
+        var live = f.ToLive();
+        f.Power.SchemeList.Add(Other);
+        f.Power.Settings[(Other, Sub, Set)] = (10, 20);
+        f.Power.Active = Other;
+        var prior = H(Pw).Read(Pw, live);
+        H(Pw).Apply(Pw, live);
+        f.Power.SchemeList.Remove(Other);
+        f.Power.Active = Balanced;
+        H(Pw).Undo(Pw, prior, live);
+        Assert.Equal((100, 50), f.Power.Settings[(Other, Sub, Set)]);
+    }
+
+    [Fact]
+    public void PowerScheme_GuidMatchedCaseInsensitively()
+    {
+        var f = WithOtherScheme();
+        var upper = new PowerScheme(Other.ToUpperInvariant());
+        Assert.IsType<SchemePrior>(H(upper).Read(upper, f.ToLive()));
+        Assert.Equal(ApplyResult.Applied, H(upper).Apply(upper, f.ToLive()));
+        Assert.True(H(upper).IsInEffect(upper, f.ToLive()));
+    }
+
+    [Fact]
     public void ServiceStart_UndoRestoresPrior()
     {
         var f = WithTemplate();

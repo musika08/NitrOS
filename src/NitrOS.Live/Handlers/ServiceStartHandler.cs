@@ -36,7 +36,8 @@ public sealed class ServiceStartHandler : IActionHandler
     public void Undo(SwitchAction action, PriorState prior, LiveSystems s)
     {
         if (prior is not ServicePrior p) return;
-        foreach (var e in p.Services) s.Services.Set(e.Name, e.Start);
+        foreach (var e in p.Services)
+            if (s.Services.Get(e.Name) is not null) s.Services.Set(e.Name, e.Start);
     }
 
     public bool IsInEffect(SwitchAction action, LiveSystems s)
