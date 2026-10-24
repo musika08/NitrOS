@@ -1,0 +1,98 @@
+using NitrOS.Live.Systems;
+
+namespace NitrOS.Live.Tests.Fakes;
+
+/// <summary>In-memory registry. Keys and names compare case-insensitively. FailOn matches a key path or a value name.</summary>
+public sealed class FakeRegistry : IRegistry
+{
+    public Dictionary<(LiveHive Hive, string Key, string Name, RegView View), RegValue> Values { get; } = new(new Cmp());
+    public HashSet<(LiveHive Hive, string Key, RegView View)> Keys { get; } = new(new KeyCmp());
+    public string? FailOn { get; set; }
+
+    private void Check(string key, string? name = null)
+    {
+        if (FailOn is not null && (string.Equals(FailOn, key, StringComparison.OrdinalIgnoreCase)
+            || (name is not null && string.Equals(FailOn, name, StringComparison.OrdinalIgnoreCase))))
+            throw new InvalidOperationException($"FakeRegistry failure on {FailOn}");
+    }
+
+    public RegValue? GetValue(LiveHive h, string key, string name, RegView v)
+    {
+        Check(key, name);
+        return Values.TryGetValue((h, key, name, v), out var val) ? val : null;
+    }
+
+    public void SetValue(LiveHive h, string key, string name, RegValue value, RegView v)
+    {
+        Check(key, name);
+        Keys.Add((h, key, v));
+        Values[(h, key, name, v)] = value;
+    }
+
+    public void DeleteValue(LiveHive h, string key, string name, RegView v)
+    {
+        Check(key, name);
+        Values.Remove((h, key, name, v));
+    }
+
+    public IReadOnlyList<string> GetValueNames(LiveHive h, string key, RegView v)
+    {
+        Check(key);
+        return Values.Keys.Where(k => k.Hive == h && k.View == v && Eq(k.Key, key)).Select(k => k.Name).ToList();
+    }
+
+    public RegTree? ExportKey(LiveHive h, string key, RegView v)
+    {
+        Check(key);
+        if (!KeyExists(h, key, v)) return null;
+        var values = Values.Where(p => p.Key.Hive == h && p.Key.View == v && Eq(p.Key.Key, key))
+            .Select(p => new RegNamedValue(p.Key.Name, p.Value)).ToList();
+        var prefix = key + "\\";
+        var childPaths = Keys.Where(k => k.Hive == h && k.View == v && k.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                && k.Key.IndexOf('\\', prefix.Length) < 0)
+            .Select(k => k.Key).ToList();
+        var subs = childPaths.Select(c => ExportKey(h, c, v)!).ToList();
+        return new RegTree(key, values, subs);
+    }
+
+    public void ImportKey(LiveHive h, RegTree tree, RegView v)
+    {
+        Check(tree.Key);
+        Keys.Add((h, tree.Key, v));
+        foreach (var nv in tree.Values) Values[(h, tree.Key, nv.Name, v)] = nv.Value;
+        foreach (var sub in tree.SubKeys) ImportKey(h, sub, v);
+    }
+
+    public void DeleteKey(LiveHive h, string key, RegView v)
+    {
+        Check(key);
+        var prefix = key + "\\";
+        bool Under(string k) => Eq(k, key) || k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+        foreach (var k in Keys.Where(k => k.Hive == h && k.View == v && Under(k.Key)).ToList()) Keys.Remove(k);
+        foreach (var k in Values.Keys.Where(k => k.Hive == h && k.View == v && Under(k.Key)).ToList()) Values.Remove(k);
+    }
+
+    public bool KeyExists(LiveHive h, string key, RegView v)
+    {
+        Check(key);
+        return Keys.Contains((h, key, v));
+    }
+
+    private static bool Eq(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+    private sealed class Cmp : IEqualityComparer<(LiveHive Hive, string Key, string Name, RegView View)>
+    {
+        public bool Equals((LiveHive Hive, string Key, string Name, RegView View) x, (LiveHive Hive, string Key, string Name, RegView View) y) =>
+            x.Hive == y.Hive && x.View == y.View && Eq(x.Key, y.Key) && Eq(x.Name, y.Name);
+        public int GetHashCode((LiveHive Hive, string Key, string Name, RegView View) o) =>
+            HashCode.Combine(o.Hive, o.View, o.Key.ToLowerInvariant(), o.Name.ToLowerInvariant());
+    }
+
+    private sealed class KeyCmp : IEqualityComparer<(LiveHive Hive, string Key, RegView View)>
+    {
+        public bool Equals((LiveHive Hive, string Key, RegView View) x, (LiveHive Hive, string Key, RegView View) y) =>
+            x.Hive == y.Hive && x.View == y.View && Eq(x.Key, y.Key);
+        public int GetHashCode((LiveHive Hive, string Key, RegView View) o) =>
+            HashCode.Combine(o.Hive, o.View, o.Key.ToLowerInvariant());
+    }
+}
