@@ -67,6 +67,7 @@ public class TotalsCalculatorTests
     {
         var catalog = Switches.CatalogOf(GamerOn("a", M(100, 3)), GamerOn("b"), GamerOn("c"));
         var totals = TotalsCalculator.For(Gamer(catalog));
+        Assert.False(totals.MeasuredAsWhole);
         Assert.Equal(2, totals.UnmeasuredCount);
         Assert.Equal(100, totals.MemoryMbSaved);
     }
@@ -79,5 +80,53 @@ public class TotalsCalculatorTests
             GamerOn("b", null, "Widgets stop working.", "Printing fails."));
         var totals = TotalsCalculator.For(Gamer(catalog));
         Assert.Equal(new[] { "Widgets stop working.", "Search is slower.", "Printing fails." }, totals.StopsWorking.ToArray());
+    }
+
+    private static SwitchDef GamerImageOnly(string id, Measurement? measured = null) =>
+        GamerOn(id, measured) with
+        {
+            Modes = [Mode.Image],
+            Live = [],
+            Image = [new FileRemove(@"C:\x")],
+        };
+
+    [Fact]
+    public void Totals_EmptySelectionIsZeroEvenWhenACardWasFilteredEmpty()
+    {
+        var catalog = Switches.CatalogOf(GamerImageOnly("only-image", M(50, 1)));
+        catalog = catalog with { Cards = new CardMeasurements(Recommended: M(900, 40), Gamer: M(900, 40)) };
+        var empty = Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, DeviceProfile.Desktop);
+
+        var totals = TotalsCalculator.For(empty);
+
+        Assert.Equal(0, totals.MemoryMbSaved);
+        Assert.Equal(0, totals.ProcessesSaved);
+        Assert.False(totals.MeasuredAsWhole);
+        Assert.Empty(totals.StopsWorking);
+    }
+
+    [Fact]
+    public void Totals_CardWithEverythingFilteredOutIsNotMeasuredAsWhole()
+    {
+        var catalog = Switches.CatalogOf(GamerImageOnly("only-image", M(50, 1)));
+        catalog = catalog with { Cards = new CardMeasurements(Recommended: M(900, 40), Gamer: M(900, 40)) };
+
+        var totals = TotalsCalculator.For(Gamer(catalog));
+
+        Assert.False(totals.MeasuredAsWhole);
+        Assert.Equal(0, totals.MemoryMbSaved);
+    }
+
+    [Fact]
+    public void Totals_CardWithSomeSwitchesFilteredOutIsNotMeasuredAsWhole()
+    {
+        var catalog = Switches.CatalogOf(GamerOn("live", M(100, 3)), GamerImageOnly("only-image", M(50, 1)));
+        catalog = catalog with { Cards = new CardMeasurements(Gamer: M(900, 40)) };
+
+        var totals = TotalsCalculator.For(Gamer(catalog));
+
+        Assert.False(totals.MeasuredAsWhole);
+        Assert.Equal(100, totals.MemoryMbSaved);
+        Assert.Equal(3, totals.ProcessesSaved);
     }
 }

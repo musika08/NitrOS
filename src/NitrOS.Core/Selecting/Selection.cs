@@ -59,8 +59,10 @@ public sealed class Selection
         return new ToggleResult(new Selection(Catalog, Mode, Device, next), true, null);
     }
 
+    /// <summary>The card whose preset equals the current selection, or null. An empty selection matches none.</summary>
     public CardId? MatchingCard()
     {
+        if (_on.Count == 0) return null;
         foreach (var card in Cards)
         {
             if (FromCard(Catalog, card, Mode, Device)._on.SetEquals(_on))
@@ -68,6 +70,13 @@ public sealed class Selection
         }
         return null;
     }
+
+    /// <summary>
+    /// True when every switch the card turns on is available in the current mode and device,
+    /// so applying the card dropped nothing.
+    /// </summary>
+    public bool AppliesWholeCard(CardId card) =>
+        Catalog.Switches.All(def => DefaultFor(def, card) != CardDefault.On || AvailabilityOf(def).Available);
 
     private Availability AvailabilityOf(SwitchDef def)
     {

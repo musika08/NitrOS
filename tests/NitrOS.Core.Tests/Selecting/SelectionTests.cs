@@ -144,4 +144,12 @@ public class SelectionTests
         var sel = Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, DeviceProfile.Desktop);
         Assert.Throws<KeyNotFoundException>(() => sel.Toggle("nope"));
     }
+
+    [Fact]
+    public void MatchingCard_IsNullForEmptySelection()
+    {
+        var catalog = Switches.CatalogOf(GamerSwitch("x", CardDefault.Off));
+        var empty = Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, DeviceProfile.Desktop);
+        Assert.Null(empty.MatchingCard());
+    }
 }

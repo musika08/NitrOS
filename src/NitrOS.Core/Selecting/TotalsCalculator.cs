@@ -16,8 +16,9 @@ public static class TotalsCalculator
         var on = selection.Catalog.Switches.Where(s => selection.IsOn(s.Id)).ToList();
         var stops = on.SelectMany(s => s.Breaks).Distinct().ToList();
 
+        // A whole-card measurement only describes the selection when the card applied in full.
         var card = selection.MatchingCard();
-        var whole = card is { } id ? selection.Catalog.Cards.For(id) : null;
+        var whole = card is { } id && selection.AppliesWholeCard(id) ? selection.Catalog.Cards.For(id) : null;
         if (whole is not null)
             return new Totals(whole.MemoryMb, whole.Processes, true, 0, stops);
 
