@@ -382,6 +382,17 @@ updates screen.
   ADK) and its download source.
 - How to restore the Store and Xbox after Max Lean.
 - How Windows Update reinstalls manufacturer apps, and how to block it.
+  Partly answered 2026-10-25 in `docs/research/reinstall-block.md`. Driver
+  packages bring back Dolby, Realtek and AMD apps through Store links. On the
+  Ally, Armoury Crate is tied to the BIOS device `ACPI\ASUS9001`, and there is
+  no WPBT table. The only documented, reversible block that leaves drivers
+  alone is the device-metadata apps policy, which is not proven to stop
+  either route. VM and Ally tests are still open.
+- Why DISM's provisioned-app query is denied even when elevated on the
+  owner's PC. Answered 2026-10-25 in `docs/research/dism-access-denied.md`.
+  The likely cause is Shadow Defender: SYSTEM still works, the elevated admin
+  is refused below the registry permissions. Not yet proven. NitrOS detects
+  the refusal and tells the user, and never changes permissions.
 - What the Ally X controller, back buttons and power controls do without
   Armoury Crate, and how to change the GPU memory reserve without it.
 - Primary BattlEye, Easy Anti-Cheat and FACEIT requirement pages (the
@@ -406,6 +417,9 @@ Findings behind this design, in `docs/research/`:
 - `web-evidence.md`: real vs myth vs harmful, anti-cheat requirements, Ally
   specifics, with dated sources.
 - `device-updates.md`: update sources per brand; ASUS listing checked live.
+- `reinstall-block.md`: how maker apps come back and what blocks it.
+- `dism-access-denied.md`: why the provisioned-app query is denied on the
+  owner's PC, and what NitrOS does about it.
 
 Main conclusions:
 
