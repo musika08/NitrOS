@@ -16,11 +16,19 @@ public class HandlersTests
         Assert.IsAssignableFrom<IActionHandler>(NitrOS.Live.Handlers.Handlers.For(new TaskDisable("\\T")));
         Assert.IsAssignableFrom<IActionHandler>(NitrOS.Live.Handlers.Handlers.For(new PowerSet("G", "S", 1)));
         Assert.IsAssignableFrom<IActionHandler>(NitrOS.Live.Handlers.Handlers.For(new PowerScheme("G")));
+        Assert.IsAssignableFrom<IActionHandler>(NitrOS.Live.Handlers.Handlers.For(new AppxRemove("X")));
+        Assert.IsAssignableFrom<IActionHandler>(NitrOS.Live.Handlers.Handlers.For(new CapabilityRemove("X")));
+        Assert.IsAssignableFrom<IActionHandler>(NitrOS.Live.Handlers.Handlers.For(new FeatureDisable("X")));
+        Assert.IsAssignableFrom<IActionHandler>(NitrOS.Live.Handlers.Handlers.For(new FileRemove("X")));
+        Assert.IsAssignableFrom<IActionHandler>(NitrOS.Live.Handlers.Handlers.For(new ProgramUninstall("X", "P")));
+        Assert.IsAssignableFrom<IActionHandler>(NitrOS.Live.Handlers.Handlers.For(new Script("x")));
     }
 
     [Fact]
     public void Handlers_ForUnknownTypeThrows()
     {
-        Assert.Throws<NotSupportedException>(() => NitrOS.Live.Handlers.Handlers.For(new AppxRemove("X")));
+        Assert.Throws<NotSupportedException>(() => NitrOS.Live.Handlers.Handlers.For(new UnknownAction()));
     }
+
+    private sealed record UnknownAction : SwitchAction;
 }

@@ -17,6 +17,7 @@ namespace NitrOS.Live.Journal;
 [JsonDerivedType(typeof(MissingPrior), "missing")]
 [JsonDerivedType(typeof(IrreversiblePrior), "irreversible")]
 [JsonDerivedType(typeof(FeaturePrior), "feature")]
+[JsonDerivedType(typeof(ScriptPrior), "script")]
 public abstract record PriorState;
 
 public sealed record RegistryPrior(RegValue? Value) : PriorState;
@@ -41,3 +42,6 @@ public sealed record MissingPrior() : PriorState;
 
 public sealed record IrreversiblePrior(string What, string? Version, string ReinstallHint) : PriorState;
 public sealed record FeaturePrior(string? State) : PriorState;
+
+/// <summary>A script with an undo body ran. Nothing else is stored because Undo runs the action's UndoBody.</summary>
+public sealed record ScriptPrior() : PriorState;
