@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\NitrOS.Live\NitrOS.Live.csproj" />
     <ProjectReference Include="..\..\src\NitrOS.Core\NitrOS.Core.csproj" />
+    <ProjectReference Include="..\..\src\NitrOS.Cli\NitrOS.Cli.csproj" />
   </ItemGroup>
 
 </Project>
