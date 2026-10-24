@@ -34,6 +34,10 @@ public static partial class CatalogValidator
                 CheckReversible(file, sw, errors);
                 CheckRegistry(file, sw, errors);
                 CheckPower(file, sw, errors);
+                CheckLiveOnlyActions(file, sw, errors);
+                CheckStartupDisable(file, sw, errors);
+                CheckRegistryDelete(file, sw, errors);
+                CheckPowerScheme(file, sw, errors);
             }
         }
 
@@ -86,6 +90,13 @@ public static partial class CatalogValidator
                 case PackageRemove p: Need(p.Pattern, "package.remove pattern"); break;
                 case FileRemove fr: Need(fr.Path, "file.remove path"); break;
                 case Script sc: Need(sc.Body, "script body"); break;
+                case ProgramUninstall pu:
+                    Need(pu.DisplayName, "program.uninstall displayName");
+                    Need(pu.Publisher, "program.uninstall publisher");
+                    break;
+                case StartupDisable sd: Need(sd.Name, "startup.disable name"); break;
+                case RegistryDelete rd: Need(rd.Key, "registry.delete key"); break;
+                case LaunchAtLogon la: Need(la.Program, "launch.at-logon program"); break;
             }
         }
     }
@@ -109,6 +120,8 @@ public static partial class CatalogValidator
         }
         foreach (var s in sw.Live.Concat(sw.Image).OfType<ServiceStart>().Where(s => !Enum.IsDefined(s.Start)))
             Add(errors, file, sw, $"Service start type {(int)s.Start} is not valid.");
+        foreach (var s in sw.Live.Concat(sw.Image).OfType<StartupDisable>().Where(s => !Enum.IsDefined(s.Source)))
+            Add(errors, file, sw, $"Startup source {(int)s.Source} is not valid.");
     }
 
     private static void CheckDuplicates(IReadOnlyList<(string File, GroupFile Group)> files, List<CatalogError> errors)
@@ -224,6 +237,57 @@ public static partial class CatalogValidator
                 Add(errors, file, sw, $"power.set setting '{a.Setting}' is not a GUID.");
             if (a.Ac is null && a.Dc is null)
                 Add(errors, file, sw, "power.set needs at least one of ac or dc.");
+        }
+    }
+
+    private static void CheckLiveOnlyActions(string file, SwitchDef sw, List<CatalogError> errors)
+    {
+        foreach (var a in sw.Image)
+        {
+            var name = a switch
+            {
+                ProgramUninstall => "program.uninstall",
+                PowerScheme => "power.scheme",
+                LaunchAtLogon => "launch.at-logon",
+                _ => null,
+            };
+            if (name is not null)
+                Add(errors, file, sw, $"{name} is live-only and must not appear in image.");
+        }
+    }
+
+    private static void CheckStartupDisable(string file, SwitchDef sw, List<CatalogError> errors)
+    {
+        foreach (var a in sw.Live.Concat(sw.Image).OfType<StartupDisable>())
+        {
+            if (!Enum.IsDefined(a.Source)) continue; // reported by CheckEnums
+            if (a.Source == StartupSource.Run)
+            {
+                if (a.Hive is not ("HKLM" or "HKCU"))
+                    Add(errors, file, sw, "startup.disable with source 'run' needs hive HKLM or HKCU.");
+            }
+            else if (a.Hive is not null)
+                Add(errors, file, sw, $"startup.disable with source '{a.Source}' must not set hive.");
+        }
+        foreach (var a in sw.Image.OfType<StartupDisable>().Where(a => Enum.IsDefined(a.Source) && a.Source != StartupSource.Run))
+            Add(errors, file, sw, "startup.disable in image supports only source 'run'.");
+    }
+
+    private static void CheckRegistryDelete(string file, SwitchDef sw, List<CatalogError> errors)
+    {
+        foreach (var a in sw.Live.Concat(sw.Image).OfType<RegistryDelete>())
+        {
+            if (a.Hive is not ("HKLM" or "HKCU"))
+                Add(errors, file, sw, $"registry.delete hive '{a.Hive}' must be HKLM or HKCU.");
+        }
+    }
+
+    private static void CheckPowerScheme(string file, SwitchDef sw, List<CatalogError> errors)
+    {
+        foreach (var a in sw.Live.Concat(sw.Image).OfType<PowerScheme>())
+        {
+            if (!Guid.TryParse(a.Scheme, out _))
+                Add(errors, file, sw, $"power.scheme '{a.Scheme}' is not a GUID.");
         }
     }
 }

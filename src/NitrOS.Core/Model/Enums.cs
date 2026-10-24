@@ -14,3 +14,5 @@ public enum DeviceTrait { Battery, Touchscreen, Handheld }
 public enum ServiceStartType { Boot, System, Automatic, AutomaticDelayed, Manual, Disabled }
 
 public enum RegistryKind { Dword, Qword, String, ExpandString, MultiString, Binary }
+
+public enum StartupSource { Run, StartupFolder, AppxTask, Task }

@@ -132,6 +132,62 @@ public class CatalogValidatorTests
         Assert.Empty(One(Switches.Make("x", b => b.Live = [new PowerSet(g, g, Dc: 5)])));
     }
 
+    private static SwitchDef LiveOnly(SwitchAction a) =>
+        Switches.Make("x", b => { b.Live = [a]; b.Reversible = false; });
+
+    private static SwitchDef ImageOnly(SwitchAction a) =>
+        Switches.Make("x", b => { b.Modes = [Mode.Image]; b.Live = []; b.Image = [a]; b.Reversible = false; });
+
+    [Fact]
+    public void ProgramUninstall_LiveOnlyAndNamed()
+    {
+        Assert.Empty(One(LiveOnly(new ProgramUninstall("Foo*", "Bar"))));
+        AssertOne(One(ImageOnly(new ProgramUninstall("Foo*", "Bar"))), "program.uninstall");
+        AssertOne(One(LiveOnly(new ProgramUninstall("", "Bar"))), "displayName");
+        AssertOne(One(LiveOnly(new ProgramUninstall("Foo", " "))), "publisher");
+    }
+
+    [Fact]
+    public void StartupDisable_HiveRules()
+    {
+        Assert.Empty(One(LiveOnly(new StartupDisable(StartupSource.Run, "n", "HKLM"))));
+        Assert.Empty(One(LiveOnly(new StartupDisable(StartupSource.Run, "n", "HKCU"))));
+        AssertOne(One(LiveOnly(new StartupDisable(StartupSource.Run, "n"))), "hive");
+        AssertOne(One(LiveOnly(new StartupDisable(StartupSource.Run, "n", "HKCR"))), "hive");
+        AssertOne(One(LiveOnly(new StartupDisable(StartupSource.Task, "n", "HKLM"))), "hive");
+        Assert.Empty(One(LiveOnly(new StartupDisable(StartupSource.StartupFolder, "n"))));
+        Assert.Empty(One(ImageOnly(new StartupDisable(StartupSource.Run, "n", "HKLM"))));
+        AssertOne(One(ImageOnly(new StartupDisable(StartupSource.Task, "n"))), "image");
+        AssertOne(One(LiveOnly(new StartupDisable((StartupSource)9, "n"))), "Startup source");
+        AssertOne(One(LiveOnly(new StartupDisable(StartupSource.Task, " "))), "startup.disable name");
+    }
+
+    [Fact]
+    public void RegistryDelete_HiveAndKey()
+    {
+        Assert.Empty(One(LiveOnly(new RegistryDelete("HKLM", @"SOFTWARE\T"))));
+        Assert.Empty(One(ImageOnly(new RegistryDelete("HKCU", @"SOFTWARE\T", "V"))));
+        AssertOne(One(LiveOnly(new RegistryDelete("HKCR", @"SOFTWARE\T"))), "hive");
+        AssertOne(One(LiveOnly(new RegistryDelete("HKLM", ""))), "registry.delete key");
+    }
+
+    [Fact]
+    public void PowerScheme_LiveOnlyGuid()
+    {
+        const string g = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c";
+        Assert.Empty(One(LiveOnly(new PowerScheme(g))));
+        AssertOne(One(LiveOnly(new PowerScheme("nope"))), "power.scheme");
+        AssertOne(One(ImageOnly(new PowerScheme(g))), "power.scheme");
+    }
+
+    [Fact]
+    public void LaunchAtLogon_LiveOnly()
+    {
+        Assert.Empty(One(LiveOnly(new LaunchAtLogon(@"C:.exe"))));
+        AssertOne(One(LiveOnly(new LaunchAtLogon(" "))), "launch.at-logon program");
+        AssertOne(One(ImageOnly(new LaunchAtLogon(@"C:.exe"))), "launch.at-logon");
+    }
+
     [Fact]
     public void ValidCatalog_HasNoErrors()
     {

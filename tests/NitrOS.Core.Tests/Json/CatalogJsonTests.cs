@@ -19,6 +19,11 @@ public class CatalogJsonTests
         new FileRemove(@"C:\Test\file.txt"),
         new PowerSet("SUB_SLEEP", "STANDBYIDLE", 0, null),
         new Script("Write-Host hi", "Write-Host undo"),
+        new ProgramUninstall("Test App*", "Test Publisher", "/S"),
+        new StartupDisable(StartupSource.StartupFolder, "Test.lnk", "HKCU"),
+        new RegistryDelete("HKCU", @"SOFTWARE\Test", null),
+        new PowerScheme("8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"),
+        new LaunchAtLogon(@"C:\Testpp.exe", "--min"),
     ];
 
     [Fact]
@@ -55,7 +60,7 @@ public class CatalogJsonTests
         Assert.Equal(a.SkipOn, b2.SkipOn);
         Assert.Equal(a.Live.Count, b2.Live.Count);
         for (int i = 0; i < a.Live.Count; i++) Assert.Equal(a.Live[i], b2.Live[i]);
-        Assert.Equal(10, b2.Image.Count);
+        Assert.Equal(15, b2.Image.Count);
         for (int i = 0; i < a.Image.Count; i++) Assert.Equal(a.Image[i], b2.Image[i]);
     }
 
@@ -91,6 +96,20 @@ public class CatalogJsonTests
           "modes":["live"],"reversible":true,"cards":{{cards}}{{extraSwitchProp}}
         }]}
         """;
+
+    [Fact]
+    public void NewActions_UseKebabCaseDiscriminatorsAndSources()
+    {
+        var json = CatalogJson.Write<SwitchAction>(new StartupDisable(StartupSource.AppxTask, "n"));
+        Assert.Contains("\"startup.disable\"", json);
+        Assert.Contains("\"appx-task\"", json);
+        Assert.Contains("\"launch.at-logon\"", CatalogJson.Write<SwitchAction>(new LaunchAtLogon("p")));
+        Assert.Contains("\"program.uninstall\"", CatalogJson.Write<SwitchAction>(new ProgramUninstall("a", "b")));
+        Assert.Contains("\"registry.delete\"", CatalogJson.Write<SwitchAction>(new RegistryDelete("HKLM", "k")));
+        Assert.Contains("\"power.scheme\"", CatalogJson.Write<SwitchAction>(new PowerScheme("g")));
+        Assert.True(new ProgramUninstall("a", "b").IsDestructive);
+        Assert.False(new RegistryDelete("HKLM", "k").IsDestructive);
+    }
 
     [Fact]
     public void Parse_RejectsUnknownProperty() =>
