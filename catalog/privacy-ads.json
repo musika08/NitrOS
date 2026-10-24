@@ -1,0 +1,114 @@
+{
+  "group": "privacy-ads",
+  "title": "Privacy and ads",
+  "switches": [
+    {
+      "id": "consumer-features-off",
+      "name": "Stop promoted app installs",
+      "feature": "Promoted apps",
+      "description": "Stops Windows installing suggested apps and games on its own.",
+      "risk": "safe",
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableWindowsConsumerFeatures",
+          "kind": "dword",
+          "data": "1"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKLM",
+          "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableWindowsConsumerFeatures",
+          "kind": "dword",
+          "data": "1"
+        }
+      ]
+    },
+    {
+      "id": "diagtrack-off",
+      "name": "Turn off usage reporting service",
+      "feature": "Usage reporting",
+      "description": "Stops the background service that sends usage data to Microsoft.",
+      "risk": "safe",
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "service.start",
+          "service": "DiagTrack",
+          "start": "disabled"
+        }
+      ],
+      "image": [
+        {
+          "type": "service.start",
+          "service": "DiagTrack",
+          "start": "disabled"
+        }
+      ]
+    },
+    {
+      "id": "advertising-id-off",
+      "name": "Turn off advertising ID",
+      "feature": "Advertising ID",
+      "description": "Stops apps using an ID to show you targeted ads.",
+      "risk": "safe",
+      "modes": [
+        "live",
+        "image"
+      ],
+      "reversible": true,
+      "cards": {
+        "recommended": "on",
+        "gamer": "on",
+        "streamer": "on",
+        "maxLean": "on"
+      },
+      "live": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
+          "name": "Enabled",
+          "kind": "dword",
+          "data": "0"
+        }
+      ],
+      "image": [
+        {
+          "type": "registry.set",
+          "hive": "HKCU",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
+          "name": "Enabled",
+          "kind": "dword",
+          "data": "0"
+        }
+      ]
+    }
+  ]
+}
