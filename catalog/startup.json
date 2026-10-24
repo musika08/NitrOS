@@ -1,0 +1,63 @@
+{
+  "group": "startup",
+  "title": "Start-up",
+  "switches": [
+    {
+      "id": "background-apps-off", "name": "Stop Store apps running in the background", "feature": "Background apps",
+      "description": "Stops Store apps running and refreshing in the background.",
+      "risk": "caution", "breaks": ["Store apps don't refresh or notify you until you open them; Xbox and chat apps may not alert you."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy", "name": "LetAppsRunInBackground", "kind": "dword", "data": "2" } ],
+      "image": [ { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy", "name": "LetAppsRunInBackground", "kind": "dword", "data": "2" } ]
+    },
+    {
+      "id": "edge-startup-boost-off", "name": "Stop Edge preloading", "feature": "Edge startup boost",
+      "description": "Stops Edge starting at sign-in and staying open after you close it.",
+      "risk": "safe", "breaks": ["Edge opens a little slower."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "StartupBoostEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "BackgroundModeEnabled", "kind": "dword", "data": "0" }
+      ],
+      "image": [
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "StartupBoostEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "BackgroundModeEnabled", "kind": "dword", "data": "0" }
+      ]
+    },
+    {
+      "id": "edge-auto-launch-off", "name": "Stop Edge auto-launch", "feature": "Edge auto-launch",
+      "description": "Turns off the entry that starts Edge when you sign in.",
+      "risk": "safe",
+      "modes": ["live"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "startup.disable", "source": "run", "name": "MicrosoftEdgeAutoLaunch_*", "hive": "HKCU" } ]
+    },
+    {
+      "id": "onedrive-setup-startup-off", "name": "Stop OneDrive setup at sign-in", "feature": "OneDrive setup entry",
+      "description": "Turns off the OneDrive setup entry that runs at every sign-in.",
+      "risk": "caution", "breaks": ["If OneDrive is kept, new users on this PC may not get OneDrive set up."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "startup.disable", "source": "run", "name": "OneDriveSetup", "hive": "HKCU" } ],
+      "image": [ { "type": "registry.delete", "hive": "HKCU", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Run", "name": "OneDriveSetup" } ]
+    },
+    {
+      "id": "steam-big-picture-at-boot", "name": "Start Steam Big Picture at sign-in", "feature": "Steam Big Picture",
+      "description": "Opens Steam in Big Picture full-screen mode when you sign in.",
+      "risk": "safe",
+      "modes": ["live"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "off" },
+      "live": [ { "type": "launch.at-logon", "program": "%ProgramFiles(x86)%\\Steam\\steam.exe", "args": "-tenfoot" } ]
+    },
+    {
+      "id": "playnite-fullscreen-at-boot", "name": "Start Playnite full screen at sign-in", "feature": "Playnite",
+      "description": "Opens Playnite in full-screen mode when you sign in.",
+      "risk": "safe",
+      "modes": ["live"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "off" },
+      "live": [ { "type": "launch.at-logon", "program": "%LOCALAPPDATA%\\Playnite\\Playnite.FullscreenApp.exe" } ]
+    }
+  ]
+}

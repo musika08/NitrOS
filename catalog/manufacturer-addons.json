@@ -1,0 +1,59 @@
+{
+  "group": "manufacturer-addons",
+  "title": "Manufacturer add-ons",
+  "switches": [
+    {
+      "id": "armoury-crate-remove", "name": "Remove Armoury Crate", "feature": "Armoury Crate",
+      "description": "Uninstalls Armoury Crate SE, Command Center and the ASUS helper services; keeps ASUS drivers.",
+      "risk": "breaks",
+      "breaks": ["Control-mode switching and back-button mapping stop working. TDP and fan modes can no longer be changed in Armoury Crate. The GPU memory reserve setting is no longer available in Windows. BIOS, firmware and controller updates come from Device updates or the ASUS website by hand."],
+      "modes": ["live"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "appx.remove", "name": "B9ECED6F.ArmouryCrateSE" },
+        { "type": "appx.remove", "name": "B9ECED6F.ArmouryCrate" },
+        { "type": "appx.remove", "name": "B9ECED6F.ASUSCommandCenter" },
+        { "type": "appx.remove", "name": "ASUSAmbientHAL64" },
+        { "type": "program.uninstall", "displayName": "Armoury Crate SE Service", "publisher": "ASUS" },
+        { "type": "program.uninstall", "displayName": "ASUS Framework Service", "publisher": "ASUSTeK Computer Inc." },
+        { "type": "program.uninstall", "displayName": "ROG Live Service", "publisher": "ASUSTek COMPUTER INC." },
+        { "type": "program.uninstall", "displayName": "ASUS Ambient HAL", "publisher": "ASUSTeK COMPUTER INC." },
+        { "type": "program.uninstall", "displayName": "ROG Screen Manager", "publisher": "ASUSTek COMPUTER INC." }
+      ]
+    },
+    {
+      "id": "myasus-remove", "name": "Remove MyASUS", "feature": "MyASUS (ASUS PC Assistant)",
+      "description": "Removes the MyASUS support app.",
+      "risk": "caution", "breaks": ["ASUS support and diagnostics app is gone."],
+      "modes": ["live"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "B9ECED6F.ASUSPCAssistant" } ]
+    },
+    {
+      "id": "dolby-access-remove", "name": "Remove Dolby Access", "feature": "Dolby Access",
+      "description": "Removes the Dolby Access app; the Dolby audio driver stays.",
+      "risk": "caution", "breaks": ["Dolby sound profiles can no longer be changed."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "DolbyLaboratories.DolbyAccess" } ],
+      "image": [ { "type": "appx.remove", "name": "DolbyLaboratories.DolbyAccess" } ]
+    },
+    {
+      "id": "realtek-audio-console-remove", "name": "Remove Realtek Audio Control", "feature": "Realtek Audio Control",
+      "description": "Removes the Realtek Audio Control app; the Realtek driver and its service stay.",
+      "risk": "caution", "breaks": ["Realtek sound settings (jack detection, effects) can no longer be changed."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "RealtekSemiconductorCorp.RealtekAudioControl" } ],
+      "image": [ { "type": "appx.remove", "name": "RealtekSemiconductorCorp.RealtekAudioControl" } ]
+    },
+    {
+      "id": "amd-panel-background-off", "name": "Stop AMD Software in the background", "feature": "AMD Software panel",
+      "description": "Keeps the AMD graphics driver but stops the AMD Software panel starting at sign-in.",
+      "risk": "caution", "breaks": ["AMD Software overlay, recording, per-game profiles and tuning are off until you open AMD Software."],
+      "modes": ["live"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "startup.disable", "source": "appx-task", "name": "AdvancedMicroDevicesInc-2.AMDRadeonSoftware_0a9344xs7nr4m!launcherrsxruntimeTask" } ]
+    }
+  ]
+}

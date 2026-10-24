@@ -41,4 +41,11 @@ public class BundledAppsTests
         Assert.Equal(expected, sw.Live);
         Assert.Equal(expected, sw.Image);
     }
+
+    [Fact]
+    public void BundledApps_EdgeGameAssistRequiresEdgeRemove()
+    {
+        var sw = Group().Switches.Single(s => s.Id == "edge-game-assist-remove");
+        Assert.Equal(new[] { "edge-remove" }, sw.Requires);
+    }
 }

@@ -242,6 +242,7 @@
       "id": "edge-game-assist-remove", "name": "Remove Edge Game Assist", "feature": "Edge Game Assist",
       "description": "Removes the in-game browser overlay from Game Bar.",
       "risk": "safe", "breaks": ["The Edge browser panel in Game Bar is gone."],
+      "requires": ["edge-remove"],
       "modes": ["live", "image"], "reversible": false,
       "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
       "live": [ { "type": "appx.remove", "name": "Microsoft.Edge.GameAssist" } ],
