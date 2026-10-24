@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using NitrOS.Core.Json;
 using NitrOS.Core.Loading;
 using NitrOS.Core.Model;
@@ -67,6 +68,49 @@ public sealed class CatalogLoaderTests : IDisposable
         Assert.Contains("registry.nuke", json);
         var error = Assert.Single(result.Errors);
         Assert.Equal("a.json", error.File);
+    }
+
+    private void WriteWithNull(string listName)
+    {
+        WriteCards();
+        WriteGroup("a.json", "a", Switches.Make("a-one"));
+        var root = JsonNode.Parse(File.ReadAllText(Path.Combine(_dir, "a.json")))!.AsObject();
+        if (listName == "switches")
+            root["switches"] = new JsonArray((JsonNode?)null);
+        else
+            root["switches"]!.AsArray()[0]!.AsObject()[listName] = new JsonArray((JsonNode?)null);
+        Write("a.json", root.ToJsonString());
+    }
+
+    [Theory]
+    [InlineData("switches")]
+    [InlineData("live")]
+    [InlineData("image")]
+    [InlineData("breaks")]
+    [InlineData("requires")]
+    [InlineData("skipOn")]
+    [InlineData("modes")]
+    public void Load_NullListItem_IsErrorNotException(string listName)
+    {
+        WriteWithNull(listName);
+
+        var result = CatalogLoader.Load(_dir);
+
+        Assert.False(result.Ok);
+        Assert.Null(result.Catalog);
+        Assert.Contains(result.Errors, e => e.File == "a.json");
+    }
+
+    [Theory]
+    [InlineData("live")]
+    [InlineData("breaks")]
+    public void Load_NullListItem_NamesTheSwitch(string listName)
+    {
+        WriteWithNull(listName);
+
+        var result = CatalogLoader.Load(_dir);
+
+        Assert.Contains(result.Errors, e => e.File == "a.json" && e.SwitchId == "a-one");
     }
 
     [Fact]

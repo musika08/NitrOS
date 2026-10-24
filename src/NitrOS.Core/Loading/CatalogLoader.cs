@@ -44,6 +44,7 @@ public static class CatalogLoader
         {
             var group = TryRead(Path.Combine(directory, name), name, CatalogJson.ParseGroup, errors);
             if (group is null) continue;
+            if (!CheckNullItems(name, group, errors)) continue;
             var tagged = group with
             {
                 Switches = group.Switches.Select(s => s with { Group = group.Group }).ToList(),
@@ -56,6 +57,45 @@ public static class CatalogLoader
         if (errors.Count > 0 || cards is null)
             return new CatalogLoadResult(null, errors);
         return new CatalogLoadResult(new Catalog(files.Select(f => f.Group).ToList(), cards), errors);
+    }
+
+    /// <summary>
+    /// System.Text.Json does not check collection elements against nullable annotations,
+    /// so a null item would crash later stages. Returns false when the group has one.
+    /// </summary>
+    private static bool CheckNullItems(string file, GroupFile group, List<CatalogError> errors)
+    {
+        var ok = true;
+        for (var i = 0; i < group.Switches.Count; i++)
+        {
+            var sw = group.Switches[i];
+            if (sw is null)
+            {
+                errors.Add(new CatalogError(file, null, null, $"switches[{i}] is null."));
+                ok = false;
+                continue;
+            }
+            ok &= NoNulls(file, sw, "modes", sw.Modes, errors);
+            ok &= NoNulls(file, sw, "live", sw.Live, errors);
+            ok &= NoNulls(file, sw, "image", sw.Image, errors);
+            ok &= NoNulls(file, sw, "breaks", sw.Breaks, errors);
+            ok &= NoNulls(file, sw, "requires", sw.Requires, errors);
+            ok &= NoNulls(file, sw, "skipOn", sw.SkipOn, errors);
+        }
+        return ok;
+    }
+
+    private static bool NoNulls<T>(string file, SwitchDef sw, string list, IReadOnlyList<T> items,
+        List<CatalogError> errors)
+    {
+        var ok = true;
+        for (var i = 0; i < items.Count; i++)
+        {
+            if (items[i] is not null) continue;
+            errors.Add(new CatalogError(file, null, sw.Id, $"{list}[{i}] is null."));
+            ok = false;
+        }
+        return ok;
     }
 
     private static T? TryRead<T>(string path, string name, Func<string, T> parse, List<CatalogError> errors)
