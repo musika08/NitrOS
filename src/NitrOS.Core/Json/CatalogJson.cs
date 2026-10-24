@@ -14,6 +14,8 @@ public static class CatalogJson
         {
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
             AllowOutOfOrderMetadataProperties = true,
+            RespectRequiredConstructorParameters = true,
+            RespectNullableAnnotations = true,
             WriteIndented = true,
         };
         o.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower));

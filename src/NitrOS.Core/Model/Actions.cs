@@ -27,5 +27,5 @@ public sealed record CapabilityRemove(string Name) : SwitchAction;
 public sealed record FeatureDisable(string Name) : SwitchAction;
 public sealed record PackageRemove(string Pattern) : SwitchAction;
 public sealed record FileRemove(string Path) : SwitchAction;
-public sealed record PowerSet(string Subgroup, string Setting, int? Ac, int? Dc) : SwitchAction;
-public sealed record Script(string Body, string? UndoBody) : SwitchAction;
+public sealed record PowerSet(string Subgroup, string Setting, int? Ac = null, int? Dc = null) : SwitchAction;
+public sealed record Script(string Body, string? UndoBody = null) : SwitchAction;

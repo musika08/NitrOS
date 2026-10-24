@@ -3,10 +3,10 @@ using System.Text.Json.Serialization;
 namespace NitrOS.Core.Model;
 
 public record CardMeasurements(
-    Measurement? Recommended,
-    Measurement? Gamer,
-    Measurement? Streamer,
-    Measurement? MaxLean)
+    Measurement? Recommended = null,
+    Measurement? Gamer = null,
+    Measurement? Streamer = null,
+    Measurement? MaxLean = null)
 {
     public Measurement? For(CardId id) => id switch
     {

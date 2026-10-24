@@ -107,4 +107,23 @@ public class CatalogJsonTests
         var g = CatalogJson.ParseGroup(GroupJson());
         Assert.Empty(g.Switches.Single().Live);
     }
+
+    [Fact]
+    public void Parse_RejectsActionMissingField() =>
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<SwitchAction>(
+            """{"type":"registry.set","hive":"HKLM"}""", CatalogJson.Options));
+
+    [Fact]
+    public void Parse_RejectsGroupMissingSwitches() =>
+        Assert.Throws<JsonException>(() => CatalogJson.ParseGroup("""{"group":"g","title":"t"}"""));
+
+    [Fact]
+    public void Parse_AllowsOmittedOptionalActionFields()
+    {
+        var p = JsonSerializer.Deserialize<SwitchAction>(
+            """{"type":"power.set","subgroup":"a","setting":"b"}""", CatalogJson.Options);
+        Assert.Equal(new PowerSet("a", "b", null, null), p);
+        var s = JsonSerializer.Deserialize<SwitchAction>("""{"type":"script","body":"x"}""", CatalogJson.Options);
+        Assert.Equal(new Script("x", null), s);
+    }
 }
