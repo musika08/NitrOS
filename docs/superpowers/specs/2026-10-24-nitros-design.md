@@ -186,6 +186,9 @@ amount reserved for the GPU, so a 24 GB device showing 15.6 GB is explained.
 6. **Done:** ISO mode shows where the ISO went and reminds the user to test it
    in a virtual machine. Tune mode shows a measured before/after on this PC
    (memory in use and process count) and offers a restart.
+7. **Device updates:** reachable from Start at any time. Lists BIOS,
+   firmware and drivers for this PC as "Up to date" or "New version", with
+   an Install button per item. Details in section 5.4.
 
 ## 5. Parts
 
@@ -199,6 +202,7 @@ X:\Projects\NitrOS
   src\NitrOS.Core     loads and checks the catalog, dependencies, totals, cards
   src\NitrOS.Live     applies switches to running Windows, backup, undo, health check
   src\NitrOS.Image    applies switches to a mounted ISO image, writes the new ISO
+  src\NitrOS.Updates  device update sources, version compare, verified install
   measure\            test virtual machine scripts and measured results
   tests\              automatic checks
   docs\
@@ -251,6 +255,46 @@ Image engine (apply, report progress) -> Done screen.
 - Download the ISO-writing tool only from Microsoft and check a pinned hash.
 - Test that a Max Lean ISO gets through Setup (Tiny11 Core ISOs hit a
   "cannot read ProductKey" error).
+
+### 5.4 Device updates
+
+Replaces the update part of Armoury Crate and other makers' apps, for any
+brand, in layers. Each layer is a "source" with one interface: given the
+device (maker, model, installed BIOS and driver versions read from Windows),
+return a list of items with name, kind (BIOS, firmware, driver), installed
+version, latest version, download URL, size and release date.
+
+1. **Windows Update (every brand):** driver and firmware updates through the
+   documented Windows Update Agent API.
+2. **Maker source:** ASUS in version 1 (support-site listing, checked live on
+   the owner's Ally X). Then Lenovo and Dell, then HP, each only after a live
+   test. MSI and brands without a public listing get a button that opens
+   their support page.
+3. **GPU vendor:** AMD, NVIDIA or Intel graphics drivers direct, because
+   makers' listings lag behind.
+
+Where two sources offer the same item, the newest version wins and the
+source is shown.
+
+Rules:
+
+- Downloads only from the maker's own servers (for ASUS,
+  `dlcdnets.asus.com`). Before running, the file's digital signature must
+  belong to that maker; otherwise it is refused.
+- Nothing installs without the user pressing Install. BIOS and firmware
+  require the charger connected and show a "do not turn off" warning.
+- A small "known bad" list shipped with NitrOS (for example, a BIOS a maker
+  pulled for bricking devices) blocks those versions from being offered.
+- Checks run only when NitrOS opens or the user presses Check. No background
+  updater.
+- Windows Update stays allowed for drivers and firmware even when the
+  manufacturer add-ons switch is on; only the add-on apps themselves are
+  blocked from reinstalling.
+- The `ASUS System Control Interface` driver is always kept: power and fan
+  control depend on it.
+- If a maker's listing stops working (none are officially documented except
+  Windows Update and Dell), the source falls back to opening the support
+  page and says why.
 
 ## 6. Undo and safety
 
@@ -312,8 +356,10 @@ Image engine (apply, report progress) -> Done screen.
 
 ## 10. Not in version 1
 
-Driver installs, overclocking, per-game settings, built-in Windows download,
-Windows 10, public release.
+Overclocking, per-game settings, built-in Windows download, Windows 10,
+public release, maker update sources other than ASUS (Lenovo, Dell, HP come
+after live tests). Driver installs are only those offered on the Device
+updates screen.
 
 ## 11. To verify during the build (not assumed)
 
@@ -327,6 +373,12 @@ Windows 10, public release.
 - Primary BattlEye, Easy Anti-Cheat and FACEIT requirement pages (the
   research could not read them).
 - Whether Smart App Control blocks anything NitrOS does.
+- How to read the Ally X controller (MCU) firmware version without Armoury
+  Crate.
+- How ASUS's BIOS and MCU updaters run silently or with progress, and their
+  exit codes.
+- Lenovo (Legion Go), Dell and HP listings, each tried live before shipping.
+- How to check AMD, NVIDIA and Intel's latest driver versions.
 
 ## 12. Research
 
@@ -339,6 +391,7 @@ Findings behind this design, in `docs/research/`:
   (commit 8909da1).
 - `web-evidence.md`: real vs myth vs harmful, anti-cheat requirements, Ally
   specifics, with dated sources.
+- `device-updates.md`: update sources per brand; ASUS listing checked live.
 
 Main conclusions:
 
