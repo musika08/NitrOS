@@ -102,6 +102,138 @@ public sealed class TuneEngineTests : IDisposable
         Assert.Equal(ActionOutcome.RolledBack, byKey[("sw.fails", 0)].Outcome);
         Assert.Equal(ActionOutcome.Failed, byKey[("sw.fails", 1)].Outcome);
         Assert.Contains("exit code 1", byKey[("sw.fails", 1)].Detail);
+        Assert.DoesNotContain("undo", _f.Scripts.Bodies); // a failed script's undo body never runs
+        Assert.Empty(result.LeftChanged.Intersect(["sw.throws", "sw.fails"]));
+    }
+
+    [Fact]
+    public void Apply_RollsBackWhenApplyThrows()
+    {
+        Tune.Put(_f, "A", "0");
+        _f.Scripts.FailOn = "boom"; // Read works, Apply throws
+        var sw = Tune.Sw("sw.x", Tune.Set("A"), new Script("boom", "undo"));
+
+        var result = Apply(Tune.Select(sw));
+
+        Assert.Equal(SwitchResult.Failed, result.Switches["sw.x"]);
+        Assert.Equal(Tune.Dword("0"), Tune.Get(_f, "A"));
+        Assert.DoesNotContain("undo", _f.Scripts.Bodies);
+        var entries = _store.Load(result.JournalPath).Entries;
+        Assert.Equal(ActionOutcome.RolledBack, entries[0].Outcome);
+        Assert.Equal(ActionOutcome.Failed, entries[1].Outcome);
+        Assert.Contains("FakeScripts failure", entries[1].Detail);
+        Assert.Empty(result.LeftChanged);
+    }
+
+    [Fact]
+    public void Apply_FailedActionRollbackThrows_LeavesEntryUndoable()
+    {
+        Tune.Put(_f, "A", "0");
+        Tune.Put(_f, "B", "0");
+        // Once B's prior is read and its pending entry saved, make every touch of B throw: Apply fails and so does its rollback.
+        var engine = new TuneEngine(_f.ToLive(), _store, j =>
+        {
+            if (j.Entries.Count > 0 && j.Entries[^1].ActionIndex == 1 && j.Entries[^1].Detail == TuneEngine.PendingDetail)
+                _f.Registry.FailOn = "B";
+            return _store.Save(j);
+        });
+        var result = engine.Apply(Tune.Select(Tune.Sw("sw.x", Tune.Set("A"), Tune.Set("B"))), Tune.Options, null, CancellationToken.None);
+
+        Assert.Equal(SwitchResult.Failed, result.Switches["sw.x"]);
+        Assert.Equal(["sw.x"], result.LeftChanged);
+        var entries = _store.Load(result.JournalPath).Entries;
+        Assert.Equal(ActionOutcome.RolledBack, entries[0].Outcome);
+        Assert.Equal(ActionOutcome.Applied, entries[1].Outcome);
+        Assert.StartsWith("Rollback failed: ", entries[1].Detail);
+
+        _f.Registry.FailOn = null;
+        Tune.Put(_f, "B", "1"); // pretend the failed Apply half-landed
+        var undo = Engine().Undo(result.JournalPath, null);
+        Assert.Equal(["sw.x"], undo.Undone);
+        Assert.Equal(Tune.Dword("0"), Tune.Get(_f, "B"));
+    }
+
+    [Fact]
+    public void Apply_CrashBetweenApplyAndOutcomeSave_UndoRestores()
+    {
+        Tune.Put(_f, "A", "0");
+        var count = 0;
+        var engine = new TuneEngine(_f.ToLive(), _store, j =>
+        {
+            if (++count == 3) throw new CrashException(); // 1 = empty journal, 2 = pending entry, 3 = outcome
+            return _store.Save(j);
+        });
+        Assert.Throws<CrashException>(() =>
+            engine.Apply(Tune.Select(Tune.Sw("sw.a", Tune.Set("A"))), Tune.Options, null, CancellationToken.None));
+        Assert.Equal(Tune.Dword("1"), Tune.Get(_f, "A"));
+
+        var path = Assert.Single(_store.List());
+        Assert.Equal(TuneEngine.PendingDetail, Assert.Single(_store.Load(path).Entries).Detail);
+        var undo = Engine().Undo(path, null);
+
+        Assert.Equal(["sw.a"], undo.Undone);
+        Assert.Equal(Tune.Dword("0"), Tune.Get(_f, "A"));
+    }
+
+    [Fact]
+    public void Apply_CancelMidSwitchRollsBackThatSwitch()
+    {
+        Tune.Put(_f, "A", "0");
+        using var cts = new CancellationTokenSource();
+        var progress = new CallbackProgress(p => { if (p.Done == 1) cts.Cancel(); });
+
+        var result = Engine().Apply(Tune.Select(Tune.Sw("sw.two", Tune.Set("A"), Tune.Set("B"))), Tune.Options, progress, cts.Token);
+
+        Assert.Equal(SwitchResult.Failed, result.Switches["sw.two"]);
+        Assert.Equal(Tune.Dword("0"), Tune.Get(_f, "A"));
+        Assert.Null(Tune.Get(_f, "B"));
+        Assert.Empty(result.LeftChanged);
+        var entry = Assert.Single(_store.Load(result.JournalPath).Entries);
+        Assert.Equal(ActionOutcome.RolledBack, entry.Outcome);
+        Assert.Equal("cancelled", entry.Detail);
+    }
+
+    [Fact]
+    public void Apply_ProgressCallbackThrows_RunContinues()
+    {
+        var progress = new CallbackProgress(_ => throw new InvalidOperationException("UI gone"));
+
+        var result = Engine().Apply(Tune.Select(Tune.Sw("sw.a", Tune.Set("A")), Tune.Sw("sw.b", Tune.Set("B"))),
+            Tune.Options, progress, CancellationToken.None);
+
+        Assert.Equal(SwitchResult.Applied, result.Switches["sw.a"]);
+        Assert.Equal(SwitchResult.Applied, result.Switches["sw.b"]);
+        Assert.Equal(Tune.Dword("1"), Tune.Get(_f, "B"));
+        Assert.Equal(["sw.a", "sw.b"], result.LeftChanged);
+    }
+
+    [Fact]
+    public void Undo_SavesToGivenPath()
+    {
+        var result = Apply(Tune.Select(Tune.Sw("sw.a", Tune.Set("A"))));
+        var elsewhere = Path.Combine(_dir, "copy", "moved.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(elsewhere)!);
+        File.Copy(result.JournalPath, elsewhere);
+
+        Engine().Undo(elsewhere, null);
+
+        Assert.Equal(ActionOutcome.RolledBack, Assert.Single(_store.Load(elsewhere).Entries).Outcome);
+        Assert.Equal(ActionOutcome.Applied, Assert.Single(_store.Load(result.JournalPath).Entries).Outcome);
+    }
+
+    [Fact]
+    public void Undo_Twice_SecondReportsNothingToUndo()
+    {
+        var result = Apply(Tune.Select(Tune.Sw("sw.a", Tune.Set("A")), Tune.Sw("sw.skip", new AppxRemove("Missing.App"))));
+
+        var first = Engine().Undo(result.JournalPath, null);
+        Assert.Equal(["sw.a"], first.Undone);
+        Assert.Equal(["sw.skip"], first.NothingToUndo);
+
+        var second = Engine().Undo(result.JournalPath, ["sw.a", "sw.unknown"]);
+        Assert.Empty(second.Undone);
+        Assert.Empty(second.CannotUndo);
+        Assert.Equal(["sw.a", "sw.unknown"], second.NothingToUndo);
     }
 
     [Fact]

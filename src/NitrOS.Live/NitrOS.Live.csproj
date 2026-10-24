@@ -8,4 +8,8 @@
     <ProjectReference Include="..\NitrOS.Core\NitrOS.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="NitrOS.Live.Tests" />
+  </ItemGroup>
+
 </Project>

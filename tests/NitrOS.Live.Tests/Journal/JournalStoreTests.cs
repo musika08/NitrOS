@@ -130,4 +130,16 @@ public class JournalStoreTests : IDisposable
         store.Save(Journal("20261001-090000", Entry(new MissingPrior())));
         Assert.Equal([b, c, a], store.List());
     }
+
+    [Fact]
+    public void JournalStore_ListPutsSuffixedRunNewer()
+    {
+        var store = new JournalStore(_dir);
+        var first = store.Save(Journal("20261025-120000"));
+        var second = store.Save(Journal("20261025-120000-2"));
+        var third = store.Save(Journal("20261025-120000-3"));
+        var later = store.Save(Journal("20261025-120001"));
+
+        Assert.Equal([later, third, second, first], store.List());
+    }
 }

@@ -1,12 +1,9 @@
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using NitrOS.Core.Model;
 using NitrOS.Core.Selecting;
 using NitrOS.Live.Handlers;
 using NitrOS.Live.Journal;
 using NitrOS.Live.Systems;
-
-[assembly: InternalsVisibleTo("NitrOS.Live.Tests")]
 
 namespace NitrOS.Live;
 
@@ -20,25 +17,36 @@ public sealed record TuneProgress(string SwitchId, int Done, int Total);
 
 /// <summary>
 /// The outcome of a run. Switches holds only the switches the run reached; a cancelled run leaves the rest out.
-/// JournalPath is empty when the run was refused.
+/// JournalPath is empty when the run was refused. LeftChanged lists, in run order, every switch with an entry still
+/// Applied after the run: a Failed switch that is not in it was cleanly rolled back.
 /// </summary>
 public sealed record TuneResult(
     string JournalPath,
     RestorePointOutcome RestorePoint,
     IReadOnlyDictionary<string, SwitchResult> Switches,
     bool Refused,
-    string? RefusedReason);
+    string? RefusedReason,
+    IReadOnlyList<string> LeftChanged);
 
-public sealed record UndoResult(IReadOnlyList<string> Undone, IReadOnlyList<(string SwitchId, string Reason)> CannotUndo);
+/// <summary>
+/// Undone: switches with at least one entry undone in this call and nothing left that cannot be undone.
+/// CannotUndo: one line per entry that could not be undone, with the reason or reinstall hint.
+/// NothingToUndo: switches with nothing left to undo (already undone, skipped or failed), and requested ids with no entries.
+/// </summary>
+public sealed record UndoResult(
+    IReadOnlyList<string> Undone,
+    IReadOnlyList<(string SwitchId, string Reason)> CannotUndo,
+    IReadOnlyList<string> NothingToUndo);
 
 /// <summary>
 /// Applies a selection to this PC with a journal that is saved before and after every action, so the PC can
-/// always be put back. A failing switch is rolled back on its own and the run carries on.
+/// always be put back. A failing or cancelled switch is rolled back on its own and the run carries on (or stops).
 /// </summary>
 public sealed class TuneEngine
 {
     public const string NoRestorePointReason = "System Restore is off on this PC.";
     public const string RestorePointDescription = "NitrOS: before tuning this PC";
+    public const string CancelledDetail = "cancelled";
 
     /// <summary>Detail on an entry saved before its Apply ran. A crash leaves it; Undo treats it as applied, which is safe because the prior was read first.</summary>
     public const string PendingDetail = "Not finished: the run stopped before this action reported back.";
@@ -49,7 +57,7 @@ public sealed class TuneEngine
 
     public TuneEngine(LiveSystems systems, JournalStore store) : this(systems, store, store.Save) { }
 
-    /// <summary>Test seam: every journal save goes through <paramref name="save"/>, so a test can count saves or simulate a crash.</summary>
+    /// <summary>Test seam: every journal save during Apply goes through <paramref name="save"/>, so a test can count saves or simulate a crash.</summary>
     internal TuneEngine(LiveSystems systems, JournalStore store, Func<RunJournal, string> save)
     {
         _s = systems ?? throw new ArgumentNullException(nameof(systems));
@@ -66,7 +74,7 @@ public sealed class TuneEngine
 
         var restorePoint = CreateRestorePoint();
         if (restorePoint == RestorePointOutcome.Unavailable && !options.AllowWithoutRestorePoint)
-            return new TuneResult("", restorePoint, new Dictionary<string, SwitchResult>(), true, NoRestorePointReason);
+            return new TuneResult("", restorePoint, new Dictionary<string, SwitchResult>(), true, NoRestorePointReason, []);
 
         var plan = Order(selection);
         var entries = new List<JournalEntry>();
@@ -128,48 +136,45 @@ public sealed class TuneEngine
                     result = ApplyResult.Failed(ex.Message);
                 }
 
-                var outcome = result.Outcome is ActionOutcome.Applied or ActionOutcome.Skipped ? result.Outcome : ActionOutcome.Failed;
-                entries[index] = entries[index] with { Outcome = outcome, Detail = result.Detail, At = Now() };
-                path = Save();
-                Report(progress, def.Id, ++done, total);
-
-                if (outcome == ActionOutcome.Failed)
+                if (result.Outcome is ActionOutcome.Applied or ActionOutcome.Skipped)
                 {
-                    // The failed action may have half-applied (for example AC written, DC not): put its prior back too.
-                    TryUndo(handler, action, prior);
-                    failed = true;
-                    break;
+                    entries[index] = entries[index] with { Outcome = result.Outcome, Detail = result.Detail, At = Now() };
+                    path = Save();
+                    Report(progress, def.Id, ++done, total);
+                    continue;
                 }
-            }
 
-            if (failed)
-            {
-                RollBack(entries, first, Save);
-                path = Save();
-                results[def.Id] = SwitchResult.Failed;
-                continue;
-            }
-
-            var mine = entries.Skip(first).ToList();
-            var applied = mine.Count(e => e.Outcome == ActionOutcome.Applied);
-            if (cancelled)
-            {
-                if (mine.Count > 0) results[def.Id] = applied > 0 ? SwitchResult.PartlyApplied : SwitchResult.Skipped;
+                path = FailAction(entries, index, handler, action, prior, result.Detail ?? "failed", Save);
+                Report(progress, def.Id, ++done, total);
+                failed = true;
                 break;
             }
 
+            var mine = entries.Skip(first).ToList();
+            if (failed || (cancelled && mine.Count > 0))
+            {
+                RollBack(entries, first, failed ? null : CancelledDetail, Save);
+                path = Save();
+                results[def.Id] = SwitchResult.Failed;
+                if (cancelled) break;
+                continue;
+            }
+            if (cancelled) break;
+
+            var applied = mine.Count(e => e.Outcome == ActionOutcome.Applied);
             results[def.Id] = applied == mine.Count && mine.Count > 0 ? SwitchResult.Applied
                 : applied == 0 ? SwitchResult.Skipped
                 : SwitchResult.PartlyApplied;
         }
 
-        return new TuneResult(path, restorePoint, results, false, null);
+        var leftChanged = entries.Where(e => e.Outcome == ActionOutcome.Applied).Select(e => e.SwitchId).Distinct().ToList();
+        return new TuneResult(path, restorePoint, results, false, null, leftChanged);
     }
 
     /// <summary>
     /// Undoes a run in reverse journal order. <paramref name="switchIds"/> null means every switch. Applied, reversible entries are
     /// put back to their prior state (even if Windows changed them since) and marked RolledBack; irreversible ones are reported
-    /// with their reinstall hint. The journal is saved after each undone entry.
+    /// with their reinstall hint. The journal at <paramref name="journalPath"/> is saved after each undone entry.
     /// </summary>
     public UndoResult Undo(string journalPath, IReadOnlyCollection<string>? switchIds)
     {
@@ -177,6 +182,7 @@ public sealed class TuneEngine
         var wanted = switchIds is null ? null : new HashSet<string>(switchIds, StringComparer.Ordinal);
         var entries = journal.Entries.ToList();
         var touched = new List<string>();
+        var undoneNow = new HashSet<string>(StringComparer.Ordinal);
         var cannot = new List<(string SwitchId, string Reason)>();
 
         for (var i = entries.Count - 1; i >= 0; i--)
@@ -203,34 +209,63 @@ public sealed class TuneEngine
             }
 
             entries[i] = e with { Outcome = ActionOutcome.RolledBack, Detail = "Undone", At = Now() };
+            undoneNow.Add(e.SwitchId);
             journal = journal with { Entries = entries.ToList() };
-            _save(journal);
+            _store.SaveTo(journal, journalPath);
         }
 
-        if (wanted is not null)
-        {
-            foreach (var id in switchIds!)
-            {
-                if (!touched.Contains(id) && !journal.SwitchIds.Contains(id))
-                    cannot.Add((id, "Not part of this run."));
-            }
-        }
-
-        var undone = touched.Where(id => !cannot.Any(c => c.SwitchId == id)).ToList();
-        return new UndoResult(undone, cannot);
+        bool Blocked(string id) => cannot.Any(c => c.SwitchId == id);
+        var undone = touched.Where(id => undoneNow.Contains(id) && !Blocked(id)).ToList();
+        var nothing = touched.Where(id => !undoneNow.Contains(id) && !Blocked(id)).ToList();
+        if (switchIds is not null)
+            nothing.AddRange(switchIds.Where(id => !touched.Contains(id)).Distinct());
+        return new UndoResult(undone, cannot, nothing);
     }
 
-    /// <summary>Undoes the switch's applied entries from <paramref name="first"/> on, newest first. Irreversible entries stay Applied.</summary>
-    private void RollBack(List<JournalEntry> entries, int first, Func<string> save)
+    /// <summary>
+    /// Records a failed Apply without losing its rollback: the entry stays Applied ("rolling back") until the failed action's own
+    /// prior is restored, and stays Applied ("Rollback failed") if that throws, so a later Undo retries it. Scripts and
+    /// irreversible actions are never undone here; they are marked Failed straight away.
+    /// </summary>
+    private string FailAction(List<JournalEntry> entries, int index, IActionHandler handler, SwitchAction action, PriorState prior,
+        string detail, Func<string> save)
+    {
+        if (prior is ScriptPrior or IrreversiblePrior or MissingPrior)
+        {
+            entries[index] = entries[index] with { Outcome = ActionOutcome.Failed, Detail = detail, At = Now() };
+            return save();
+        }
+
+        entries[index] = entries[index] with { Outcome = ActionOutcome.Applied, Detail = $"Apply failed: {detail}; rolling back", At = Now() };
+        save();
+        try
+        {
+            handler.Undo(action, prior, _s);
+            entries[index] = entries[index] with { Outcome = ActionOutcome.Failed, Detail = detail, At = Now() };
+        }
+        catch (Exception ex)
+        {
+            entries[index] = entries[index] with { Detail = "Rollback failed: " + ex.Message, At = Now() };
+        }
+        return save();
+    }
+
+    /// <summary>
+    /// Undoes the switch's applied entries from <paramref name="first"/> on, newest first, and marks them RolledBack (with
+    /// <paramref name="detail"/> when given). Irreversible and script-without-undo entries stay Applied; an undo that throws
+    /// leaves its entry Applied with "Rollback failed".
+    /// </summary>
+    private void RollBack(List<JournalEntry> entries, int first, string? detail, Func<string> save)
     {
         for (var j = entries.Count - 1; j >= first; j--)
         {
             var e = entries[j];
             if (e.Outcome != ActionOutcome.Applied || e.Prior is IrreversiblePrior) continue;
+            if (e.Detail is { } d && d.StartsWith("Rollback failed: ", StringComparison.Ordinal)) continue; // already tried
             try
             {
                 Handlers.Handlers.For(e.Action).Undo(e.Action, e.Prior, _s);
-                entries[j] = e with { Outcome = ActionOutcome.RolledBack, At = Now() };
+                entries[j] = e with { Outcome = ActionOutcome.RolledBack, Detail = detail ?? e.Detail, At = Now() };
             }
             catch (Exception ex)
             {
@@ -238,12 +273,6 @@ public sealed class TuneEngine
             }
             save();
         }
-    }
-
-    private void TryUndo(IActionHandler handler, SwitchAction action, PriorState prior)
-    {
-        try { handler.Undo(action, prior, _s); }
-        catch (Exception) { /* best effort; the entry already says Failed */ }
     }
 
     private RestorePointOutcome CreateRestorePoint()
@@ -269,8 +298,12 @@ public sealed class TuneEngine
         return id;
     }
 
-    private static void Report(IProgress<TuneProgress>? progress, string switchId, int done, int total) =>
-        progress?.Report(new TuneProgress(switchId, done, total));
+    /// <summary>A throwing progress callback must never abort a run half-way.</summary>
+    private static void Report(IProgress<TuneProgress>? progress, string switchId, int done, int total)
+    {
+        try { progress?.Report(new TuneProgress(switchId, done, total)); }
+        catch (Exception) { /* ignored on purpose */ }
+    }
 
     private static DateTimeOffset Now() => DateTimeOffset.Now;
 }

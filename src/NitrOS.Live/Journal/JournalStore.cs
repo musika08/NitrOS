@@ -13,7 +13,12 @@ public sealed class JournalStore(string directory)
         if (string.IsNullOrWhiteSpace(journal.RunId) || journal.RunId.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
             throw new ArgumentException("RunId is not a valid file name.", nameof(journal));
         Directory.CreateDirectory(directory);
-        var path = Path.Combine(directory, journal.RunId + Ext);
+        return SaveTo(journal, Path.Combine(directory, journal.RunId + Ext));
+    }
+
+    /// <summary>Writes the journal to an exact path, atomically like <see cref="Save"/>. Used to update a journal where it was loaded from.</summary>
+    public string SaveTo(RunJournal journal, string path)
+    {
         var tmp = path + ".tmp";
         File.WriteAllText(tmp, JsonSerializer.Serialize(journal, CatalogJson.Options));
         File.Move(tmp, path, overwrite: true);
@@ -24,12 +29,12 @@ public sealed class JournalStore(string directory)
         JsonSerializer.Deserialize<RunJournal>(File.ReadAllText(path), CatalogJson.Options)
         ?? throw new JsonException("Journal is null.");
 
-    /// <summary>Journal paths, newest first (RunIds are yyyyMMdd-HHmmss, so name order is time order; last-write time only breaks ties). Leftover .tmp files are ignored.</summary>
+    /// <summary>Journal paths, newest first (RunIds are yyyyMMdd-HHmmss with an optional -2, -3 suffix; ordinal order on the name without ".json" is time order, so X-2 is newer than X; last-write time only breaks ties). Leftover .tmp files are ignored.</summary>
     public IReadOnlyList<string> List()
     {
         if (!Directory.Exists(directory)) return [];
         return Directory.EnumerateFiles(directory, "*" + Ext)
-            .OrderByDescending(p => Path.GetFileName(p), StringComparer.Ordinal)
+            .OrderByDescending(p => Path.GetFileNameWithoutExtension(p), StringComparer.Ordinal)
             .ThenByDescending(File.GetLastWriteTimeUtc)
             .ToList();
     }

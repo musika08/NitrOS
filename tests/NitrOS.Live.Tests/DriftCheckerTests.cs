@@ -57,6 +57,43 @@ public sealed class DriftCheckerTests : IDisposable
     }
 
     [Fact]
+    public void Drift_PowerSetUsesRecordedScheme()
+    {
+        const string Balanced = "381b4222-f694-41f0-9685-ff5bb260df2e";
+        const string Other = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c";
+        _f.Power.SchemeList.Add(Other);
+        _f.Power.Settings[(Balanced, "sub", "set")] = (10, 10);
+        _f.Power.Settings[(Other, "sub", "set")] = (50, 50);
+        var journal = Run(Tune.Sw("sw.power", new PowerSet("sub", "set", 0, 0)));
+
+        _f.Power.Active = Other; // the user picked another plan later; the tuned plan still holds its value
+        var checker = new DriftChecker(_f.ToLive());
+        Assert.Empty(checker.Check(journal));
+        Assert.Empty(checker.LastErrors);
+
+        _f.Power.Settings[(Balanced, "sub", "set")] = (10, 0); // Windows reset the tuned plan
+        Assert.Equal(["sw.power"], checker.Check(journal));
+    }
+
+    [Fact]
+    public void Drift_ReportsCheckErrorsSeparately()
+    {
+        var journal = Run(Tune.Sw("sw.reg", Tune.Set("A")), Tune.Sw("sw.other", Tune.Set("B")));
+        Tune.Put(_f, "B", "0");
+        _f.Registry.FailOn = "A";
+
+        var checker = new DriftChecker(_f.ToLive());
+        Assert.Equal(["sw.other"], checker.Check(journal));
+        var error = Assert.Single(checker.LastErrors);
+        Assert.Equal("sw.reg", error.SwitchId);
+        Assert.Contains("FakeRegistry failure", error.Error);
+
+        _f.Registry.FailOn = null;
+        checker.Check(journal);
+        Assert.Empty(checker.LastErrors);
+    }
+
+    [Fact]
     public void Drift_IgnoresRolledBackEntries()
     {
         var journal = Run(Tune.Sw("sw.reg", Tune.Set("A")));
