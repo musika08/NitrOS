@@ -17,7 +17,8 @@ It works two ways, with the same switches:
   undo.
 
 The main target device is a handheld gaming PC (the owner's ASUS ROG Xbox
-Ally X, Ryzen Z2 Extreme, 16 GB). It also has to work on desktops and other
+Ally X, Ryzen Z2 Extreme, 24 GB of which about 8 GB is currently reserved for
+the GPU). It also has to work on desktops and other
 handhelds.
 
 ### What the owner said
@@ -32,6 +33,7 @@ handhelds.
 - Max Lean assumes the user does not use Xbox. A user who wants Xbox installs
   it separately.
 - Armoury Crate is removed on every card. No manufacturer add-ons at all.
+- Cut memory wherever possible, not only in gaming-related parts.
 
 ### Assumptions (owner can correct)
 
@@ -73,6 +75,38 @@ handhelds.
 A tweak only ships if measurement shows a real gain or it clearly removes
 load. Popular "FPS boost" tweaks that do nothing are left out.
 
+Added after research (section 12):
+
+- **Fewer service processes:** raise the service-host grouping threshold
+  (`SvcHostSplitThresholdInKB`). Microsoft's figures put it at roughly 70
+  down to roughly 20 svchost processes, with only a modest RAM gain and weaker
+  service isolation; one source reports it can upset Xbox services. Caution
+  badge; measured before card defaults are set.
+- **Vendor GPU panel in the background:** keep the AMD or NVIDIA driver, stop
+  the settings panel running (about 0.5 GB on the owner's Ally X).
+- **Start-up cleanup:** Edge startup boost and auto-launch, OneDrive setup,
+  Teams, Phone Link, OEM tray apps, resident Snipping Tool.
+- **Background apps policy:** stop Store apps running in the background.
+- **Search's background web engine:** the feature flag that runs WebView2
+  inside Search, off.
+- **Windows AI parts:** Copilot, Recall, AI Fabric service, Click to Do, and
+  AI features in Edge, Paint and Office.
+- **Delivery Optimization:** no peer-to-peer update sharing.
+- **Virtual Machine Platform and Hyper-V:** off unless the user needs WSL or
+  virtual machines.
+- **Handheld power settings:** separate plugged-in and battery values for CPU
+  boost, energy preference, USB and PCIe power saving. Never the Ultimate
+  Performance plan on a handheld.
+
+Not shipped, because the evidence says no effect or harm on Windows 11:
+SysMain off, memory compression off, pagefile off, timer resolution, Nagle
+and TcpAckFrequency, NetworkThrottlingIndex and SystemResponsiveness,
+Win32PrioritySeparation, MSI mode, MPO off, core parking, HPET and bcdedit
+timer tweaks, Spectre and Meltdown mitigations off, Office Click-to-Run off,
+touch keyboard service off or TextInputHost rename, Error Reporting off.
+These are listed in the app's help as "myths we tested" so users know why
+they are missing.
+
 ## 3. Cards
 
 Each card shows three lines before it is picked: memory saved, fewer
@@ -95,7 +129,12 @@ bottom updates live.
 | Xbox app, Game Bar, Gaming Services, Xbox home | keep | keep | keep | remove |
 | Windows Update | keep | keep | keep | off |
 | Defender | keep | keep | keep | remove |
-| Memory Integrity | keep | decided by anti-cheat test | decided by anti-cheat test | off |
+| Memory Integrity | unchanged | unchanged | unchanged | off |
+| Fewer service processes (grouping threshold) | no | decided by measurement | decided by measurement | yes |
+| Vendor GPU panel in background | keep | stop | stop | stop |
+| Start-up cleanup, background apps policy | yes | yes | yes | yes |
+| Windows AI parts (Copilot, Recall, AI Fabric) | remove | remove | remove | remove |
+| Virtual Machine Platform, Hyper-V | unchanged | off | off | off |
 | Recovery tools (ISO mode only) | keep | keep | keep | remove |
 | Printing and Print to PDF | keep | keep | keep | remove |
 | Bluetooth, microphone, touch, rotation, battery, sleep | keep | keep | keep | keep |
@@ -114,8 +153,23 @@ Store and the Xbox parts together. The restore method must be proven in the
 test virtual machine before it ships.
 
 Gamer and Streamer keep anti-cheat games working (Valorant, Fortnite, Call of
-Duty, Battlefield 6): TPM, Secure Boot and whatever security parts the tests
-show they need stay on. Max Lean says plainly that these games will not run.
+Duty, Battlefield 6, FACEIT). NitrOS never touches TPM, Secure Boot or IOMMU
+on any card, and leaves Memory Integrity and VBS as the user has them,
+because Vanguard and FACEIT increasingly require them. Max Lean turns Memory
+Integrity off and says plainly that some of these games will not run.
+
+The manufacturer add-ons switch says what is lost on an Ally: control-mode
+switching, back-button mapping, TDP and fan modes, the GPU memory reserve
+setting, and firmware, BIOS and controller updates (these then come from the
+ASUS website by hand). Third-party replacements such as Handheld Companion are
+not installed by NitrOS.
+
+Microsoft's Xbox full-screen mode claims to return about 2 GB to games by not
+loading the desktop. Max Lean removes it (owner's decision); the Start-up
+group's "Steam Big Picture at boot" switch is the replacement.
+
+The Done screen and cards show memory as "available to Windows" and note any
+amount reserved for the GPU, so a 24 GB device showing 15.6 GB is explained.
 
 ## 4. Screens
 
@@ -184,6 +238,19 @@ reversible live action, or a valid `requires` reference.
 Catalog files -> Core (check, resolve dependencies and warnings, apply card
 defaults, compute totals) -> App (show, user edits) -> Review -> Live or
 Image engine (apply, report progress) -> Done screen.
+
+### 5.3 ISO builder rules (from Tiny11's open issues)
+
+- Check that the host's DISM is at least the image's servicing version before
+  starting; refuse with a clear message otherwise.
+- Treat "pending operations deferred to first boot" as deferred, not failed.
+- Removing Edge also removes its uninstall entries, so it does not linger in
+  the installed-programs list.
+- Never write offline to protected user keys that return access denied; use
+  first-logon setup for those.
+- Download the ISO-writing tool only from Microsoft and check a pinned hash.
+- Test that a Max Lean ISO gets through Setup (Tiny11 Core ISOs hit a
+  "cannot read ProductKey" error).
 
 ## 6. Undo and safety
 
@@ -256,5 +323,29 @@ Windows 10, public release.
 - How to restore the Store and Xbox after Max Lean.
 - How Windows Update reinstalls manufacturer apps, and how to block it.
 - What the Ally X controller, back buttons and power controls do without
-  Armoury Crate.
-- Which security parts each listed anti-cheat needs.
+  Armoury Crate, and how to change the GPU memory reserve without it.
+- Primary BattlEye, Easy Anti-Cheat and FACEIT requirement pages (the
+  research could not read them).
+- Whether Smart App Control blocks anything NitrOS does.
+
+## 12. Research
+
+Findings behind this design, in `docs/research/`:
+
+- `ally-x-inventory.md`: what runs on the owner's Ally X today.
+- `winutil-tweaks.md`: every Chris Titus winutil tweak (commit 2f0bdc8).
+- `winhance-settings.md`: every Winhance setting, facts only (commit db80ecf).
+- `tiny11-removals.md`: Tiny11 removals, offline method, open issues
+  (commit 8909da1).
+- `web-evidence.md`: real vs myth vs harmful, anti-cheat requirements, Ally
+  specifics, with dated sources.
+
+Main conclusions:
+
+1. On a real device the biggest Windows-side costs are manufacturer and vendor
+   software and Defender. The bundled consumer apps are small each.
+2. Process count is driven by service-host splitting, services and scheduled
+   tasks.
+3. Most popular registry "FPS tweaks" have no measurable effect on Windows 11.
+4. None of the three reference projects publishes memory measurements, so
+   NitrOS's test machine is the only source of real numbers.
