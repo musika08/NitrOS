@@ -1,0 +1,61 @@
+{
+  "group": "security-updates",
+  "title": "Security and updates",
+  "switches": [
+    {
+      "id": "defender-remove", "name": "Turn off Microsoft Defender", "feature": "Microsoft Defender",
+      "description": "Turns off Defender's services and real-time protection on this PC or in the slim ISO.",
+      "risk": "breaks",
+      "breaks": [
+        "No antivirus: nothing scans downloads or USB drives.",
+        "Some anti-cheat games and Smart App Control may refuse to run."
+      ],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [
+        { "type": "service.start", "service": "WinDefend", "start": "disabled" },
+        { "type": "service.start", "service": "WdNisSvc", "start": "disabled" },
+        { "type": "service.start", "service": "WdNisDrv", "start": "disabled" },
+        { "type": "service.start", "service": "WdFilter", "start": "disabled" },
+        { "type": "service.start", "service": "Sense", "start": "disabled" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows Defender", "name": "DisableAntiSpyware", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection", "name": "DisableRealtimeMonitoring", "kind": "dword", "data": "1" }
+      ],
+      "image": [
+        { "type": "service.start", "service": "WinDefend", "start": "disabled" },
+        { "type": "service.start", "service": "WdNisSvc", "start": "disabled" },
+        { "type": "service.start", "service": "WdNisDrv", "start": "disabled" },
+        { "type": "service.start", "service": "WdFilter", "start": "disabled" },
+        { "type": "service.start", "service": "Sense", "start": "disabled" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows Defender", "name": "DisableAntiSpyware", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection", "name": "DisableRealtimeMonitoring", "kind": "dword", "data": "1" }
+      ]
+    },
+    {
+      "id": "windows-update-auto-off", "name": "Turn off automatic Windows updates", "feature": "Windows Update automatic installs",
+      "description": "Stops Windows downloading and installing updates on its own; you can still check for updates yourself.",
+      "risk": "breaks",
+      "breaks": [
+        "Security updates no longer install on their own; press Check for updates to get them.",
+        "Anti-cheats that need current Windows (Valorant) may not start until you update."
+      ],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [ { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU", "name": "NoAutoUpdate", "kind": "dword", "data": "1" } ],
+      "image": [ { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU", "name": "NoAutoUpdate", "kind": "dword", "data": "1" } ]
+    },
+    {
+      "id": "memory-integrity-off", "name": "Turn off Memory Integrity", "feature": "Memory Integrity",
+      "description": "Turns off Memory Integrity (core isolation); VBS, TPM and Secure Boot are not touched.",
+      "risk": "breaks",
+      "breaks": [
+        "Valorant, FACEIT and Fortnite tournaments may refuse to start.",
+        "Drivers lose a layer of protection."
+      ],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [ { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity", "name": "Enabled", "kind": "dword", "data": "0" } ],
+      "image": [ { "type": "registry.set", "hive": "HKLM", "key": "SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity", "name": "Enabled", "kind": "dword", "data": "0" } ]
+    }
+  ]
+}

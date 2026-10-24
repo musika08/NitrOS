@@ -1,0 +1,83 @@
+{
+  "group": "xbox",
+  "title": "Xbox",
+  "switches": [
+    {
+      "id": "xbox-app-remove", "name": "Remove Xbox app", "feature": "Xbox app",
+      "description": "Removes the Xbox app and with it the Xbox full-screen home.",
+      "risk": "breaks",
+      "breaks": [
+        "Game Pass PC games can't be browsed or installed.",
+        "Xbox full-screen mode is gone."
+      ],
+      "requires": ["gaming-services-remove", "xbox-sign-in-remove"],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.GamingApp" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.GamingApp" } ]
+    },
+    {
+      "id": "game-bar-remove", "name": "Remove Game Bar", "feature": "Xbox Game Bar",
+      "description": "Removes Game Bar, its overlay and its speech-to-text overlay.",
+      "risk": "breaks",
+      "breaks": [
+        "Win+G and the Xbox button no longer open Game Bar.",
+        "Game Bar clips, screenshots and widgets are gone."
+      ],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [
+        { "type": "appx.remove", "name": "Microsoft.XboxGamingOverlay" },
+        { "type": "appx.remove", "name": "Microsoft.XboxSpeechToTextOverlay" }
+      ],
+      "image": [
+        { "type": "appx.remove", "name": "Microsoft.XboxGamingOverlay" },
+        { "type": "appx.remove", "name": "Microsoft.XboxSpeechToTextOverlay" }
+      ]
+    },
+    {
+      "id": "xbox-sign-in-remove", "name": "Remove Xbox sign-in parts", "feature": "Xbox sign-in",
+      "description": "Removes the Xbox identity provider and in-game Xbox dialogs.",
+      "risk": "breaks",
+      "breaks": ["Games that sign in with an Xbox or Microsoft account (Minecraft, Forza, some Steam games) may not sign in."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [
+        { "type": "appx.remove", "name": "Microsoft.XboxIdentityProvider" },
+        { "type": "appx.remove", "name": "Microsoft.Xbox.TCUI" }
+      ],
+      "image": [
+        { "type": "appx.remove", "name": "Microsoft.XboxIdentityProvider" },
+        { "type": "appx.remove", "name": "Microsoft.Xbox.TCUI" }
+      ]
+    },
+    {
+      "id": "gaming-services-remove", "name": "Remove Gaming Services", "feature": "Gaming Services",
+      "description": "Removes Gaming Services, which Store and Game Pass games need to run.",
+      "risk": "breaks",
+      "breaks": ["Microsoft Store and Game Pass games (including Minecraft) won't start or install."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "Microsoft.GamingServices" } ],
+      "image": [ { "type": "appx.remove", "name": "Microsoft.GamingServices" } ]
+    },
+    {
+      "id": "xbox-services-off", "name": "Turn off Xbox Live services", "feature": "Xbox Live services",
+      "description": "Turns off Xbox sign-in, cloud save and networking services; controller support stays.",
+      "risk": "breaks",
+      "breaks": ["Xbox sign-in, cloud saves and Xbox multiplayer stop."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "off", "gamer": "off", "streamer": "off", "maxLean": "on" },
+      "live": [
+        { "type": "service.start", "service": "XblAuthManager", "start": "disabled" },
+        { "type": "service.start", "service": "XblGameSave", "start": "disabled" },
+        { "type": "service.start", "service": "XboxNetApiSvc", "start": "disabled" }
+      ],
+      "image": [
+        { "type": "service.start", "service": "XblAuthManager", "start": "disabled" },
+        { "type": "service.start", "service": "XblGameSave", "start": "disabled" },
+        { "type": "service.start", "service": "XboxNetApiSvc", "start": "disabled" }
+      ]
+    }
+  ]
+}

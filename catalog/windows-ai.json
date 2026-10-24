@@ -1,0 +1,164 @@
+{
+  "group": "windows-ai",
+  "title": "Windows AI",
+  "switches": [
+    {
+      "id": "copilot-remove", "name": "Remove Copilot", "feature": "Copilot",
+      "description": "Removes the Copilot app and turns off Windows Copilot and its taskbar button.",
+      "risk": "safe", "breaks": ["Copilot is gone from Windows."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "appx.remove", "name": "Microsoft.Copilot" },
+        { "type": "registry.set", "hive": "HKCU", "key": "Software\\Policies\\Microsoft\\Windows\\WindowsCopilot", "name": "TurnOffWindowsCopilot", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKCU", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "ShowCopilotButton", "kind": "dword", "data": "0" }
+      ],
+      "image": [
+        { "type": "appx.remove", "name": "Microsoft.Copilot" },
+        { "type": "registry.set", "hive": "HKCU", "key": "Software\\Policies\\Microsoft\\Windows\\WindowsCopilot", "name": "TurnOffWindowsCopilot", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKCU", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "ShowCopilotButton", "kind": "dword", "data": "0" }
+      ]
+    },
+    {
+      "id": "recall-off", "name": "Turn off Recall", "feature": "Recall",
+      "description": "Removes the Recall feature and blocks it with policy.",
+      "risk": "safe", "breaks": ["Recall snapshots and search are gone."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "feature.disable", "name": "Recall" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI", "name": "AllowRecallEnablement", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI", "name": "DisableAIDataAnalysis", "kind": "dword", "data": "1" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\WindowsAI\\Recall\\InitialConfiguration" }
+      ],
+      "image": [
+        { "type": "feature.disable", "name": "Recall" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI", "name": "AllowRecallEnablement", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI", "name": "DisableAIDataAnalysis", "kind": "dword", "data": "1" },
+        { "type": "task.disable", "path": "\\Microsoft\\Windows\\WindowsAI\\Recall\\InitialConfiguration" }
+      ]
+    },
+    {
+      "id": "ai-fabric-off", "name": "Turn off AI Fabric service", "feature": "AI Fabric service",
+      "description": "Turns off the Windows AI Fabric background service.",
+      "risk": "caution", "breaks": ["On-device Windows AI features stop."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "service.start", "service": "WSAIFabricSvc", "start": "disabled" } ],
+      "image": [ { "type": "service.start", "service": "WSAIFabricSvc", "start": "disabled" } ]
+    },
+    {
+      "id": "click-to-do-off", "name": "Turn off Click to Do", "feature": "Click to Do",
+      "description": "Turns off Click to Do by policy.",
+      "risk": "safe", "breaks": ["Click to Do and the AI actions on screen content are gone."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI", "name": "DisableClickToDo", "kind": "dword", "data": "1" } ],
+      "image": [ { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI", "name": "DisableClickToDo", "kind": "dword", "data": "1" } ]
+    },
+    {
+      "id": "ai-agents-off", "name": "Turn off Windows AI agents and model access", "feature": "AI agents and model access",
+      "description": "Blocks the Settings agent and apps' access to Windows' built-in AI models.",
+      "risk": "caution", "breaks": ["The AI agent in Settings search is gone; apps can't use Windows' built-in AI models."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI", "name": "DisableSettingsAgent", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy", "name": "LetAppsAccessSystemAIModels", "kind": "dword", "data": "2" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\generativeAI", "name": "Value", "kind": "string", "data": "Deny" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\systemAIModels", "name": "Value", "kind": "string", "data": "Deny" }
+      ],
+      "image": [
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI", "name": "DisableSettingsAgent", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy", "name": "LetAppsAccessSystemAIModels", "kind": "dword", "data": "2" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\generativeAI", "name": "Value", "kind": "string", "data": "Deny" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\systemAIModels", "name": "Value", "kind": "string", "data": "Deny" }
+      ]
+    },
+    {
+      "id": "ai-helper-apps-remove", "name": "Remove AI Manager", "feature": "AI Manager",
+      "description": "Removes the AI Manager package.",
+      "risk": "safe", "breaks": ["AI Manager is gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "appx.remove", "name": "aimgr" } ],
+      "image": [ { "type": "appx.remove", "name": "aimgr" } ]
+    },
+    {
+      "id": "edge-ai-off", "name": "Turn off AI in Edge", "feature": "Edge AI features",
+      "description": "Turns off Copilot, sidebar and generative AI features in Edge by policy.",
+      "risk": "safe",
+      "breaks": [
+        "Copilot and AI writing features inside Edge are gone.",
+        "Edge shows \"managed by your organization\"."
+      ],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "HubsSidebarEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "CopilotPageContext", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "EdgeEntraCopilotPageContext", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "Microsoft365CopilotChatIconEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "EdgeHistoryAISearchEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "ComposeInlineEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "BuiltInAIAPIsEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "AIGenThemesEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "ShareBrowsingHistoryWithCopilotSearchAllowed", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "GenAILocalFoundationalModelSettings", "kind": "dword", "data": "1" }
+      ],
+      "image": [
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "HubsSidebarEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "CopilotPageContext", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "EdgeEntraCopilotPageContext", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "Microsoft365CopilotChatIconEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "EdgeHistoryAISearchEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "ComposeInlineEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "BuiltInAIAPIsEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "AIGenThemesEnabled", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "ShareBrowsingHistoryWithCopilotSearchAllowed", "kind": "dword", "data": "0" },
+        { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\Microsoft\\Edge", "name": "GenAILocalFoundationalModelSettings", "kind": "dword", "data": "1" }
+      ]
+    },
+    {
+      "id": "paint-ai-off", "name": "Turn off AI in Paint", "feature": "Paint AI features",
+      "description": "Turns off Image Creator, Cocreator and generative fill in Paint.",
+      "risk": "safe", "breaks": ["Paint's AI tools are gone."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "registry.set", "hive": "HKLM", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Paint", "name": "DisableImageCreator", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKLM", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Paint", "name": "DisableCocreator", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKLM", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Paint", "name": "DisableGenerativeFill", "kind": "dword", "data": "1" }
+      ],
+      "image": [
+        { "type": "registry.set", "hive": "HKLM", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Paint", "name": "DisableImageCreator", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKLM", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Paint", "name": "DisableCocreator", "kind": "dword", "data": "1" },
+        { "type": "registry.set", "hive": "HKLM", "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Paint", "name": "DisableGenerativeFill", "kind": "dword", "data": "1" }
+      ]
+    },
+    {
+      "id": "notepad-ai-off", "name": "Turn off AI in Notepad", "feature": "Notepad AI features",
+      "description": "Turns off Copilot rewrite and summarise in Notepad.",
+      "risk": "safe", "breaks": ["Notepad's AI tools are gone."],
+      "modes": ["live", "image"], "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\WindowsNotepad", "name": "DisableAIFeatures", "kind": "dword", "data": "1" } ],
+      "image": [ { "type": "registry.set", "hive": "HKLM", "key": "SOFTWARE\\Policies\\WindowsNotepad", "name": "DisableAIFeatures", "kind": "dword", "data": "1" } ]
+    },
+    {
+      "id": "office-actions-server-remove", "name": "Remove Office Actions Server", "feature": "Office Actions Server",
+      "description": "Removes the Office AI actions helper and its scheduled task.",
+      "risk": "safe", "breaks": ["Office AI actions from the Start menu and File Explorer are gone."],
+      "modes": ["live", "image"], "reversible": false,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [
+        { "type": "appx.remove", "name": "Microsoft.Office.ActionsServer" },
+        { "type": "task.disable", "path": "\\Microsoft\\Office\\Office Actions Server" }
+      ],
+      "image": [
+        { "type": "appx.remove", "name": "Microsoft.Office.ActionsServer" },
+        { "type": "task.disable", "path": "\\Microsoft\\Office\\Office Actions Server" }
+      ]
+    }
+  ]
+}
