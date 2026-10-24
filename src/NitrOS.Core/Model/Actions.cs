@@ -19,6 +19,10 @@ public abstract record SwitchAction
     public bool IsDestructive => this is AppxRemove or CapabilityRemove or PackageRemove or FileRemove;
 }
 
+/// <summary>
+/// Sets one registry value. An empty <c>Name</c> targets the key's default value.
+/// For <see cref="RegistryKind.MultiString"/>, <c>Data</c> holds the strings separated by newline (LF, U+000A) characters.
+/// </summary>
 public sealed record RegistrySet(string Hive, string Key, string Name, RegistryKind Kind, string Data) : SwitchAction;
 public sealed record ServiceStart(string Service, ServiceStartType Start) : SwitchAction;
 public sealed record TaskDisable(string Path) : SwitchAction;

@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using NitrOS.Core.Model;
 
 namespace NitrOS.Core.Selecting;
@@ -13,9 +14,9 @@ public sealed class Selection
     private static readonly CardId[] Cards =
         [CardId.Recommended, CardId.Gamer, CardId.Streamer, CardId.MaxLean];
 
-    private readonly HashSet<string> _on;
+    private readonly FrozenSet<string> _on;
 
-    private Selection(Catalog catalog, TargetMode mode, DeviceProfile device, HashSet<string> on)
+    private Selection(Catalog catalog, TargetMode mode, DeviceProfile device, FrozenSet<string> on)
     {
         Catalog = catalog;
         Mode = mode;
@@ -33,30 +34,29 @@ public sealed class Selection
     public static Selection FromCard(Catalog catalog, CardId card, TargetMode mode, DeviceProfile device)
     {
         var on = new HashSet<string>();
-        var probe = new Selection(catalog, mode, device, on);
         if (card != CardId.Custom)
         {
             foreach (var def in catalog.Switches)
             {
-                if (DefaultFor(def, card) == CardDefault.On && probe.AvailabilityOf(def).Available)
+                if (DefaultFor(def, card) == CardDefault.On && AvailabilityOf(def, mode, device).Available)
                     on.Add(def.Id);
             }
         }
-        return probe;
+        return new Selection(catalog, mode, device, on.ToFrozenSet());
     }
 
-    public Availability AvailabilityOf(string id) => AvailabilityOf(Catalog.Get(id));
+    public Availability AvailabilityOf(string id) => AvailabilityOf(Catalog.Get(id), Mode, Device);
 
     public ToggleResult Toggle(string id)
     {
         var def = Catalog.Get(id);
-        var availability = AvailabilityOf(def);
+        var availability = AvailabilityOf(def, Mode, Device);
         if (!availability.Available)
             return new ToggleResult(this, false, availability.Reason);
 
         var next = new HashSet<string>(_on);
         if (!next.Remove(id)) next.Add(id);
-        return new ToggleResult(new Selection(Catalog, Mode, Device, next), true, null);
+        return new ToggleResult(new Selection(Catalog, Mode, Device, next.ToFrozenSet()), true, null);
     }
 
     /// <summary>The card whose preset equals the current selection, or null. An empty selection matches none.</summary>
@@ -76,18 +76,18 @@ public sealed class Selection
     /// so applying the card dropped nothing.
     /// </summary>
     public bool AppliesWholeCard(CardId card) =>
-        Catalog.Switches.All(def => DefaultFor(def, card) != CardDefault.On || AvailabilityOf(def).Available);
+        Catalog.Switches.All(def => DefaultFor(def, card) != CardDefault.On || AvailabilityOf(def, Mode, Device).Available);
 
-    private Availability AvailabilityOf(SwitchDef def)
+    private static Availability AvailabilityOf(SwitchDef def, TargetMode mode, DeviceProfile device)
     {
-        if (Mode == TargetMode.TunePc && !def.Modes.Contains(Model.Mode.Live))
+        if (mode == TargetMode.TunePc && !def.Modes.Contains(Model.Mode.Live))
             return new Availability(false, "Only available when building an ISO.");
-        if (Mode == TargetMode.BuildIso && !def.Modes.Contains(Model.Mode.Image))
+        if (mode == TargetMode.BuildIso && !def.Modes.Contains(Model.Mode.Image))
             return new Availability(false, "Only available when tuning this PC.");
 
         foreach (var trait in new[] { DeviceTrait.Battery, DeviceTrait.Touchscreen, DeviceTrait.Handheld })
         {
-            if (def.SkipOn.Contains(trait) && Device.Has(trait))
+            if (def.SkipOn.Contains(trait) && device.Has(trait))
             {
                 var why = trait switch
                 {

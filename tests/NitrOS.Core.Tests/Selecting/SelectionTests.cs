@@ -152,4 +152,16 @@ public class SelectionTests
         var empty = Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, DeviceProfile.Desktop);
         Assert.Null(empty.MatchingCard());
     }
+
+    [Fact]
+    public void On_IsNotACastableMutableSet()
+    {
+        var catalog = Switches.CatalogOf(GamerSwitch("x", CardDefault.On));
+        var sel = Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
+        Assert.True(sel.On is not HashSet<string>);
+        Assert.Contains("x", sel.On);
+        var toggled = sel.Toggle("x").Selection;
+        Assert.True(toggled.On is not HashSet<string>);
+        Assert.Empty(toggled.On);
+    }
 }

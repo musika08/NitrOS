@@ -1,3 +1,5 @@
+namespace NitrOS.Core.Tests;
+
 public class SmokeTests
 {
     [Fact]
