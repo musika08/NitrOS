@@ -77,7 +77,7 @@ Inventory: `docs/research/switch-inventory.md`, frozen by this check.
 - Dropped `windows-ai-core-remove`, `oem-reinstall-block`, `wpbt-off`.
 - `svchost-grouping-on` uses fixed data `4294967295`, cards off/pending/pending/on. No other row depended only on computed data.
 - Every `NEEDS ACTION TYPE` replaced with a task 1 type (`program.uninstall`, `startup.disable`, `registry.delete`, `power.scheme`, `launch.at-logon`) or the row dropped.
-- `requires` follows the spec's meaning: `xbox-app-remove` lists `store-remove` and `gaming-services-remove`; `game-recording-background-off` lists nothing; no other row lists anything.
+- `requires` follows the spec's meaning: `xbox-app-remove` lists `store-remove`, `gaming-services-remove` and `xbox-sign-in-remove`; `edge-game-assist-remove` lists `edge-remove` (controller ruling, review round 1); `game-recording-background-off` lists nothing; no other row lists anything.
 - The proposed card defaults were accepted as written.
 
 ## Left for the engines and the VM
