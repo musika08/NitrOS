@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/NitrOS.Core/NitrOS.Core.csproj" />
+    <Project Path="src/NitrOS.Live/NitrOS.Live.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NitrOS.Core.Tests/NitrOS.Core.Tests.csproj" />
+    <Project Path="tests/NitrOS.Live.Tests/NitrOS.Live.Tests.csproj" />
   </Folder>
 </Solution>

@@ -164,4 +164,33 @@ public class SelectionTests
         Assert.True(toggled.On is not HashSet<string>);
         Assert.Empty(toggled.On);
     }
+
+    [Fact]
+    public void FromIds_TurnsOnGivenIds()
+    {
+        var catalog = Switches.CatalogOf(GamerSwitch("a", CardDefault.Off), GamerSwitch("b", CardDefault.Off));
+        var sel = Selection.FromIds(catalog, ["a"], TargetMode.TunePc, DeviceProfile.Desktop);
+        Assert.True(sel.IsOn("a"));
+        Assert.False(sel.IsOn("b"));
+        Assert.Empty(sel.Dropped);
+    }
+
+    [Fact]
+    public void FromIds_DropsUnavailableWithReason()
+    {
+        var catalog = Switches.CatalogOf(ImageOnly("x", CardDefault.Off));
+        var sel = Selection.FromIds(catalog, ["x"], TargetMode.TunePc, DeviceProfile.Desktop);
+        Assert.False(sel.IsOn("x"));
+        var dropped = Assert.Single(sel.Dropped);
+        Assert.Equal("x", dropped.Id);
+        Assert.Equal("Only available when building an ISO.", dropped.Reason);
+    }
+
+    [Fact]
+    public void FromIds_UnknownIdThrows()
+    {
+        var catalog = Switches.CatalogOf(GamerSwitch("a", CardDefault.Off));
+        Assert.Throws<KeyNotFoundException>(() =>
+            Selection.FromIds(catalog, ["nope"], TargetMode.TunePc, DeviceProfile.Desktop));
+    }
 }

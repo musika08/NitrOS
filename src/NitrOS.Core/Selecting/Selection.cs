@@ -16,18 +16,23 @@ public sealed class Selection
 
     private readonly FrozenSet<string> _on;
 
-    private Selection(Catalog catalog, TargetMode mode, DeviceProfile device, FrozenSet<string> on)
+    private Selection(Catalog catalog, TargetMode mode, DeviceProfile device, FrozenSet<string> on,
+        IReadOnlyList<(string Id, string Reason)>? dropped = null)
     {
         Catalog = catalog;
         Mode = mode;
         Device = device;
         _on = on;
+        Dropped = dropped ?? [];
     }
 
     public Catalog Catalog { get; }
     public TargetMode Mode { get; }
     public DeviceProfile Device { get; }
     public IReadOnlySet<string> On => _on;
+
+    /// <summary>Ids given to <see cref="FromIds"/> that were left off because they are unavailable, with the reason.</summary>
+    public IReadOnlyList<(string Id, string Reason)> Dropped { get; }
 
     public bool IsOn(string id) => _on.Contains(id);
 
@@ -43,6 +48,20 @@ public sealed class Selection
             }
         }
         return new Selection(catalog, mode, device, on.ToFrozenSet());
+    }
+
+    /// <summary>Unknown ids throw KeyNotFoundException; unavailable ids are left off and listed in Dropped.</summary>
+    public static Selection FromIds(Catalog catalog, IEnumerable<string> ids, TargetMode mode, DeviceProfile device)
+    {
+        var on = new HashSet<string>();
+        var dropped = new List<(string Id, string Reason)>();
+        foreach (var id in ids)
+        {
+            var availability = AvailabilityOf(catalog.Get(id), mode, device);
+            if (availability.Available) on.Add(id);
+            else dropped.Add((id, availability.Reason ?? "Unavailable."));
+        }
+        return new Selection(catalog, mode, device, on.ToFrozenSet(), dropped);
     }
 
     public Availability AvailabilityOf(string id) => AvailabilityOf(Catalog.Get(id), Mode, Device);
