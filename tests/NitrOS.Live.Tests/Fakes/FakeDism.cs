@@ -6,7 +6,7 @@ public sealed class FakeDism : IDism
 {
     public Dictionary<string, string> Features { get; } = new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, string> Capabilities { get; } = new(StringComparer.OrdinalIgnoreCase);
-    /// <summary>What Disable/Enable/RemoveCapability return for a present item; the state changes only on Done.</summary>
+    /// <summary>What Disable/Enable/RemoveCapability return for a present item; the state changes on Done and RebootRequired, not on Deferred or Failed.</summary>
     public DismOutcome Result { get; set; } = DismOutcome.Done;
     public string? FailOn { get; set; }
 
@@ -38,7 +38,7 @@ public sealed class FakeDism : IDism
     {
         Check(name);
         if (!map.ContainsKey(name)) return DismOutcome.NotPresent;
-        if (Result is DismOutcome.Done or DismOutcome.RebootRequired or DismOutcome.Deferred) map[name] = newState;
+        if (Result is DismOutcome.Done or DismOutcome.RebootRequired) map[name] = newState;
         return Result;
     }
 }

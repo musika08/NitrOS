@@ -24,13 +24,13 @@ public sealed class JournalStore(string directory)
         JsonSerializer.Deserialize<RunJournal>(File.ReadAllText(path), CatalogJson.Options)
         ?? throw new JsonException("Journal is null.");
 
-    /// <summary>Journal paths, newest (last written) first. Leftover .tmp files are ignored.</summary>
+    /// <summary>Journal paths, newest first (RunIds are yyyyMMdd-HHmmss, so name order is time order; last-write time only breaks ties). Leftover .tmp files are ignored.</summary>
     public IReadOnlyList<string> List()
     {
         if (!Directory.Exists(directory)) return [];
         return Directory.EnumerateFiles(directory, "*" + Ext)
-            .OrderByDescending(File.GetLastWriteTimeUtc)
-            .ThenByDescending(p => p, StringComparer.Ordinal)
+            .OrderByDescending(p => Path.GetFileName(p), StringComparer.Ordinal)
+            .ThenByDescending(File.GetLastWriteTimeUtc)
             .ToList();
     }
 }

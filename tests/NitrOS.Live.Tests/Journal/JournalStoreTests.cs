@@ -16,8 +16,20 @@ public class JournalStoreTests : IDisposable
     private static RunJournal Journal(string id, params JournalEntry[] entries) =>
         new(id, "S-1-5-21-1", "26100", ["sw.one"], entries);
 
+    private static readonly SwitchAction[] Actions =
+    [
+        new TaskDisable("\\Microsoft\\X"),
+        new PowerSet("sub", "set", null, null),
+        new PowerSet("sub", "set", 5, 0),
+        new StartupDisable(StartupSource.Run, "Foo", "HKCU"),
+        new Script("echo hi", "echo undo"),
+        new Script("echo hi"),
+        new LaunchAtLogon("%ProgramFiles%\\X\\x.exe", "--tray"),
+        new RegistryDelete("HKLM", "SOFTWARE\\X"),
+    ];
+
     private static JournalEntry Entry(PriorState prior, int i = 0) =>
-        new("sw.one", i, new TaskDisable("\\Microsoft\\X"), prior, ActionOutcome.Applied, null,
+        new("sw.one", i, Actions[i % Actions.Length], prior, ActionOutcome.Applied, null,
             new DateTimeOffset(2026, 10, 25, 12, 0, 0, TimeSpan.Zero));
 
     [Fact]
@@ -107,13 +119,15 @@ public class JournalStoreTests : IDisposable
     public void JournalStore_ListNewestFirst()
     {
         var store = new JournalStore(_dir);
-        var a = store.Save(Journal("a"));
-        var b = store.Save(Journal("b"));
-        var c = store.Save(Journal("c"));
-        File.SetLastWriteTimeUtc(a, new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc));
-        File.SetLastWriteTimeUtc(b, new DateTime(2026, 10, 3, 0, 0, 0, DateTimeKind.Utc));
-        File.SetLastWriteTimeUtc(c, new DateTime(2026, 10, 2, 0, 0, 0, DateTimeKind.Utc));
+        var a = store.Save(Journal("20261001-090000"));
+        var b = store.Save(Journal("20261003-090000"));
+        var c = store.Save(Journal("20261002-090000"));
 
+        Assert.Equal([b, c, a], store.List());
+
+        // Re-saving the OLDEST run (a later write time) must not move it to the front.
+        File.SetLastWriteTimeUtc(a, DateTime.UtcNow.AddDays(1));
+        store.Save(Journal("20261001-090000", Entry(new MissingPrior())));
         Assert.Equal([b, c, a], store.List());
     }
 }

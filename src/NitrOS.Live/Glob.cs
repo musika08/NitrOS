@@ -6,6 +6,6 @@ namespace NitrOS.Live;
 public static class Glob
 {
     public static bool IsMatch(string pattern, string text) =>
-        Regex.IsMatch(text, "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$",
+        Regex.IsMatch(text, "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "\\z",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline);
 }

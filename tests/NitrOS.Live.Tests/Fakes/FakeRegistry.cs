@@ -25,7 +25,7 @@ public sealed class FakeRegistry : IRegistry
     public void SetValue(LiveHive h, string key, string name, RegValue value, RegView v)
     {
         Check(key, name);
-        Keys.Add((h, key, v));
+        AddWithAncestors(h, key, v);
         Values[(h, key, name, v)] = value;
     }
 
@@ -44,23 +44,44 @@ public sealed class FakeRegistry : IRegistry
     public RegTree? ExportKey(LiveHive h, string key, RegView v)
     {
         Check(key);
-        if (!KeyExists(h, key, v)) return null;
+        if (!Exists(h, key, v)) return null;
         var values = Values.Where(p => p.Key.Hive == h && p.Key.View == v && Eq(p.Key.Key, key))
             .Select(p => new RegNamedValue(p.Key.Name, p.Value)).ToList();
         var prefix = key + "\\";
-        var childPaths = Keys.Where(k => k.Hive == h && k.View == v && k.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-                && k.Key.IndexOf('\\', prefix.Length) < 0)
-            .Select(k => k.Key).ToList();
-        var subs = childPaths.Select(c => ExportKey(h, c, v)!).ToList();
-        return new RegTree(key, values, subs);
+        var childPaths = new List<string>();
+        foreach (var path in Keys.Where(k => k.Hive == h && k.View == v).Select(k => k.Key)
+                     .Concat(Values.Keys.Where(k => k.Hive == h && k.View == v).Select(k => k.Key)))
+        {
+            if (!path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+            var end = path.IndexOf('\\', prefix.Length);
+            var child = end < 0 ? path : path[..end];
+            if (!childPaths.Contains(child, StringComparer.OrdinalIgnoreCase)) childPaths.Add(child);
+        }
+        return new RegTree(key, values, childPaths.Select(c => ExportKey(h, c, v)!).ToList());
     }
 
     public void ImportKey(LiveHive h, RegTree tree, RegView v)
     {
         Check(tree.Key);
-        Keys.Add((h, tree.Key, v));
+        AddWithAncestors(h, tree.Key, v);
         foreach (var nv in tree.Values) Values[(h, tree.Key, nv.Name, v)] = nv.Value;
         foreach (var sub in tree.SubKeys) ImportKey(h, sub, v);
+    }
+
+    private void AddWithAncestors(LiveHive h, string key, RegView v)
+    {
+        var idx = -1;
+        while ((idx = key.IndexOf('\\', idx + 1)) >= 0) Keys.Add((h, key[..idx], v));
+        Keys.Add((h, key, v));
+    }
+
+    /// <summary>A key exists if it was created, or any value or descendant key sits under it.</summary>
+    private bool Exists(LiveHive h, string key, RegView v)
+    {
+        if (Keys.Contains((h, key, v))) return true;
+        var prefix = key + "\\";
+        return Values.Keys.Any(k => k.Hive == h && k.View == v && (Eq(k.Key, key) || k.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
+            || Keys.Any(k => k.Hive == h && k.View == v && k.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }
 
     public void DeleteKey(LiveHive h, string key, RegView v)
@@ -75,7 +96,7 @@ public sealed class FakeRegistry : IRegistry
     public bool KeyExists(LiveHive h, string key, RegView v)
     {
         Check(key);
-        return Keys.Contains((h, key, v));
+        return Exists(h, key, v);
     }
 
     private static bool Eq(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
