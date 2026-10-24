@@ -99,6 +99,17 @@ internal static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool QueryServiceStatus(SafeServiceHandle service, out SERVICE_STATUS status);
 
+    public const int WTSUserName = 5;
+    public const int WTSDomainName = 7;
+    public const uint SERVICE_START_PENDING = 2;
+
+    [DllImport("wtsapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, EntryPoint = "WTSQuerySessionInformationW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool WTSQuerySessionInformation(IntPtr server, uint sessionId, int infoClass, out IntPtr buffer, out uint bytesReturned);
+
+    [DllImport("wtsapi32.dll")]
+    public static extern void WTSFreeMemory(IntPtr memory);
+
     // ---- WinVerifyTrust (wintrust) ----
     public static readonly Guid WINTRUST_ACTION_GENERIC_VERIFY_V2 = new("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
     public const uint WTD_UI_NONE = 2;

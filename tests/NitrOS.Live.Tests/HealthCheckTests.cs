@@ -1,3 +1,4 @@
+using System.Net.Http;
 using NitrOS.Live;
 using NitrOS.Live.Windows;
 
@@ -96,11 +97,65 @@ public class HealthCheckTests
     public void WinHealthProbe_ReadsThisPc()
     {
         // Read-only: process list, service status, package query and one HTTP GET.
-        var p = new WinHealthProbe();
+        var p = new WinHealthProbe(_ => { });
         Assert.True(p.IsServiceRunning("RpcSs"));
         Assert.False(p.IsServiceRunning("NitrOS-no-such-service"));
         Assert.True(p.IsProcessRunning("explorer"));
         Assert.False(p.IsPackageInstalled("NitrOS.No.Such.Package.7f3a"));
         _ = p.HttpGet(HealthCheck.ConnectTestUrl);
+    }
+
+    private sealed class ThrowingProbe : IHealthProbe
+    {
+        public bool IsProcessRunning(string n) => throw new InvalidOperationException("boom " + n);
+        public bool IsServiceRunning(string n) => n == "Audiosrv" ? true : throw new InvalidOperationException("svc " + n);
+        public bool IsPackageInstalled(string n) => true;
+        public string? HttpGet(string url) => throw new HttpRequestException("offline");
+    }
+
+    [Fact]
+    public void Health_ProbeExceptionFailsOnlyThatItemWithDetail()
+    {
+        var r = HealthCheck.Run(new ThrowingProbe(), None);
+        var items = r.Items.ToDictionary(i => i.Name);
+        Assert.False(items["Start menu"].Ok);
+        Assert.Contains("boom", items["Start menu"].Detail);
+        Assert.False(items["Internet"].Ok);
+        Assert.Contains("offline", items["Internet"].Detail);
+        Assert.True(items["Sound"].Ok);
+        Assert.Null(items["Sound"].Detail);
+        Assert.False(items["Bluetooth"].Ok);
+        Assert.True(items["Microsoft Store"].Ok);
+        Assert.False(items["Game Pass"].Ok);
+        Assert.Equal(6, r.Items.Count);
+    }
+
+    [Fact]
+    public void Retry_StopsAtFirstSuccessAndSleepsBetweenTries()
+    {
+        var sleeps = new List<TimeSpan>();
+        var calls = 0;
+        var ok = ProbeRetry.Until(() => ++calls == 2, sleeps.Add);
+        Assert.True(ok);
+        Assert.Equal(2, calls);
+        Assert.Equal([TimeSpan.FromSeconds(2)], sleeps);
+    }
+
+    [Fact]
+    public void Retry_GivesUpAfterThreeTries()
+    {
+        var sleeps = new List<TimeSpan>();
+        var calls = 0;
+        Assert.False(ProbeRetry.Until(() => { calls++; return false; }, sleeps.Add));
+        Assert.Equal(3, calls);
+        Assert.Equal(2, sleeps.Count);
+    }
+
+    [Fact]
+    public void Retry_ServicePendingCountsAsNotYet()
+    {
+        var states = new Queue<uint>([NativeMethods.SERVICE_START_PENDING, NativeMethods.SERVICE_RUNNING]);
+        var ok = ProbeRetry.Until(() => states.Dequeue() == NativeMethods.SERVICE_RUNNING, _ => { });
+        Assert.True(ok);
     }
 }

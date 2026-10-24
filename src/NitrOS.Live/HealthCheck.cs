@@ -9,7 +9,7 @@ public interface IHealthProbe
     string? HttpGet(string url);
 }
 
-public record HealthItem(string Name, bool Ok, string? LikelySwitchId);
+public record HealthItem(string Name, bool Ok, string? LikelySwitchId, string? Detail = null);
 
 public record HealthReport(IReadOnlyList<HealthItem> Items)
 {
@@ -34,35 +34,35 @@ public static class HealthCheck
     {
         var items = new List<HealthItem>
         {
-            Item("Start menu", probe.IsProcessRunning("StartMenuExperienceHost"), StartSwitch),
-            Item("Internet", IsInternetUp(probe), null),
-            Item("Sound", probe.IsServiceRunning("Audiosrv"), null),
+            Check("Start menu", StartSwitch, () => probe.IsProcessRunning("StartMenuExperienceHost")),
+            Check("Internet", null, () => probe.HttpGet(ConnectTestUrl)?.Trim() == ConnectTestBody),
+            Check("Sound", null, () => probe.IsServiceRunning("Audiosrv")),
         };
 
         if (!appliedSwitchIds.Contains(BluetoothSwitch))
-            items.Add(Item("Bluetooth", probe.IsServiceRunning("bthserv"), BluetoothSwitch));
+            items.Add(Check("Bluetooth", BluetoothSwitch, () => probe.IsServiceRunning("bthserv")));
 
         if (!appliedSwitchIds.Contains(StoreSwitch))
-            items.Add(Item("Microsoft Store", probe.IsPackageInstalled("Microsoft.WindowsStore"), StoreSwitch));
+            items.Add(Check("Microsoft Store", StoreSwitch, () => probe.IsPackageInstalled("Microsoft.WindowsStore")));
 
         var keepXboxApp = !appliedSwitchIds.Contains(XboxAppSwitch);
         var keepGamingServices = !appliedSwitchIds.Contains(GamingServicesSwitch);
         if (keepXboxApp || keepGamingServices)
         {
-            var appOk = !keepXboxApp || probe.IsPackageInstalled("Microsoft.GamingApp");
-            var servicesOk = !keepGamingServices || probe.IsServiceRunning("GamingServices");
             // Name the switch whose part actually failed.
-            var likely = !appOk ? XboxAppSwitch : GamingServicesSwitch;
-            items.Add(Item("Game Pass", appOk && servicesOk, likely));
+            var app = keepXboxApp ? Check("Game Pass", XboxAppSwitch, () => probe.IsPackageInstalled("Microsoft.GamingApp")) : null;
+            var svc = keepGamingServices ? Check("Game Pass", GamingServicesSwitch, () => probe.IsServiceRunning("GamingServices")) : null;
+            items.Add(app is { Ok: false } ? app : svc is { Ok: false } ? svc : new HealthItem("Game Pass", true, null));
         }
 
         return new HealthReport(items);
     }
 
-    private static bool IsInternetUp(IHealthProbe probe)
+    // A probe that throws fails only its own item, with the message kept as Detail.
+    private static HealthItem Check(string name, string? likelySwitch, Func<bool> test)
     {
-        try { return probe.HttpGet(ConnectTestUrl)?.Trim() == ConnectTestBody; }
-        catch (Exception) { return false; }
+        try { return Item(name, test(), likelySwitch); }
+        catch (Exception e) { return new HealthItem(name, false, likelySwitch, e.Message); }
     }
 
     private static HealthItem Item(string name, bool ok, string? likely) => new(name, ok, ok ? null : likely);

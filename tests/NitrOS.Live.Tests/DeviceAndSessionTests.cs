@@ -95,4 +95,19 @@ public class DeviceAndSessionTests
         _ = f.IsElevated;
         _ = f.ConsoleUserSid;
     }
+
+    [Fact]
+    public void WinSessionFacts_ConsoleUserSidMatchesThisUser()
+    {
+        // Read-only: tests run as the signed-in user on this PC.
+        var f = new WinSessionFacts();
+        Assert.NotNull(f.ConsoleUserSid);
+        Assert.Equal(f.ProcessUserSid, f.ConsoleUserSid);
+    }
+
+    [Fact]
+    public void WinSessionFacts_BuildComesFromRegistry()
+    {
+        Assert.True(new WinSessionFacts().WindowsBuild >= 22000);
+    }
 }
