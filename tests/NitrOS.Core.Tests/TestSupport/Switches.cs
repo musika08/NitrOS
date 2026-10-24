@@ -49,7 +49,7 @@ public static class Switches
         };
     }
 
-    public static NitrOS.Core.Model.Catalog CatalogOf(params SwitchDef[] switches) =>
+    public static Catalog CatalogOf(params SwitchDef[] switches) =>
         new(
             [new GroupFile("test", "Test", switches.Select(s => s with { Group = "test" }).ToList())],
             new CardMeasurements(null, null, null, null));

@@ -6,14 +6,14 @@ namespace NitrOS.Core.Tests.Selecting;
 
 public class WarningEngineTests
 {
-    private static Selection Custom(NitrOS.Core.Model.Catalog catalog, TargetMode mode, params string[] on)
+    private static Selection Custom(Catalog catalog, TargetMode mode, params string[] on)
     {
         var sel = Selection.FromCard(catalog, CardId.Custom, mode, DeviceProfile.Desktop);
         foreach (var id in on) sel = sel.Toggle(id).Selection;
         return sel;
     }
 
-    private static NitrOS.Core.Model.Catalog XboxStore() => Switches.CatalogOf(
+    private static Catalog XboxStore() => Switches.CatalogOf(
         Switches.Make("store", b => b.Feature = "Microsoft Store"),
         Switches.Make("xbox", b => { b.Feature = "Xbox app"; b.Requires = ["store"]; }));
 

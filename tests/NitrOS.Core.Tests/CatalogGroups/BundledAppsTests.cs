@@ -2,7 +2,7 @@ using NitrOS.Core.Loading;
 using NitrOS.Core.Model;
 using NitrOS.Core.Tests.TestSupport;
 
-namespace NitrOS.Core.Tests.Catalog;
+namespace NitrOS.Core.Tests.CatalogGroups;
 
 public class BundledAppsTests
 {

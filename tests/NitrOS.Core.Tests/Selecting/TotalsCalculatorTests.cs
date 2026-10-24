@@ -24,7 +24,7 @@ public class TotalsCalculatorTests
             b.Breaks = breaks;
         });
 
-    private static Selection Gamer(NitrOS.Core.Model.Catalog catalog) =>
+    private static Selection Gamer(Catalog catalog) =>
         Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
 
     [Fact]
