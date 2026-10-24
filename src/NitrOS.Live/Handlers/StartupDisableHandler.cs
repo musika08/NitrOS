@@ -114,10 +114,10 @@ public sealed class StartupDisableHandler : IActionHandler
             : new StartupPrior(targets.Select(t => new StartupEntry(Loc(t), t.Old)).ToList());
     }
 
-    public ActionOutcome Apply(SwitchAction action, LiveSystems s)
+    public ApplyResult Apply(SwitchAction action, LiveSystems s)
     {
         var targets = Resolve((StartupDisable)action, s);
-        if (targets.Count == 0) return ActionOutcome.Skipped;
+        if (targets.Count == 0) return ApplyResult.Skipped("no matching start-up entry");
         foreach (var t in targets)
         {
             switch (t.Kind)
@@ -134,7 +134,7 @@ public sealed class StartupDisableHandler : IActionHandler
                     break;
             }
         }
-        return ActionOutcome.Applied;
+        return ApplyResult.Applied;
     }
 
     public void Undo(SwitchAction action, PriorState prior, LiveSystems s)

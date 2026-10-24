@@ -57,7 +57,7 @@ public class StartupDisableHandlerTests
         Run(f, LiveHive.CurrentUser, "Foo");
         Approve(f, LiveHive.CurrentUser, "Run", "Foo", Enabled);
         var a = RunAction();
-        Assert.Equal(ActionOutcome.Applied, Handler(a).Apply(a, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, Handler(a).Apply(a, f.ToLive()).Outcome);
         Assert.Equal(Disabled, Hex(f, LiveHive.CurrentUser, "Run", "Foo"));
         Assert.Equal(RegistryKind.Binary, f.Registry.GetValue(LiveHive.CurrentUser, Approved + "Run", "Foo", RegView.Default)!.Kind);
     }
@@ -70,7 +70,7 @@ public class StartupDisableHandlerTests
         var a = RunAction();
         var h = Handler(a);
         var prior = h.Read(a, f.ToLive());
-        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()).Outcome);
         Assert.Equal("030000000000000000000000", Hex(f, LiveHive.CurrentUser, "Run", "Foo"));
         h.Undo(a, prior, f.ToLive());
         Assert.Null(Hex(f, LiveHive.CurrentUser, "Run", "Foo"));
@@ -101,7 +101,9 @@ public class StartupDisableHandlerTests
         })
         {
             Assert.IsType<MissingPrior>(Handler(a).Read(a, f.ToLive()));
-            Assert.Equal(ActionOutcome.Skipped, Handler(a).Apply(a, f.ToLive()));
+            var skip = Handler(a).Apply(a, f.ToLive());
+            Assert.Equal(ActionOutcome.Skipped, skip.Outcome);
+            Assert.Equal("no matching start-up entry", skip.Detail);
             Handler(a).Undo(a, new MissingPrior(), f.ToLive());
             Assert.False(Handler(a).IsInEffect(a, f.ToLive()));
         }
@@ -132,7 +134,7 @@ public class StartupDisableHandlerTests
         var a = RunAction();
         var h = Handler(a);
         Assert.IsType<MissingPrior>(h.Read(a, f.ToLive()));
-        Assert.Equal(ActionOutcome.Skipped, h.Apply(a, f.ToLive()));
+        Assert.Equal(ActionOutcome.Skipped, h.Apply(a, f.ToLive()).Outcome);
         Assert.Equal("060000000000000000000000", Hex(f, LiveHive.CurrentUser, "Run", "Foo"));
         Assert.False(h.IsInEffect(a, f.ToLive()));
     }
@@ -154,7 +156,7 @@ public class StartupDisableHandlerTests
         var f = new FakeSystems();
         Run(f, LiveHive.LocalMachine, "Foo");
         var a = RunAction(hive: "HKLM");
-        Assert.Equal(ActionOutcome.Applied, Handler(a).Apply(a, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, Handler(a).Apply(a, f.ToLive()).Outcome);
         Assert.Equal(Disabled, Hex(f, LiveHive.LocalMachine, "Run", "Foo"));
         Assert.Null(Hex(f, LiveHive.LocalMachine, "Run32", "Foo"));
     }
@@ -168,7 +170,7 @@ public class StartupDisableHandlerTests
         var a = RunAction(hive: "HKLM");
         var h = Handler(a);
         var prior = h.Read(a, f.ToLive());
-        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()).Outcome);
         Assert.Equal(Disabled, Hex(f, LiveHive.LocalMachine, "Run32", "Foo"));
         Assert.Null(Hex(f, LiveHive.LocalMachine, "Run", "Foo"));
         h.Undo(a, prior, f.ToLive());
@@ -205,7 +207,7 @@ public class StartupDisableHandlerTests
         var a = new StartupDisable(StartupSource.StartupFolder, "Thing.lnk");
         var h = Handler(a);
         var prior = h.Read(a, f.ToLive());
-        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()).Outcome);
         Assert.Equal(Disabled, Hex(f, LiveHive.CurrentUser, "StartupFolder", "Thing.lnk"));
         Assert.True(h.IsInEffect(a, f.ToLive()));
         h.Undo(a, prior, f.ToLive());
@@ -222,7 +224,7 @@ public class StartupDisableHandlerTests
         var a = new StartupDisable(StartupSource.StartupFolder, "New.lnk");
         var h = Handler(a);
         var prior = h.Read(a, f.ToLive());
-        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()).Outcome);
         Assert.Equal(Disabled, Hex(f, LiveHive.CurrentUser, "StartupFolder", "New.lnk"));
         h.Undo(a, prior, f.ToLive());
         Assert.Null(Hex(f, LiveHive.CurrentUser, "StartupFolder", "New.lnk"));
@@ -236,7 +238,7 @@ public class StartupDisableHandlerTests
         var a = new StartupDisable(StartupSource.AppxTask, "Pkg_8wekyb3d8bbwe!StartupId");
         var h = Handler(a);
         var prior = h.Read(a, f.ToLive());
-        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()).Outcome);
         Assert.Equal("1", State(f, "Pkg_8wekyb3d8bbwe", "StartupId"));
         Assert.True(h.IsInEffect(a, f.ToLive()));
         h.Undo(a, prior, f.ToLive());
@@ -250,7 +252,7 @@ public class StartupDisableHandlerTests
         var f = new FakeSystems();
         foreach (var pkg in new[] { "Vendor.A_x", "Vendor.B_x", "Other_x" }) AppxState(f, pkg, "T", "2");
         var a = new StartupDisable(StartupSource.AppxTask, "Vendor.*!T");
-        Assert.Equal(ActionOutcome.Applied, Handler(a).Apply(a, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, Handler(a).Apply(a, f.ToLive()).Outcome);
         Assert.Equal("1", State(f, "Vendor.A_x", "T"));
         Assert.Equal("1", State(f, "Vendor.B_x", "T"));
         Assert.Equal("2", State(f, "Other_x", "T"));
@@ -264,7 +266,7 @@ public class StartupDisableHandlerTests
         var a = new StartupDisable(StartupSource.Task, "\\Vendor\\Updater");
         var h = Handler(a);
         var prior = h.Read(a, f.ToLive());
-        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, h.Apply(a, f.ToLive()).Outcome);
         Assert.False(f.Tasks.Enabled["\\Vendor\\Updater"]);
         Assert.True(h.IsInEffect(a, f.ToLive()));
         h.Undo(a, prior, f.ToLive());

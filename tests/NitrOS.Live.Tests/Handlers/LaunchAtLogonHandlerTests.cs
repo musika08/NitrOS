@@ -39,7 +39,7 @@ public class LaunchAtLogonHandlerTests
     public void LaunchAtLogon_Applies()
     {
         var f = WithExe();
-        Assert.Equal(ActionOutcome.Applied, Handler().Apply(Action, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, Handler().Apply(Action, f.ToLive()).Outcome);
         Assert.Equal(new RegValue(RegistryKind.String, "\"C:\\Tools\\app.exe\" --tray"), Current(f));
     }
 
@@ -50,7 +50,7 @@ public class LaunchAtLogonHandlerTests
         Environment.SetEnvironmentVariable("NITROS_TEST_DIR", "C:\\Expanded");
         var a = new LaunchAtLogon("%NITROS_TEST_DIR%\\x.exe");
         f.Files.Existing.Add("C:\\Expanded\\x.exe");
-        Assert.Equal(ActionOutcome.Applied, NitrOS.Live.Handlers.Handlers.For(a).Apply(a, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, NitrOS.Live.Handlers.Handlers.For(a).Apply(a, f.ToLive()).Outcome);
         Assert.Equal("\"C:\\Expanded\\x.exe\"", Current(f)!.Data);
     }
 
@@ -83,7 +83,9 @@ public class LaunchAtLogonHandlerTests
     {
         var f = new FakeSystems();
         Assert.IsType<MissingPrior>(Handler().Read(Action, f.ToLive()));
-        Assert.Equal(ActionOutcome.Skipped, Handler().Apply(Action, f.ToLive()));
+        var skip = Handler().Apply(Action, f.ToLive());
+        Assert.Equal(ActionOutcome.Skipped, skip.Outcome);
+        Assert.Equal("program file not found", skip.Detail);
         Assert.Null(Current(f));
         Handler().Undo(Action, new MissingPrior(), f.ToLive());
         Assert.Null(Current(f));

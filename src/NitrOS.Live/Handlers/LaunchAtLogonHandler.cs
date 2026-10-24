@@ -21,12 +21,12 @@ public sealed class LaunchAtLogonHandler : IActionHandler
         return new LaunchPrior(s.Registry.GetValue(LiveHive.CurrentUser, RunKey, ValueName, RegView.Default));
     }
 
-    public ActionOutcome Apply(SwitchAction action, LiveSystems s)
+    public ApplyResult Apply(SwitchAction action, LiveSystems s)
     {
         var a = (LaunchAtLogon)action;
-        if (!s.Files.Exists(Program(a))) return ActionOutcome.Skipped;
+        if (!s.Files.Exists(Program(a))) return ApplyResult.Skipped("program file not found");
         s.Registry.SetValue(LiveHive.CurrentUser, RunKey, ValueName, Wanted(a), RegView.Default);
-        return ActionOutcome.Applied;
+        return ApplyResult.Applied;
     }
 
     public void Undo(SwitchAction action, PriorState prior, LiveSystems s)

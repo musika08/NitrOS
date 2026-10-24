@@ -12,11 +12,11 @@ public sealed class RegistrySetHandler : IActionHandler
         return new RegistryPrior(s.Registry.GetValue(HiveMap.Parse(a.Hive), a.Key, a.Name, RegView.Default));
     }
 
-    public ActionOutcome Apply(SwitchAction action, LiveSystems s)
+    public ApplyResult Apply(SwitchAction action, LiveSystems s)
     {
         var a = (RegistrySet)action;
         s.Registry.SetValue(HiveMap.Parse(a.Hive), a.Key, a.Name, new RegValue(a.Kind, a.Data), RegView.Default);
-        return ActionOutcome.Applied;
+        return ApplyResult.Applied;
     }
 
     public void Undo(SwitchAction action, PriorState prior, LiveSystems s)

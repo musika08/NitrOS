@@ -35,7 +35,7 @@ public class RegistrySetHandlerTests
     public void RegistrySet_Applies()
     {
         var f = new FakeSystems();
-        Assert.Equal(ActionOutcome.Applied, Handler().Apply(Action, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, Handler().Apply(Action, f.ToLive()).Outcome);
         Assert.Equal(new RegValue(RegistryKind.Dword, "1"), Current(f));
     }
 
@@ -98,6 +98,6 @@ public class RegistrySetHandlerTests
     public void RegistrySet_UnknownHiveThrows()
     {
         var f = new FakeSystems();
-        Assert.Throws<ArgumentException>(() => Handler().Apply(Action with { Hive = "HKXX" }, f.ToLive()));
+        Assert.Throws<ArgumentException>(() => Handler().Apply(Action with { Hive = "HKXX" }, f.ToLive()).Outcome);
     }
 }

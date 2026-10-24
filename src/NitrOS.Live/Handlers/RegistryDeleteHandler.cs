@@ -19,19 +19,19 @@ public sealed class RegistryDeleteHandler : IActionHandler
         return tree is null ? new MissingPrior() : new RegistryTreePrior(tree, null);
     }
 
-    public ActionOutcome Apply(SwitchAction action, LiveSystems s)
+    public ApplyResult Apply(SwitchAction action, LiveSystems s)
     {
         var a = (RegistryDelete)action;
         var hive = HiveMap.Parse(a.Hive);
         if (a.Name is not null)
         {
-            if (s.Registry.GetValue(hive, a.Key, a.Name, RegView.Default) is null) return ActionOutcome.Skipped;
+            if (s.Registry.GetValue(hive, a.Key, a.Name, RegView.Default) is null) return ApplyResult.Skipped("target not found");
             s.Registry.DeleteValue(hive, a.Key, a.Name, RegView.Default);
-            return ActionOutcome.Applied;
+            return ApplyResult.Applied;
         }
-        if (!s.Registry.KeyExists(hive, a.Key, RegView.Default)) return ActionOutcome.Skipped;
+        if (!s.Registry.KeyExists(hive, a.Key, RegView.Default)) return ApplyResult.Skipped("target not found");
         s.Registry.DeleteKey(hive, a.Key, RegView.Default);
-        return ActionOutcome.Applied;
+        return ApplyResult.Applied;
     }
 
     public void Undo(SwitchAction action, PriorState prior, LiveSystems s)

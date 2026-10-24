@@ -10,7 +10,7 @@ public interface IActionHandler
     PriorState Read(SwitchAction action, LiveSystems s);
 
     /// <summary>Makes the change. Skipped when the target is absent.</summary>
-    ActionOutcome Apply(SwitchAction action, LiveSystems s);
+    ApplyResult Apply(SwitchAction action, LiveSystems s);
 
     /// <summary>Restores exactly the prior state. No-op for MissingPrior.</summary>
     void Undo(SwitchAction action, PriorState prior, LiveSystems s);

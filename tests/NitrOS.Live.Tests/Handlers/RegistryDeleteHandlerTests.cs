@@ -44,11 +44,11 @@ public class RegistryDeleteHandlerTests
     public void RegistryDelete_Applies()
     {
         var f = WithTree();
-        Assert.Equal(ActionOutcome.Applied, Handler(ValueAction).Apply(ValueAction, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, Handler(ValueAction).Apply(ValueAction, f.ToLive()).Outcome);
         Assert.Null(Get(f, Key, "Flag"));
         Assert.NotNull(Get(f, Key, "Other"));
 
-        Assert.Equal(ActionOutcome.Applied, Handler(KeyAction).Apply(KeyAction, f.ToLive()));
+        Assert.Equal(ActionOutcome.Applied, Handler(KeyAction).Apply(KeyAction, f.ToLive()).Outcome);
         Assert.False(f.Registry.KeyExists(LiveHive.CurrentUser, Key, RegView.Default));
         Assert.False(f.Registry.KeyExists(LiveHive.CurrentUser, Key + "\\Sub", RegView.Default));
     }
@@ -82,12 +82,14 @@ public class RegistryDeleteHandlerTests
         var f = new FakeSystems();
         Assert.IsType<MissingPrior>(Handler(ValueAction).Read(ValueAction, f.ToLive()));
         Assert.IsType<MissingPrior>(Handler(KeyAction).Read(KeyAction, f.ToLive()));
-        Assert.Equal(ActionOutcome.Skipped, Handler(ValueAction).Apply(ValueAction, f.ToLive()));
-        Assert.Equal(ActionOutcome.Skipped, Handler(KeyAction).Apply(KeyAction, f.ToLive()));
+        Assert.Equal(ActionOutcome.Skipped, Handler(ValueAction).Apply(ValueAction, f.ToLive()).Outcome);
+        var skip = Handler(KeyAction).Apply(KeyAction, f.ToLive());
+        Assert.Equal(ActionOutcome.Skipped, skip.Outcome);
+        Assert.Equal("target not found", skip.Detail);
         // Key present but value absent is also a missing target.
         f.Registry.SetValue(LiveHive.CurrentUser, Key, "Other", Val, RegView.Default);
         Assert.IsType<MissingPrior>(Handler(ValueAction).Read(ValueAction, f.ToLive()));
-        Assert.Equal(ActionOutcome.Skipped, Handler(ValueAction).Apply(ValueAction, f.ToLive()));
+        Assert.Equal(ActionOutcome.Skipped, Handler(ValueAction).Apply(ValueAction, f.ToLive()).Outcome);
     }
 
     [Fact]
