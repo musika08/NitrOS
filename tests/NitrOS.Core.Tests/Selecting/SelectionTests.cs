@@ -1,8 +1,8 @@
 using NitrOS.Core.Model;
-using NitrOS.Core.Selection;
+using NitrOS.Core.Selecting;
 using NitrOS.Core.Tests.TestSupport;
 
-namespace NitrOS.Core.Tests.Selection;
+namespace NitrOS.Core.Tests.Selecting;
 
 public class SelectionTests
 {
@@ -29,7 +29,7 @@ public class SelectionTests
     public void FromCard_TurnsOnCardDefaults()
     {
         var catalog = Switches.CatalogOf(GamerSwitch("x", CardDefault.On), GamerSwitch("y", CardDefault.Off));
-        var sel = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
+        var sel = Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
         Assert.Equal(new[] { "x" }, sel.On.ToArray());
         Assert.True(sel.IsOn("x"));
         Assert.False(sel.IsOn("y"));
@@ -39,7 +39,7 @@ public class SelectionTests
     public void FromCard_PendingCountsAsOff()
     {
         var catalog = Switches.CatalogOf(GamerSwitch("x", CardDefault.Pending));
-        var sel = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
+        var sel = Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
         Assert.False(sel.IsOn("x"));
     }
 
@@ -47,7 +47,7 @@ public class SelectionTests
     public void FromCard_CustomIsEmpty()
     {
         var catalog = Switches.CatalogOf(GamerSwitch("x", CardDefault.On));
-        var sel = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, DeviceProfile.Desktop);
+        var sel = Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, DeviceProfile.Desktop);
         Assert.Empty(sel.On);
     }
 
@@ -55,8 +55,8 @@ public class SelectionTests
     public void FromCard_SkipsUnavailableSwitches()
     {
         var catalog = Switches.CatalogOf(ImageOnly("x", CardDefault.On));
-        var tune = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
-        var iso = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Gamer, TargetMode.BuildIso, DeviceProfile.Desktop);
+        var tune = Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
+        var iso = Selection.FromCard(catalog, CardId.Gamer, TargetMode.BuildIso, DeviceProfile.Desktop);
         Assert.False(tune.IsOn("x"));
         Assert.True(iso.IsOn("x"));
     }
@@ -65,8 +65,8 @@ public class SelectionTests
     public void FromCard_SkipsProtectedOnDevice()
     {
         var catalog = Switches.CatalogOf(GamerSwitch("x", CardDefault.On, b => b.SkipOn = [DeviceTrait.Battery]));
-        var laptop = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, new DeviceProfile(true, false, false));
-        var desktop = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
+        var laptop = Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, new DeviceProfile(true, false, false));
+        var desktop = Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
         Assert.False(laptop.IsOn("x"));
         Assert.True(desktop.IsOn("x"));
     }
@@ -77,7 +77,7 @@ public class SelectionTests
         var catalog = Switches.CatalogOf(
             ImageOnly("x", CardDefault.Off),
             GamerSwitch("b", CardDefault.Off, c => c.SkipOn = [DeviceTrait.Battery]));
-        var sel = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, new DeviceProfile(true, false, false));
+        var sel = Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, new DeviceProfile(true, false, false));
 
         var image = sel.Toggle("x");
         Assert.False(image.Changed);
@@ -95,11 +95,11 @@ public class SelectionTests
             GamerSwitch("live", CardDefault.Off),
             GamerSwitch("t", CardDefault.Off, b => b.SkipOn = [DeviceTrait.Touchscreen]),
             GamerSwitch("h", CardDefault.Off, b => b.SkipOn = [DeviceTrait.Handheld]));
-        var iso = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Custom, TargetMode.BuildIso, DeviceProfile.Desktop);
+        var iso = Selection.FromCard(catalog, CardId.Custom, TargetMode.BuildIso, DeviceProfile.Desktop);
         Assert.Equal("Only available when tuning this PC.", iso.AvailabilityOf("live").Reason);
 
         var device = new DeviceProfile(false, true, true);
-        var sel = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, device);
+        var sel = Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, device);
         Assert.Equal("Kept on this device because it has a touchscreen.", sel.AvailabilityOf("t").Reason);
         Assert.Equal("Kept on this device because it is a handheld.", sel.AvailabilityOf("h").Reason);
         Assert.True(sel.AvailabilityOf("live").Available);
@@ -110,7 +110,7 @@ public class SelectionTests
     public void Toggle_FlipsAvailableSwitch()
     {
         var catalog = Switches.CatalogOf(GamerSwitch("x", CardDefault.Off));
-        var original = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, DeviceProfile.Desktop);
+        var original = Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, DeviceProfile.Desktop);
 
         var on = original.Toggle("x");
         Assert.True(on.Changed);
@@ -128,7 +128,7 @@ public class SelectionTests
     public void MatchingCard_DetectsCardAndEdits()
     {
         var catalog = Switches.CatalogOf(GamerSwitch("x", CardDefault.On), GamerSwitch("y", CardDefault.Off));
-        var sel = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
+        var sel = Selection.FromCard(catalog, CardId.Gamer, TargetMode.TunePc, DeviceProfile.Desktop);
         Assert.Equal(CardId.Gamer, sel.MatchingCard());
 
         var edited = sel.Toggle("y").Selection;
@@ -139,7 +139,7 @@ public class SelectionTests
     public void UnknownId_Throws()
     {
         var catalog = Switches.CatalogOf(GamerSwitch("x", CardDefault.Off));
-        var sel = NitrOS.Core.Selection.Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, DeviceProfile.Desktop);
+        var sel = Selection.FromCard(catalog, CardId.Custom, TargetMode.TunePc, DeviceProfile.Desktop);
         Assert.Throws<KeyNotFoundException>(() => sel.Toggle("nope"));
     }
 }

@@ -1,6 +1,6 @@
 using NitrOS.Core.Model;
 
-namespace NitrOS.Core.Selection;
+namespace NitrOS.Core.Selecting;
 
 public enum TargetMode { TunePc, BuildIso }
 

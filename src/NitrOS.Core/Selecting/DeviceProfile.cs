@@ -1,6 +1,6 @@
 using NitrOS.Core.Model;
 
-namespace NitrOS.Core.Selection;
+namespace NitrOS.Core.Selecting;
 
 public record DeviceProfile(bool HasBattery, bool HasTouchscreen, bool IsHandheld)
 {
