@@ -66,13 +66,16 @@ public sealed class WinDism : IDism
             || Regex.IsMatch(output, @"Error:\s*(5|740|0x80070005|0x800702e4)\b", RegexOptions.IgnoreCase)
             || output.Contains("Access is denied", StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>A failed run for an unknown feature (0x800F080C) or with a "not found" / "is unknown" message.</summary>
+    /// <summary>
+    /// Only DISM's "unknown feature" result counts as not present: 0x800F080C (CBS_E_UNKNOWN_UPDATE, "Feature name ... is
+    /// unknown"). Anything else, including 0x80070490 "Element not found", is a real failure. The result DISM gives for an
+    /// unknown capability name is not documented; it is treated the same way only when it is this code or text (VM to confirm).
+    /// </summary>
     public static bool IsNotFound(int exitCode, string output) =>
         exitCode != 0 && exitCode != RestartExitCode
         && (exitCode == unchecked((int)0x800F080C)
-            || output.Contains("not found", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("is unknown", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("0x800f080c", StringComparison.OrdinalIgnoreCase));
+            || output.Contains("0x800f080c", StringComparison.OrdinalIgnoreCase)
+            || output.Contains("is unknown", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The normalised state, null when the item does not exist. Throws for access denied and any other failure.</summary>
     public static string? ParseQuery(int exitCode, string output)
@@ -97,6 +100,7 @@ public sealed class WinDism : IDism
         throw new InvalidOperationException($"Unknown DISM state '{raw.Trim()}'");
     }
 
+    /// <summary>Done, RebootRequired, Deferred or NotPresent; access denied and every other failure throw with the DISM text.</summary>
     public static DismOutcome ClassifyChange(int exitCode, string output)
     {
         if (IsAccessDenied(exitCode, output)) throw new DismAccessDeniedException();
@@ -107,12 +111,15 @@ public sealed class WinDism : IDism
             return DismOutcome.Done;
         }
         if (IsNotFound(exitCode, output)) return DismOutcome.NotPresent;
-        return DismOutcome.Failed;
+        // The engine records the exception message, so the DISM text reaches the journal.
+        throw new InvalidOperationException($"DISM failed (exit {exitCode}): {LastLines(output)}");
     }
 
-    private static string LastLines(string output)
+    /// <summary>The DISM text from the "Error:" line on (up to 5 lines), else the last 3 lines.</summary>
+    internal static string LastLines(string output)
     {
         var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return string.Join(" | ", lines.TakeLast(3));
+        var err = Array.FindIndex(lines, l => l.StartsWith("Error", StringComparison.OrdinalIgnoreCase));
+        return string.Join(" | ", err >= 0 ? lines.Skip(err).Take(5) : lines.TakeLast(3));
     }
 }

@@ -8,16 +8,18 @@ namespace NitrOS.Live.Tests.Windows;
 public sealed class BackupFolderTests : IDisposable
 {
     private static bool VmEnabled => Environment.GetEnvironmentVariable("NITROS_VM") == "1";
+    private static readonly SecurityIdentifier World = new(WellKnownSidType.WorldSid, null);
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "NitrOS-test-" + Guid.NewGuid().ToString("N"));
 
     public BackupFolderTests() => Directory.CreateDirectory(_dir);
 
+    /// <summary>The test user still owns everything, so it may give itself access back before deleting.</summary>
     public void Dispose()
     {
-        // The test user still owns everything, so it may restore its own access before deleting.
         var me = WindowsIdentity.GetCurrent().User!;
-        foreach (var d in Directory.Exists(_dir) ? new DirectoryInfo(_dir).EnumerateDirectories("*", SearchOption.TopDirectoryOnly) : [])
-            GrantMe(d, me);
+        foreach (var d in new DirectoryInfo(_dir).GetDirectories()) GrantMe(d, me);
+        foreach (var e in new DirectoryInfo(_dir).EnumerateFileSystemInfos("*", SearchOption.AllDirectories))
+            if ((e.Attributes & FileAttributes.ReparsePoint) != 0 && e is DirectoryInfo link) link.Delete();
         Directory.Delete(_dir, recursive: true);
     }
 
@@ -28,20 +30,21 @@ public sealed class BackupFolderTests : IDisposable
         s.AddAccessRule(new FileSystemAccessRule(me, FileSystemRights.FullControl,
             InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
         d.SetAccessControl(s);
-        foreach (var f in d.GetFiles("*", new EnumerationOptions { RecurseSubdirectories = false, IgnoreInaccessible = true }))
+        if ((d.Attributes & FileAttributes.ReparsePoint) != 0) return;
+        foreach (var f in d.GetFiles())
         {
             var fs = new FileSecurity();
-            fs.SetAccessRuleProtection(false, false);
+            fs.SetAccessRuleProtection(true, false);
+            fs.AddAccessRule(new FileSystemAccessRule(me, FileSystemRights.FullControl, AccessControlType.Allow));
             f.SetAccessControl(fs);
         }
+        foreach (var sub in d.GetDirectories()) GrantMe(sub, me);
     }
 
-    private static void AssertLockedDown(string path)
+    private static void AssertLockedDown(FileSystemSecurity sec, string what)
     {
-        var sec = new DirectoryInfo(path).GetAccessControl();
-        Assert.True(sec.AreAccessRulesProtected, "inheritance from the parent must be off");
+        Assert.True(sec.AreAccessRulesProtected, what + ": inheritance from the parent must be off");
         var rules = sec.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<FileSystemAccessRule>().ToList();
-        Assert.Equal(2, rules.Count);
         Assert.All(rules, r =>
         {
             Assert.Equal(AccessControlType.Allow, r.AccessControlType);
@@ -50,46 +53,106 @@ public sealed class BackupFolderTests : IDisposable
         });
         Assert.Equal(
             new[] { BackupFolder.Administrators.Value, BackupFolder.LocalSystem.Value }.OrderBy(x => x),
-            rules.Select(r => r.IdentityReference.Value).OrderBy(x => x));
+            rules.Select(r => r.IdentityReference.Value).Distinct().OrderBy(x => x));
+    }
+
+    private static void AssertLockedDown(string dir) => AssertLockedDown(new DirectoryInfo(dir).GetAccessControl(), dir);
+
+    private static void Weaken(string dir)
+    {
+        var weak = new DirectoryInfo(dir).GetAccessControl();
+        weak.AddAccessRule(new FileSystemAccessRule(World, FileSystemRights.Modify,
+            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+        new DirectoryInfo(dir).SetAccessControl(weak);
     }
 
     [Fact]
-    public void Ensure_CreatesFolderForAdministratorsAndSystemOnly()
+    public void Ensure_CreatesBothLevelsForAdministratorsAndSystemOnly()
     {
-        var path = Path.Combine(_dir, "backups");
-        BackupFolder.Ensure(path, setOwner: false);
-        Assert.True(Directory.Exists(path));
+        var root = Path.Combine(_dir, "NitrOS");
+        var path = Path.Combine(root, "backups");
+        Assert.Empty(BackupFolder.Ensure(path, setOwner: false));
+        AssertLockedDown(root);
         AssertLockedDown(path);
     }
 
     [Fact]
-    public void Ensure_TightensExistingWeakFolderAndItsFiles()
+    public void Ensure_TightensPermissiveParentAndPlantedContent()
     {
-        var path = Path.Combine(_dir, "backups");
+        var root = Path.Combine(_dir, "NitrOS");
+        var path = Path.Combine(root, "backups");
+        Directory.CreateDirectory(Path.Combine(root, "other"));
         Directory.CreateDirectory(path);
+        Weaken(root);
         var planted = Path.Combine(path, "planted.json");
         File.WriteAllText(planted, "{}");
-        // Give Everyone write access, as a planted folder might have.
-        var weak = new DirectoryInfo(path).GetAccessControl();
-        weak.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.Modify,
-            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
-        new DirectoryInfo(path).SetAccessControl(weak);
         var fileSec = new FileInfo(planted).GetAccessControl();
-        fileSec.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.FullControl, AccessControlType.Allow));
+        fileSec.AddAccessRule(new FileSystemAccessRule(World, FileSystemRights.FullControl, AccessControlType.Allow));
         new FileInfo(planted).SetAccessControl(fileSec);
 
-        BackupFolder.Ensure(path, setOwner: false);
+        Assert.Empty(BackupFolder.Ensure(path, setOwner: false));
 
+        AssertLockedDown(root);
         AssertLockedDown(path);
-        var fileRules = new FileInfo(planted).GetAccessControl().GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<FileSystemAccessRule>().ToList();
-        Assert.All(fileRules, r => Assert.True(r.IsInherited, "the planted file must keep no explicit permission"));
-        Assert.DoesNotContain(fileRules, r => r.IdentityReference.Value == new SecurityIdentifier(WellKnownSidType.WorldSid, null).Value);
+        AssertLockedDown(Path.Combine(root, "other"));
+        AssertLockedDown(new FileInfo(planted).GetAccessControl(), planted);
     }
 
     [Fact]
-    public void Ensure_RejectsRelativePath()
+    public void Ensure_RefusesJunctionAnywhereInThePath()
+    {
+        var real = Path.Combine(_dir, "real");
+        Directory.CreateDirectory(real);
+        var link = Path.Combine(_dir, "link");
+        Assert.Equal(0, ProcessRunner.Run("cmd.exe", ["/c", "mklink", "/J", link, real], TimeSpan.FromSeconds(20)).ExitCode);
+
+        // The junction as the NitrOS level, and as the backups level.
+        Assert.Throws<InvalidOperationException>(() => BackupFolder.Ensure(Path.Combine(link, "backups"), setOwner: false));
+        Assert.Throws<InvalidOperationException>(() => BackupFolder.Ensure(link, setOwner: false));
+        Assert.Empty(Directory.GetFileSystemEntries(real));
+        Assert.False(new DirectoryInfo(real).GetAccessControl().AreAccessRulesProtected);
+    }
+
+    [Fact]
+    public void Ensure_RefusesJunctionInsideTheFolder()
+    {
+        var root = Path.Combine(_dir, "NitrOS");
+        var path = Path.Combine(root, "backups");
+        Directory.CreateDirectory(path);
+        var outside = Path.Combine(_dir, "outside");
+        Directory.CreateDirectory(outside);
+        Assert.Equal(0, ProcessRunner.Run("cmd.exe", ["/c", "mklink", "/J", Path.Combine(path, "link"), outside], TimeSpan.FromSeconds(20)).ExitCode);
+
+        Assert.Throws<InvalidOperationException>(() => BackupFolder.Ensure(path, setOwner: false));
+        Assert.False(new DirectoryInfo(outside).GetAccessControl().AreAccessRulesProtected);
+    }
+
+    [Fact]
+    public void Ensure_SkipsHardLinkedFiles()
+    {
+        var root = Path.Combine(_dir, "NitrOS");
+        var path = Path.Combine(root, "backups");
+        Directory.CreateDirectory(path);
+        var elsewhere = Path.Combine(_dir, "elsewhere.txt");
+        File.WriteAllText(elsewhere, "x");
+        var linked = Path.Combine(path, "linked.json");
+        Assert.Equal(0, ProcessRunner.Run("cmd.exe", ["/c", "mklink", "/H", linked, elsewhere], TimeSpan.FromSeconds(20)).ExitCode);
+        Assert.Equal(2u, BackupFolder.LinkCount(elsewhere));
+        var before = new FileInfo(elsewhere).GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+
+        var skipped = BackupFolder.Ensure(path, setOwner: false);
+
+        Assert.Equal(new[] { linked }, skipped);
+        Assert.Equal(before, new FileInfo(elsewhere).GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access));
+        AssertLockedDown(path);
+    }
+
+    [Fact]
+    public void Ensure_RejectsBadPaths()
     {
         Assert.Throws<ArgumentException>(() => BackupFolder.Ensure("backups"));
+        Assert.Throws<ArgumentException>(() => BackupFolder.Ensure(@"C:\backups"));
+        Assert.Throws<ArgumentException>(() => BackupFolder.Ensure(@"\\server\share\NitrOS\backups"));
     }
 
     [Fact]
@@ -100,12 +163,15 @@ public sealed class BackupFolderTests : IDisposable
 
     [Fact]
     [Trait("Lane", "Vm")]
-    public void WinSystems_Create_LocksDownProgramDataFolder()
+    public void WinSystems_Create_LocksDownProgramDataFolders()
     {
         Assert.SkipUnless(VmEnabled, "VM lane only: creates and locks %ProgramData%\\NitrOS\\backups (set NITROS_VM=1 inside the elevated VM)");
         var systems = WinSystems.Create();
         Assert.NotNull(systems.RestorePoint);
-        AssertLockedDown(WinSystems.BackupPath);
-        Assert.Equal(BackupFolder.Administrators, new DirectoryInfo(WinSystems.BackupPath).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+        foreach (var level in new[] { Path.GetDirectoryName(WinSystems.BackupPath)!, WinSystems.BackupPath })
+        {
+            AssertLockedDown(level);
+            Assert.Equal(BackupFolder.Administrators, new DirectoryInfo(level).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+        }
     }
 }

@@ -81,6 +81,30 @@ public sealed class WinFileSystemTests : IDisposable
     }
 
     [Fact]
+    public void ListTree_TargetFirstThenParentsBeforeChildren()
+    {
+        var target = Path.Combine(_dir, "tree");
+        Directory.CreateDirectory(Path.Combine(target, "a", "b"));
+        File.WriteAllText(Path.Combine(target, "a", "b", "f.txt"), "x");
+        File.WriteAllText(Path.Combine(target, "top.txt"), "x");
+
+        var list = WinFileSystem.ListTree(target, isDir: true);
+
+        Assert.Equal(target, list[0]);
+        Assert.Equal(5, list.Count);
+        Assert.True(list.IndexOf(Path.Combine(target, "a")) < list.IndexOf(Path.Combine(target, "a", "b")));
+        Assert.True(list.IndexOf(Path.Combine(target, "a", "b")) < list.IndexOf(Path.Combine(target, "a", "b", "f.txt")));
+        Assert.Equal(new[] { Path.Combine(_dir, "x.txt") }, WinFileSystem.ListTree(WriteFile("x.txt"), isDir: false));
+    }
+
+    private string WriteFile(string name)
+    {
+        var p = Path.Combine(_dir, name);
+        File.WriteAllText(p, "x");
+        return p;
+    }
+
+    [Fact]
     public void TakeOwnershipAndDelete_MissingIsANoOp()
     {
         new WinFileSystem().TakeOwnershipAndDelete(Path.Combine(_dir, "missing.txt"));

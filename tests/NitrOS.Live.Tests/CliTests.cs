@@ -145,6 +145,34 @@ public class CliTests : IDisposable
     }
 
     [Fact]
+    public void JournalCommands_RefuseWhenTheFolderCannotBeSecured()
+    {
+        var env = Env() with { SecureJournalDir = () => throw new UnauthorizedAccessException("not elevated") };
+        foreach (var args in new[] { new[] { "journals" }, new[] { "drift", "x" }, new[] { "undo", "x", "--yes" } })
+        {
+            var (code, text) = Run(env, args);
+            Assert.Equal(1, code);
+            Assert.Contains("could not be secured", text);
+        }
+        Assert.Equal(0, _systemsCalls);
+        // health still runs, without journals.
+        var (hCode, hText) = Run(env, "health");
+        Assert.Contains("journals not read", hText);
+        Assert.Equal(0, hCode);
+    }
+
+    [Fact]
+    public void JournalCommands_SecureFirstAndReportSkippedHardLinks()
+    {
+        var calls = 0;
+        var env = Env() with { SecureJournalDir = () => { calls++; return [@"C:\x\linked.json"]; } };
+        var (code, text) = Run(env, "journals");
+        Assert.Equal(0, code);
+        Assert.Equal(1, calls);
+        Assert.Contains(@"Skipped (hard-linked file, left unchanged): C:\x\linked.json", text);
+    }
+
+    [Fact]
     public void Journals_EmptyWhenFolderMissing()
     {
         var (code, text) = Run(Env(), "journals");

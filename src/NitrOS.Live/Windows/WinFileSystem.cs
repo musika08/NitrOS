@@ -5,7 +5,8 @@ namespace NitrOS.Live.Windows;
 /// <summary>
 /// Deletes a file or folder after takeown and an icacls grant to BUILTIN\Administrators. Refuses relative paths,
 /// wildcards, drive roots, the Windows and Program Files roots, and any tree that contains a junction or symbolic
-/// link (takeown /R and icacls /T could otherwise reach outside the target).
+/// link (icacls /T could otherwise reach outside the target). takeown runs once per entry as <c>takeown /F &lt;entry&gt;</c>
+/// without /R, so it never asks its localised /D yes/no question; the tree was already listed in full, top-down.
 /// </summary>
 public sealed class WinFileSystem : IFileSystem
 {
@@ -18,10 +19,9 @@ public sealed class WinFileSystem : IFileSystem
         var full = ValidateTarget(path);
         var isDir = Directory.Exists(full);
         if (!isDir && !File.Exists(full)) return;
-        RefuseReparsePoints(full, isDir);
+        var entries = ListTree(full, isDir);
 
-        var takeown = isDir ? new[] { "/F", full, "/R", "/D", "Y" } : new[] { "/F", full };
-        Run("takeown.exe", takeown);
+        foreach (var e in entries) Run("takeown.exe", ["/F", e]);
         var icacls = isDir ? new[] { full, "/grant", "*S-1-5-32-544:F", "/T", "/C" } : new[] { full, "/grant", "*S-1-5-32-544:F", "/C" };
         Run("icacls.exe", icacls);
 
@@ -64,11 +64,13 @@ public sealed class WinFileSystem : IFileSystem
         return full;
     }
 
-    private static void RefuseReparsePoints(string full, bool isDir)
+    /// <summary>The target and everything under it, parents before children. Throws for any junction or link, or anything unlistable.</summary>
+    internal static List<string> ListTree(string full, bool isDir)
     {
         if ((File.GetAttributes(full) & FileAttributes.ReparsePoint) != 0)
             throw new InvalidOperationException($"Refusing to delete '{full}': it is a junction or link");
-        if (!isDir) return;
+        var result = new List<string> { full };
+        if (!isDir) return result;
         var stack = new Stack<string>();
         stack.Push(full);
         while (stack.Count > 0)
@@ -78,9 +80,11 @@ public sealed class WinFileSystem : IFileSystem
             {
                 if ((e.Attributes & FileAttributes.ReparsePoint) != 0)
                     throw new InvalidOperationException($"Refusing to delete '{full}': it contains the junction or link '{e.FullName}'");
+                result.Add(e.FullName);
                 if ((e.Attributes & FileAttributes.Directory) != 0) stack.Push(e.FullName);
             }
         }
+        return result;
     }
 
     private static void Run(string tool, string[] args)

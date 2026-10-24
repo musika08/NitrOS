@@ -25,12 +25,19 @@ public sealed class FeatureDisableHandler : IActionHandler
         };
     }
 
+    /// <summary>Throws when re-enabling fails, so the engine records "Rollback failed" and a later undo retries.</summary>
     public void Undo(SwitchAction action, PriorState prior, LiveSystems s)
     {
         if (prior is not FeaturePrior { State: { } state } || !Is(state, "Enabled")) return;
-        s.Dism.EnableFeature(((FeatureDisable)action).Name);
+        var name = ((FeatureDisable)action).Name;
+        if (s.Dism.EnableFeature(name) == DismOutcome.Failed)
+            throw new InvalidOperationException($"re-enabling the feature {name} failed");
     }
 
-    public bool IsInEffect(SwitchAction action, LiveSystems s) =>
-        Is(s.Dism.FeatureState(((FeatureDisable)action).Name), "Disabled");
+    /// <summary>Disabled, DisablePending and DisabledWithPayloadRemoved all mean the switch holds.</summary>
+    public bool IsInEffect(SwitchAction action, LiveSystems s)
+    {
+        var state = s.Dism.FeatureState(((FeatureDisable)action).Name);
+        return Is(state, "Disabled") || Is(state, "DisablePending") || Is(state, "DisabledWithPayloadRemoved");
+    }
 }

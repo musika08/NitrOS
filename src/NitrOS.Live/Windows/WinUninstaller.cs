@@ -1,14 +1,20 @@
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
+using Microsoft.Win32.SafeHandles;
 using NitrOS.Live.Systems;
 
 namespace NitrOS.Live.Windows;
 
-/// <summary>A parsed uninstall command: the program to start and its separate arguments.</summary>
-public sealed record UninstallCommand(string Executable, IReadOnlyList<string> Arguments, bool IsMsiExec);
+/// <summary>A parsed uninstall command: the program to start and its separate arguments. ProductCode is set for msiexec.</summary>
+public sealed record UninstallCommand(string Executable, IReadOnlyList<string> Arguments, bool IsMsiExec, string? ProductCode = null);
+
+/// <summary>The uninstaller may not be run from where it is; the message is the user-facing detail.</summary>
+public sealed class UninstallRefusedException(string message) : InvalidOperationException(message);
 
 /// <summary>
 /// Reads the Uninstall keys (HKLM 64-bit, HKLM 32-bit, HKCU; both registry views), checks the uninstaller's
@@ -19,10 +25,16 @@ public sealed class WinUninstaller : IUninstaller
     private const string UninstallKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
     private static readonly TimeSpan RunTimeout = TimeSpan.FromMinutes(30);
     private static readonly Regex UnquotedExeRx = new(@"^(.+?\.exe)(?=\s|$)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex MsiUninstallRx = new(@"^[/-]x(\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\})?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex MsiOperationRx = new(@"^[/-]([xi])(\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\})?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex GuidArgRx = new(@"^\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}$", RegexOptions.Compiled);
-    // msiexec operations other than uninstall: install, admin, advertise, patch, update, repair.
-    private static readonly Regex MsiOtherOperationRx = new(@"^[/-](i|a|j|ju|jm|p|update|f[poedcamusv]*)(\{.*)?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>The only msiexec options passed through, besides the single /X{GUID}.</summary>
+    private static readonly HashSet<string> MsiAllowedOptions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "/qn", "/quiet", "/passive", "/qb", "/qb!", "/qb-", "/norestart", "REBOOT=ReallySuppress",
+    };
+
+    public const string UserWritableDetail = "per-user program in a user-writable folder; remove it from Settings > Apps";
 
     private static string MsiExecPath => Path.Combine(Environment.SystemDirectory, "msiexec.exe");
 
@@ -60,28 +72,179 @@ public sealed class WinUninstaller : IUninstaller
         yield return (RegistryHive.CurrentUser, RegistryView.Registry32, @"HKCU\" + UninstallKey);
     }
 
+    /// <summary>
+    /// False when the command cannot be parsed, the program is missing, or a signer does not match. Throws
+    /// <see cref="UninstallRefusedException"/> when the program sits in the Windows folder or in a user-writable place.
+    /// </summary>
     public bool SignerMatches(UninstallEntry entry, string publisher)
     {
         UninstallCommand cmd;
         try { cmd = Parse(Compose(entry, null)); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return false; }
-
-        if (cmd.IsMsiExec)
-        {
-            // msiexec.exe is catalog-signed by Microsoft; the MSI product itself is identified by the entry's publisher.
-            var msiSigners = TrustedSignerNames(cmd.Executable);
-            return msiSigners is not null && msiSigners.Any(n => NamesMatch(n, "Microsoft Corporation")) && NamesMatch(entry.Publisher, publisher);
-        }
-        if (!File.Exists(cmd.Executable)) return false;
-        var signers = TrustedSignerNames(cmd.Executable);
-        return signers is not null && signers.Any(n => NamesMatch(n, publisher));
+        using var files = VerifiedFiles.Open(cmd);
+        return files is not null && files.Matches(entry, publisher);
     }
 
+    /// <summary>
+    /// Verifies again through handles opened without write or delete sharing, so the files cannot be swapped between the
+    /// check and the start; the handles are released once the process has started.
+    /// </summary>
     public int Run(UninstallEntry entry, string? args)
     {
         var cmd = Parse(Compose(entry, args));
-        var (code, _, _) = ProcessRunner.Run(cmd.Executable, cmd.Arguments, RunTimeout);
+        using var files = VerifiedFiles.Open(cmd) ?? throw new FileNotFoundException($"Uninstaller for '{entry.DisplayName}' not found", cmd.Executable);
+        if (!files.Matches(entry, entry.Publisher))
+            throw new UninstallRefusedException($"{entry.DisplayName}: signature check failed");
+        var (code, _, _) = ProcessRunner.Run(cmd.Executable, cmd.Arguments, RunTimeout, files.Dispose);
         return code;
+    }
+
+    /// <summary>The uninstaller (and for msiexec the product's cached .msi), open with FileShare.Read only.</summary>
+    private sealed class VerifiedFiles : IDisposable
+    {
+        private readonly string _exe;
+        private SafeFileHandle? _exeHandle;
+        private readonly string? _package;
+        private SafeFileHandle? _packageHandle;
+        private readonly bool _msi;
+
+        private VerifiedFiles(string exe, SafeFileHandle exeHandle, string? package, SafeFileHandle? packageHandle, bool msi)
+        {
+            _exe = exe; _exeHandle = exeHandle; _package = package; _packageHandle = packageHandle; _msi = msi;
+        }
+
+        /// <summary>Null when the program is not there. An unknown MSI product gives files that never match.</summary>
+        public static VerifiedFiles? Open(UninstallCommand cmd)
+        {
+            CheckLocation(cmd.Executable, cmd.IsMsiExec);
+            if (!File.Exists(cmd.Executable)) return null;
+            var exeHandle = OpenLocked(cmd.Executable);
+            try
+            {
+                if (!cmd.IsMsiExec)
+                {
+                    if (IsUserWritable(cmd.Executable)) throw new UninstallRefusedException(UserWritableDetail);
+                    return new VerifiedFiles(cmd.Executable, exeHandle, null, null, false);
+                }
+                var package = LocalPackage(cmd.ProductCode!);
+                if (package is null || !Path.IsPathFullyQualified(package) || IsNetworkOrDevice(package) || !File.Exists(package))
+                    return new VerifiedFiles(cmd.Executable, exeHandle, null, null, true);
+                var packageHandle = OpenLocked(package);
+                try
+                {
+                    if (IsUserWritable(package)) throw new UninstallRefusedException(UserWritableDetail);
+                }
+                catch { packageHandle.Dispose(); throw; }
+                return new VerifiedFiles(cmd.Executable, exeHandle, package, packageHandle, true);
+            }
+            catch { exeHandle.Dispose(); throw; }
+        }
+
+        public bool Matches(UninstallEntry entry, string publisher)
+        {
+            if (_exeHandle is null) throw new ObjectDisposedException(nameof(VerifiedFiles));
+            if (!_msi) return TrustedSignerNames(_exeHandle, _exe) is { } names && names.Any(n => NamesMatch(n, publisher));
+
+            // msiexec.exe must be Microsoft's, and the product's own cached .msi must be signed by the publisher.
+            if (_packageHandle is null || _package is null) return false;
+            var msiexec = TrustedSignerNames(_exeHandle, _exe);
+            if (msiexec is null || !msiexec.Any(n => NamesMatch(n, "Microsoft Corporation"))) return false;
+            var signers = TrustedSignerNames(_packageHandle, _package);
+            return signers is not null && signers.Any(n => NamesMatch(n, publisher)) && NamesMatch(entry.Publisher, publisher);
+        }
+
+        public void Dispose()
+        {
+            _packageHandle?.Dispose();
+            _packageHandle = null;
+            _exeHandle?.Dispose();
+            _exeHandle = null;
+        }
+    }
+
+    /// <summary>Read access, sharing read only: nobody can write, rename or delete the file while the handle is open.</summary>
+    internal static SafeFileHandle OpenLocked(string path) =>
+        File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+    private static bool IsNetworkOrDevice(string path) =>
+        path.StartsWith(@"\\", StringComparison.Ordinal) || path.StartsWith("//", StringComparison.Ordinal);
+
+    /// <summary>Refuses UNC and device paths, and any program inside %SystemRoot% other than System32/SysWOW64 msiexec.exe.</summary>
+    internal static void CheckLocation(string exe, bool isMsiExec)
+    {
+        if (IsNetworkOrDevice(exe)) throw new UninstallRefusedException($"uninstaller on a network or device path is refused: {exe}");
+        if (isMsiExec) return;
+        var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows).TrimEnd('\\') + @"\";
+        if (Path.GetFullPath(exe).StartsWith(windows, StringComparison.OrdinalIgnoreCase))
+            throw new UninstallRefusedException($"uninstaller inside the Windows folder is refused: {exe}");
+    }
+
+    /// <summary>The product's cached package (MsiGetProductInfoW "LocalPackage"); null for an unknown product or property.</summary>
+    internal static string? LocalPackage(string productCode)
+    {
+        uint len = 0;
+        var rc = NativeMethods.MsiGetProductInfoW(productCode, "LocalPackage", null, ref len);
+        if (rc != NativeMethods.ERROR_SUCCESS && rc != NativeMethods.ERROR_MORE_DATA) return null;
+        if (len == 0) return null;
+        var buf = new char[len + 1];
+        len = (uint)buf.Length;
+        rc = NativeMethods.MsiGetProductInfoW(productCode, "LocalPackage", buf, ref len);
+        if (rc != NativeMethods.ERROR_SUCCESS || len == 0) return null;
+        return new string(buf, 0, (int)len);
+    }
+
+    // ---- user-writable check ----
+
+    private const int WriteData = 0x2, AppendData = 0x4, DeleteChild = 0x40, DeleteRight = 0x10000, WriteDac = 0x40000, WriteOwner = 0x80000;
+    private const int GenericAll = 0x10000000, GenericWrite = 0x40000000;
+
+    /// <summary>Rights that let someone replace the file itself.</summary>
+    public const int FileWriteMask = WriteData | AppendData | DeleteRight | WriteDac | WriteOwner | GenericAll | GenericWrite;
+    /// <summary>Rights on the program's own folder that allow swapping it or planting a DLL next to it.</summary>
+    public const int FolderWriteMask = WriteData | DeleteChild | DeleteRight | WriteDac | WriteOwner | GenericAll | GenericWrite;
+    /// <summary>Rights on a folder further up that allow renaming the path away (creating new subfolders is harmless).</summary>
+    public const int AncestorWriteMask = DeleteChild | DeleteRight | WriteDac | WriteOwner | GenericAll;
+
+    /// <summary>Everyone, Authenticated Users, BUILTIN\Users, INTERACTIVE and the current user.</summary>
+    internal static IReadOnlySet<string> NonAdminSids()
+    {
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "S-1-1-0", "S-1-5-11", "S-1-5-32-545", "S-1-5-4" };
+        if (WindowsIdentity.GetCurrent().User is { } me) set.Add(me.Value);
+        return set;
+    }
+
+    /// <summary>True when the file, its folder, or any folder up to the volume root can be changed by a non-admin user.</summary>
+    internal static bool IsUserWritable(string file)
+    {
+        var sids = NonAdminSids();
+        const AccessControlSections sections = AccessControlSections.Access | AccessControlSections.Owner;
+        if (Grants(new FileInfo(file).GetAccessControl(sections), sids, FileWriteMask)) return true;
+        var dir = new FileInfo(file).Directory;
+        var mask = FolderWriteMask;
+        while (dir is not null)
+        {
+            if (Grants(dir.GetAccessControl(sections), sids, mask)) return true;
+            mask = AncestorWriteMask;
+            dir = dir.Parent;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Conservative: any allow entry (not inherit-only) for one of the SIDs with one of the rights counts, deny entries
+    /// are not subtracted, and an owner in the set counts (owners can always rewrite the permissions).
+    /// </summary>
+    public static bool Grants(FileSystemSecurity security, IReadOnlySet<string> sids, int mask)
+    {
+        if (security.GetOwner(typeof(SecurityIdentifier)) is SecurityIdentifier owner && sids.Contains(owner.Value)) return true;
+        foreach (FileSystemAccessRule r in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
+        {
+            if (r.AccessControlType != AccessControlType.Allow) continue;
+            if ((r.PropagationFlags & PropagationFlags.InheritOnly) != 0) continue;
+            if (!sids.Contains(r.IdentityReference.Value)) continue;
+            if (((int)r.FileSystemRights & mask) != 0) return true;
+        }
+        return false;
     }
 
     /// <summary>QuietUninstallString, else UninstallString, with the extra args appended after a space.</summary>
@@ -135,6 +298,8 @@ public sealed class WinUninstaller : IUninstaller
             throw new NotSupportedException($"Uninstaller '{exe}' is not an .exe");
         if (!Path.IsPathFullyQualified(exe))
             throw new NotSupportedException($"Uninstaller '{exe}' is not a full path");
+        if (IsNetworkOrDevice(exe))
+            throw new NotSupportedException($"Uninstaller '{exe}' is on a network or device path");
         return new UninstallCommand(Path.GetFullPath(exe), args, false);
     }
 
@@ -151,27 +316,32 @@ public sealed class WinUninstaller : IUninstaller
             || string.Equals(Path.GetFullPath(dir).TrimEnd('\\'), Path.Combine(windows, "SysWOW64"), StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>
+    /// Allow-list: exactly one /X{GUID} (or /X {GUID}; a lone /I{GUID} maintenance command is rewritten to /X{GUID}), plus
+    /// /qn /quiet /passive /qb /qb! /qb- /norestart and REBOOT=ReallySuppress. Anything else throws.
+    /// </summary>
     private static UninstallCommand ParseMsi(IReadOnlyList<string> args, string command)
     {
-        var outArgs = new List<string>();
-        var uninstalls = 0;
+        var options = new List<string>();
+        string? product = null;
         for (var i = 0; i < args.Count; i++)
         {
             var a = args[i];
-            var m = MsiUninstallRx.Match(a);
+            var m = MsiOperationRx.Match(a);
             if (m.Success)
             {
-                uninstalls++;
-                if (m.Groups[1].Success) { outArgs.Add(a); continue; }
-                // "/X {GUID}" written as two tokens
-                if (i + 1 < args.Count && GuidArgRx.IsMatch(args[i + 1])) { outArgs.Add(a); outArgs.Add(args[++i]); continue; }
-                throw new NotSupportedException($"msiexec /X without a product code in '{command}'");
+                if (product is not null) throw new NotSupportedException($"msiexec command has more than one operation: '{command}'");
+                if (m.Groups[2].Success) product = m.Groups[2].Value;
+                else if (i + 1 < args.Count && GuidArgRx.IsMatch(args[i + 1])) product = args[++i];
+                else throw new NotSupportedException($"msiexec /{m.Groups[1].Value} without a product code in '{command}'");
+                continue;
             }
-            if (MsiOtherOperationRx.IsMatch(a)) throw new NotSupportedException($"msiexec command is not an uninstall: '{command}'");
-            outArgs.Add(a);
+            if (MsiAllowedOptions.Contains(a)) { options.Add(a); continue; }
+            throw new NotSupportedException($"msiexec option '{a}' is not allowed in '{command}'");
         }
-        if (uninstalls != 1) throw new NotSupportedException($"msiexec command is not a single uninstall (/X{{GUID}}): '{command}'");
-        return new UninstallCommand(MsiExecPath, outArgs, true);
+        if (product is null) throw new NotSupportedException($"msiexec command is not an uninstall (/X{{GUID}}): '{command}'");
+        product = product.ToUpperInvariant();
+        return new UninstallCommand(MsiExecPath, new[] { "/X" + product }.Concat(options).ToList(), true, product);
     }
 
     /// <summary>Splits arguments with the Windows command-line rules (quotes, doubled quotes, backslashes before quotes).</summary>
@@ -221,29 +391,33 @@ public sealed class WinUninstaller : IUninstaller
         return result;
     }
 
-    private static readonly HashSet<string> LegalSuffixes = new(StringComparer.Ordinal)
+    /// <summary>Spellings of the same legal suffix; suffixes are unified, never dropped, so "Valve GmbH" is not "Valve Corporation".</summary>
+    private static readonly Dictionary<string, string> SuffixSynonyms = new(StringComparer.Ordinal)
     {
-        "corporation", "corp", "incorporated", "inc", "limited", "ltd", "llc", "co", "company", "gmbh", "ag", "plc", "sa", "bv", "srl", "kk",
+        ["corporation"] = "corp",
+        ["incorporated"] = "inc",
+        ["company"] = "co",
+        ["limited"] = "ltd",
     };
 
     /// <summary>Explicit spellings of the same company, after normalisation. Nothing is matched by prefix or similarity.</summary>
     private static readonly Dictionary<string, string> Aliases = new(StringComparer.Ordinal)
     {
-        ["asus"] = "asustek computer",
+        ["asus"] = "asustek computer inc",
     };
 
-    /// <summary>Lowercase, punctuation to spaces, trailing legal suffixes (Corp., Inc., Ltd.) dropped.</summary>
+    /// <summary>Lowercase, punctuation to spaces, suffix synonyms unified (Corporation = Corp., Inc. = Incorporated, ...).</summary>
     public static string NormaliseName(string name)
     {
         var cleaned = new StringBuilder();
         foreach (var ch in name.ToLowerInvariant()) cleaned.Append(char.IsLetterOrDigit(ch) ? ch : ' ');
-        var tokens = cleaned.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
-        while (tokens.Count > 1 && LegalSuffixes.Contains(tokens[^1])) tokens.RemoveAt(tokens.Count - 1);
+        var tokens = cleaned.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(t => SuffixSynonyms.TryGetValue(t, out var u) ? u : t);
         var joined = string.Join(' ', tokens);
         return Aliases.TryGetValue(joined, out var canonical) ? canonical : joined;
     }
 
-    /// <summary>"Valve Corp." matches "Valve Corporation"; ASUS matches ASUSTeK COMPUTER INC.; case is ignored.</summary>
+    /// <summary>"Valve Corp." matches "Valve Corporation"; ASUS matches ASUSTeK COMPUTER INC.; case and punctuation are ignored.</summary>
     public static bool NamesMatch(string a, string b)
     {
         var na = NormaliseName(a);
@@ -257,23 +431,33 @@ public sealed class WinUninstaller : IUninstaller
     internal static IReadOnlyList<string>? TrustedSignerNames(string path)
     {
         if (!File.Exists(path)) return null;
-        var (hr, names) = VerifyEmbedded(path);
-        if (hr == 0) return names;
-        if (hr != NativeMethods.TRUST_E_NOSIGNATURE) return null;
-        return VerifyCatalog(path);
+        using var h = OpenLocked(path);
+        return TrustedSignerNames(h, path);
     }
 
-    private static (int Hr, IReadOnlyList<string>? Names) VerifyEmbedded(string path)
+    /// <summary>As above, reading through an already open handle (WINTRUST_FILE_INFO.hFile, catalog hash and member handle).</summary>
+    internal static IReadOnlyList<string>? TrustedSignerNames(SafeFileHandle handle, string path)
     {
+        var (hr, names) = VerifyEmbedded(handle, path);
+        if (hr == 0) return names;
+        if (hr != NativeMethods.TRUST_E_NOSIGNATURE) return null;
+        return VerifyCatalog(handle, path);
+    }
+
+    private static (int Hr, IReadOnlyList<string>? Names) VerifyEmbedded(SafeFileHandle handle, string path)
+    {
+        var added = false;
+        handle.DangerousAddRef(ref added);
         var pathPtr = Marshal.StringToHGlobalUni(path);
-        var info = new NativeMethods.WINTRUST_FILE_INFO
-        {
-            cbStruct = (uint)Marshal.SizeOf<NativeMethods.WINTRUST_FILE_INFO>(),
-            pcwszFilePath = pathPtr,
-        };
         var infoPtr = Marshal.AllocHGlobal(Marshal.SizeOf<NativeMethods.WINTRUST_FILE_INFO>());
         try
         {
+            var info = new NativeMethods.WINTRUST_FILE_INFO
+            {
+                cbStruct = (uint)Marshal.SizeOf<NativeMethods.WINTRUST_FILE_INFO>(),
+                pcwszFilePath = pathPtr,
+                hFile = handle.DangerousGetHandle(),
+            };
             Marshal.StructureToPtr(info, infoPtr, false);
             return Verify(NativeMethods.WTD_CHOICE_FILE, infoPtr);
         }
@@ -281,34 +465,30 @@ public sealed class WinUninstaller : IUninstaller
         {
             Marshal.FreeHGlobal(infoPtr);
             Marshal.FreeHGlobal(pathPtr);
+            if (added) handle.DangerousRelease();
         }
     }
 
-    private static IReadOnlyList<string>? VerifyCatalog(string path)
+    private static IReadOnlyList<string>? VerifyCatalog(SafeFileHandle fh, string path)
     {
         foreach (var algorithm in new[] { "SHA256", null })
         {
             if (!NativeMethods.CryptCATAdminAcquireContext2(out var admin, IntPtr.Zero, algorithm, IntPtr.Zero, 0)) continue;
             try
             {
-                byte[] hash;
-                using (var fh = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    uint size = 0;
-                    NativeMethods.CryptCATAdminCalcHashFromFileHandle2(admin, fh, ref size, null, 0);
-                    if (size == 0 || size > 1024) continue;
-                    hash = new byte[size];
-                    if (!NativeMethods.CryptCATAdminCalcHashFromFileHandle2(admin, fh, ref size, hash, 0)) continue;
-                }
+                uint size = 0;
+                NativeMethods.CryptCATAdminCalcHashFromFileHandle2(admin, fh, ref size, null, 0);
+                if (size == 0 || size > 1024) continue;
+                var hash = new byte[size];
+                if (!NativeMethods.CryptCATAdminCalcHashFromFileHandle2(admin, fh, ref size, hash, 0)) continue;
                 var catInfo = NativeMethods.CryptCATAdminEnumCatalogFromHash(admin, hash, (uint)hash.Length, 0, IntPtr.Zero);
                 if (catInfo == IntPtr.Zero) continue;
                 try
                 {
                     var ci = new NativeMethods.CATALOG_INFO { cbStruct = (uint)Marshal.SizeOf<NativeMethods.CATALOG_INFO>(), wszCatalogFile = "" };
                     if (!NativeMethods.CryptCATCatalogInfoFromContext(catInfo, ref ci, 0)) continue;
-                    var (hr, names) = VerifyCatalogMember(path, ci.wszCatalogFile, hash, admin);
-                    if (hr == 0) return names;
-                    return null;
+                    var (hr, names) = VerifyCatalogMember(fh, path, ci.wszCatalogFile, hash, admin);
+                    return hr == 0 ? names : null;
                 }
                 finally { NativeMethods.CryptCATAdminReleaseCatalogContext(admin, catInfo, 0); }
             }
@@ -317,8 +497,10 @@ public sealed class WinUninstaller : IUninstaller
         return null;
     }
 
-    private static (int Hr, IReadOnlyList<string>? Names) VerifyCatalogMember(string path, string catalogFile, byte[] hash, IntPtr admin)
+    private static (int Hr, IReadOnlyList<string>? Names) VerifyCatalogMember(SafeFileHandle fh, string path, string catalogFile, byte[] hash, IntPtr admin)
     {
+        var added = false;
+        fh.DangerousAddRef(ref added);
         var catPtr = Marshal.StringToHGlobalUni(catalogFile);
         var tagPtr = Marshal.StringToHGlobalUni(Convert.ToHexString(hash));
         var memberPtr = Marshal.StringToHGlobalUni(path);
@@ -333,6 +515,7 @@ public sealed class WinUninstaller : IUninstaller
                 pcwszCatalogFilePath = catPtr,
                 pcwszMemberTag = tagPtr,
                 pcwszMemberFilePath = memberPtr,
+                hMemberFile = fh.DangerousGetHandle(),
                 pbCalculatedFileHash = hashPtr,
                 cbCalculatedFileHash = (uint)hash.Length,
                 hCatAdmin = admin,
@@ -347,6 +530,7 @@ public sealed class WinUninstaller : IUninstaller
             Marshal.FreeHGlobal(memberPtr);
             Marshal.FreeHGlobal(tagPtr);
             Marshal.FreeHGlobal(catPtr);
+            if (added) fh.DangerousRelease();
         }
     }
 

@@ -15,7 +15,15 @@ public static class ProcessRunner
     {
         var psi = NewStartInfo(file);
         foreach (var a in args) psi.ArgumentList.Add(a);
-        return Run(psi, timeout);
+        return Run(psi, timeout, null);
+    }
+
+    /// <summary>As the argument-list overload; <paramref name="onStarted"/> runs right after the process has started (for example to release a file handle held since verification).</summary>
+    public static (int ExitCode, string StdOut, string StdErr) Run(string file, IReadOnlyList<string> args, TimeSpan timeout, Action onStarted)
+    {
+        var psi = NewStartInfo(file);
+        foreach (var a in args) psi.ArgumentList.Add(a);
+        return Run(psi, timeout, onStarted);
     }
 
     /// <summary>Raw command-line overload, for callers that fully control the text.</summary>
@@ -23,7 +31,7 @@ public static class ProcessRunner
     {
         var psi = NewStartInfo(file);
         psi.Arguments = args;
-        return Run(psi, timeout);
+        return Run(psi, timeout, null);
     }
 
     private static ProcessStartInfo NewStartInfo(string file) => new(file)
@@ -35,11 +43,12 @@ public static class ProcessRunner
         CreateNoWindow = true,
     };
 
-    private static (int ExitCode, string StdOut, string StdErr) Run(ProcessStartInfo psi, TimeSpan timeout)
+    private static (int ExitCode, string StdOut, string StdErr) Run(ProcessStartInfo psi, TimeSpan timeout, Action? onStarted)
     {
         var sw = Stopwatch.StartNew();
         using var p = new Process { StartInfo = psi };
         p.Start();
+        onStarted?.Invoke();
         p.StandardInput.Close();
         var outBuf = new StringBuilder();
         var errBuf = new StringBuilder();

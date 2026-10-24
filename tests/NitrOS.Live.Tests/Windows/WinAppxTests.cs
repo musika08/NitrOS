@@ -17,6 +17,15 @@ public class WinAppxTests
         Assert.Empty(appx.InstalledForCurrentUser("NitrOS.No.Such.Package.7f3a"));
     }
 
+    [Fact]
+    public void Describe_IncludesHresultAndExtendedCode()
+    {
+        Assert.Equal("Failed removing Foo_1.0: Removal failed. (HRESULT 0x80073CFA, extended 0x80070005)",
+            WinAppx.Describe("removing Foo_1.0", unchecked((int)0x80073CFA), " Removal failed. ", unchecked((int)0x80070005)));
+        Assert.Equal("Failed deprovisioning Foo: no error text (HRESULT 0x80004005)",
+            WinAppx.Describe("deprovisioning Foo", unchecked((int)0x80004005), null, 0));
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("*")]

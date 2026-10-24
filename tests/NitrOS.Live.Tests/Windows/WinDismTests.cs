@@ -77,9 +77,22 @@ public class WinDismTests
     [Fact]
     public void ParseQuery_NotFoundIsNull()
     {
-        const string unknown = "Error: 0x800f080c\r\n\r\nFeature name Foo is unknown.\r\nA Windows feature name was not recognized.";
-        Assert.Null(WinDism.ParseQuery(unchecked((int)0x800F080C), unknown));
-        Assert.Null(WinDism.ParseQuery(87, "Error: 87\r\nThe capability was not found."));
+        // 0x800F080C is CBS_E_UNKNOWN_UPDATE, DISM's "Feature name ... is unknown" result.
+        Assert.Null(WinDism.ParseQuery(unchecked((int)0x800F080C), "Error: 0x800f080c\r\n\r\nFeature name Foo is unknown."));
+        Assert.Null(WinDism.ParseQuery(unchecked((int)0x800F080C), "Error: 0x800f080c"));
+    }
+
+    [Fact]
+    public void ElementNotFound_IsAFailureWithTheDismText()
+    {
+        // 0x80070490 (ERROR_NOT_FOUND, "Element not found.") is a servicing failure, not a missing feature.
+        const string text = "Deployment Image Servicing and Management tool\r\n\r\nError: 0x80070490\r\n\r\nElement not found.\r\n\r\nThe DISM log file can be found at C:\\Windows\\Logs\\DISM\\dism.log";
+        var q = Assert.Throws<InvalidOperationException>(() => WinDism.ParseQuery(unchecked((int)0x80070490), text));
+        Assert.Contains("0x80070490", q.Message);
+        Assert.Contains("Element not found", q.Message);
+        var c = Assert.Throws<InvalidOperationException>(() => WinDism.ClassifyChange(unchecked((int)0x80070490), text));
+        Assert.Contains("Element not found", c.Message);
+        Assert.IsNotType<DismAccessDeniedException>(c);
     }
 
     [Theory]
@@ -115,9 +128,11 @@ public class WinDismTests
         Assert.Equal(DismOutcome.RebootRequired, WinDism.ClassifyChange(3010, "The restart is required."));
         Assert.Equal(DismOutcome.Deferred, WinDism.ClassifyChange(0, "Feature state: Disable Pending"));
         Assert.Equal(DismOutcome.Deferred, WinDism.ClassifyChange(0, "Uninstall Pending"));
-        Assert.Equal(DismOutcome.NotPresent, WinDism.ClassifyChange(unchecked((int)0x800F080C), "Feature name X is unknown."));
-        Assert.Equal(DismOutcome.Failed, WinDism.ClassifyChange(87, "Error: 87 The parameter is incorrect."));
-        Assert.Equal(DismOutcome.Failed, WinDism.ClassifyChange(ProcessRunner.TimeoutExitCode, "timed out"));
+        Assert.Equal(DismOutcome.NotPresent, WinDism.ClassifyChange(unchecked((int)0x800F080C), "Error: 0x800f080c\r\nFeature name X is unknown."));
+        Assert.Contains("The parameter is incorrect", Assert.Throws<InvalidOperationException>(() => WinDism.ClassifyChange(87, "Error: 87\r\nThe parameter is incorrect.")).Message);
+        Assert.Contains("timed out", Assert.Throws<InvalidOperationException>(() => WinDism.ClassifyChange(ProcessRunner.TimeoutExitCode, "timed out")).Message);
+        // "not found" wording alone no longer means NotPresent.
+        Assert.Throws<InvalidOperationException>(() => WinDism.ClassifyChange(2, "Error: 2\r\nThe system cannot find the file specified. Source not found."));
     }
 
     [Theory]
@@ -159,6 +174,8 @@ public class WinDismTests
         Assert.SkipUnless(VmEnabled, "VM lane only: removes a real Windows capability (set NITROS_VM=1 inside the VM)");
         var d = new WinDism();
         const string c = "App.StepsRecorder~~~~0.0.1.0";
+        // VM to confirm: the exit code and text DISM gives for an unknown capability name (IsNotFound accepts only 0x800F080C / "is unknown").
+        Assert.Null(d.CapabilityState("NitrOS.No.Such.Capability~~~~0.0.1.0"));
         if (d.CapabilityState(c) is not "Installed") Assert.Skip("Steps Recorder capability not installed in this VM");
         Assert.Contains(d.RemoveCapability(c), new[] { DismOutcome.Done, DismOutcome.RebootRequired, DismOutcome.Deferred });
     }

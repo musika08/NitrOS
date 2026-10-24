@@ -226,4 +226,43 @@ internal static class NativeMethods
     [DllImport("srclient.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool SRSetRestorePointW(ref RESTOREPOINTINFOW restorePoint, out STATEMGRSTATUS status);
+
+    // ---- Windows Installer (msi) ----
+    public const int ERROR_SUCCESS = 0;
+    public const int ERROR_MORE_DATA = 234;
+
+    /// <summary>Returns a Win32 error code (not a SetLastError API).</summary>
+    [DllImport("msi.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+    public static extern int MsiGetProductInfoW(string product, string property, [Out] char[]? value, ref uint valueLength);
+
+    // ---- Files (kernel32) ----
+    /// <summary>FILETIME is two DWORDs (4-byte aligned), so the longs need Pack = 4; native size 52.</summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public struct BY_HANDLE_FILE_INFORMATION
+    {
+        public uint dwFileAttributes;
+        public long ftCreationTime;
+        public long ftLastAccessTime;
+        public long ftLastWriteTime;
+        public uint dwVolumeSerialNumber;
+        public uint nFileSizeHigh;
+        public uint nFileSizeLow;
+        public uint nNumberOfLinks;
+        public uint nFileIndexHigh;
+        public uint nFileIndexLow;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetFileInformationByHandle(SafeFileHandle file, out BY_HANDLE_FILE_INFORMATION info);
+
+    // ---- File security without propagation (advapi32) ----
+    public const uint OWNER_SECURITY_INFORMATION = 0x00000001;
+    public const uint DACL_SECURITY_INFORMATION = 0x00000004;
+    public const uint PROTECTED_DACL_SECURITY_INFORMATION = 0x80000000;
+
+    /// <summary>Unlike SetNamedSecurityInfo, this does not push inheritable entries down to existing children.</summary>
+    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, EntryPoint = "SetFileSecurityW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetFileSecurity(string fileName, uint securityInformation, byte[] securityDescriptor);
 }

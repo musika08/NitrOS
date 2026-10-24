@@ -68,13 +68,39 @@ public sealed class WinAppx : IAppx
     private static void Wait(IAsyncOperationWithProgress<DeploymentResult, DeploymentProgress> op, string what)
     {
         var task = op.AsTask();
-        if (!task.Wait(Timeout))
+        try
         {
-            try { op.Cancel(); } catch (Exception) { /* best effort; the timeout is reported below */ }
-            throw new TimeoutException($"Timed out after {Timeout.TotalMinutes} minutes {what}");
+            if (!task.Wait(Timeout))
+            {
+                try { op.Cancel(); } catch (Exception) { /* best effort; the timeout is reported below */ }
+                throw new TimeoutException($"Timed out after {Timeout.TotalMinutes} minutes {what}");
+            }
+        }
+        catch (AggregateException ae)
+        {
+            var inner = ae.Flatten().InnerExceptions.FirstOrDefault() ?? ae;
+            // For a failed deployment operation GetResults still carries ErrorText and ExtendedErrorCode.
+            string? text = null;
+            int? extended = null;
+            try
+            {
+                var failed = op.GetResults();
+                text = failed?.ErrorText;
+                extended = failed?.ExtendedErrorCode?.HResult;
+            }
+            catch (Exception) { /* no result available: report the exception alone */ }
+            throw new InvalidOperationException(Describe(what, inner.HResult, text ?? inner.Message, extended), inner);
         }
         var r = task.Result;
         if (r.ExtendedErrorCode is { HResult: not 0 } err)
-            throw new InvalidOperationException($"Failed {what}: {r.ErrorText} (0x{err.HResult:X8})", err);
+            throw new InvalidOperationException(Describe(what, err.HResult, r.ErrorText, err.HResult), err);
+    }
+
+    /// <summary>"Failed removing X: text (HRESULT 0x80073CF1, extended 0x80070005)".</summary>
+    public static string Describe(string what, int hresult, string? errorText, int? extended)
+    {
+        var text = string.IsNullOrWhiteSpace(errorText) ? "no error text" : errorText.Trim();
+        var ext = extended is { } e and not 0 ? $", extended 0x{e:X8}" : "";
+        return $"Failed {what}: {text} (HRESULT 0x{hresult:X8}{ext})";
     }
 }

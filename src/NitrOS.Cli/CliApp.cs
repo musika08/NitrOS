@@ -150,7 +150,8 @@ public static class CliApp
         var (sel, code) = BuildSelection(p, o, env);
         if (sel is null) return code;
 
-        var store = new JournalStore(env.JournalDir);
+        var store = OpenStore(o, env);
+        if (store is null) return Refused;
         var engine = new TuneEngine(env.Systems(), store);
         var options = new TuneOptions(p.AllowNoRestore, env.Session.ProcessUserSid, env.Session.WindowsBuild.ToString());
         var result = engine.Apply(sel, options, new Progress(o), CancellationToken.None);
@@ -185,6 +186,8 @@ public static class CliApp
             o.WriteLine($"Refused: {guard.Reason}");
             return Refused;
         }
+        var store = OpenStore(o, env);
+        if (store is null) return Refused;
         var path = ResolveJournal(p.Positional[0], env);
         if (path is null)
         {
@@ -192,7 +195,7 @@ public static class CliApp
             return Refused;
         }
 
-        var engine = new TuneEngine(env.Systems(), new JournalStore(env.JournalDir));
+        var engine = new TuneEngine(env.Systems(), store);
         var r = engine.Undo(path, p.Ids);
         foreach (var id in r.Undone) o.WriteLine($"Undone: {id}");
         foreach (var (id, reason) in r.CannotUndo) o.WriteLine($"Cannot undo: {id}: {reason}");
@@ -203,13 +206,15 @@ public static class CliApp
     private static int Drift(Parsed p, TextWriter o, CliEnvironment env)
     {
         if (p.Positional.Count != 1) throw new UsageException("drift needs one journal (a file path or a run id).");
+        var store = OpenStore(o, env);
+        if (store is null) return Refused;
         var path = ResolveJournal(p.Positional[0], env);
         if (path is null)
         {
             o.WriteLine($"Refused: journal '{p.Positional[0]}' was not found.");
             return Refused;
         }
-        var journal = new JournalStore(env.JournalDir).Load(path);
+        var journal = store.Load(path);
         var checker = new DriftChecker(env.Systems());
         var drifted = checker.Check(journal);
         foreach (var (id, err) in checker.LastErrors) o.WriteLine($"Could not check: {id}: {err}");
@@ -225,9 +230,9 @@ public static class CliApp
     private static int Health(Parsed p, TextWriter o, CliEnvironment env)
     {
         NoPositional(p);
-        var store = new JournalStore(env.JournalDir);
+        var store = OpenStore(o, env, refuse: false);
         var applied = new HashSet<string>(StringComparer.Ordinal);
-        if (store.List().FirstOrDefault() is { } latest)
+        if (store?.List().FirstOrDefault() is { } latest)
         {
             try
             {
@@ -245,7 +250,8 @@ public static class CliApp
     private static int Journals(Parsed p, TextWriter o, CliEnvironment env)
     {
         NoPositional(p);
-        var store = new JournalStore(env.JournalDir);
+        var store = OpenStore(o, env);
+        if (store is null) return Refused;
         var list = store.List();
         if (list.Count == 0)
         {
@@ -268,6 +274,30 @@ public static class CliApp
     }
 
     // ---- helpers ----
+
+    /// <summary>
+    /// A journal store whose folder has been secured first. On failure prints why and returns null; with refuse false
+    /// (health) it prints a note instead, and the caller goes on without journals.
+    /// </summary>
+    private static JournalStore? OpenStore(TextWriter o, CliEnvironment env, bool refuse = true)
+    {
+        var store = new JournalStore(env.JournalDir, () =>
+        {
+            foreach (var f in env.SecureJournalDir()) o.WriteLine($"Skipped (hard-linked file, left unchanged): {f}");
+        });
+        try
+        {
+            store.EnsureDirectory();
+            return store;
+        }
+        catch (Exception e)
+        {
+            o.WriteLine(refuse
+                ? $"Refused: the journal folder could not be secured ({e.Message}). Run nitros from an administrator prompt."
+                : $"Note: journals not read, the journal folder could not be secured ({e.Message}).");
+            return null;
+        }
+    }
 
     private static void RequireSelectionArgs(Parsed p)
     {

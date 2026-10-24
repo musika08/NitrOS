@@ -237,6 +237,36 @@ public class AppFeatureFileProgramScriptHandlerTests
         H(Feat).Undo(Feat, new MissingPrior(), live);
     }
 
+    [Theory]
+    [InlineData("Disabled", true)]
+    [InlineData("DisablePending", true)]
+    [InlineData("DisabledWithPayloadRemoved", true)]
+    [InlineData("Enabled", false)]
+    [InlineData("EnablePending", false)]
+    public void FeatureDisable_IsInEffectForEveryDisabledState(string state, bool expected)
+    {
+        var f = new FakeSystems();
+        f.Dism.Features[Feat.Name] = state;
+        Assert.Equal(expected, H(Feat).IsInEffect(Feat, f.ToLive()));
+    }
+
+    [Fact]
+    public void FeatureDisable_UndoThrowsWhenReEnablingFails()
+    {
+        var f = new FakeSystems();
+        f.Dism.Features[Feat.Name] = "Enabled";
+        var live = f.ToLive();
+        var prior = H(Feat).Read(Feat, live);
+        H(Feat).Apply(Feat, live);
+        f.Dism.Result = DismOutcome.Failed;
+        var e = Assert.Throws<InvalidOperationException>(() => H(Feat).Undo(Feat, prior, live));
+        Assert.Contains(Feat.Name, e.Message);
+        // A later retry that succeeds puts it back.
+        f.Dism.Result = DismOutcome.Done;
+        H(Feat).Undo(Feat, prior, live);
+        Assert.Equal("Enabled", f.Dism.Features[Feat.Name]);
+    }
+
     [Fact]
     public void FeatureDisable_IsInEffectAfterApply()
     {

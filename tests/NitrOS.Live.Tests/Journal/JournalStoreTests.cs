@@ -142,4 +142,30 @@ public class JournalStoreTests : IDisposable
 
         Assert.Equal([later, third, second, first], store.List());
     }
+
+    [Fact]
+    public void EnsureHook_RunsOnceBeforeFirstUse()
+    {
+        var calls = 0;
+        var store = new JournalStore(_dir, () => calls++);
+        Assert.Equal(0, calls);
+        Assert.Empty(store.List());
+        var path = store.Save(Journal("20261025-120000"));
+        store.Load(path);
+        Assert.Equal(1, calls);
+    }
+
+    [Fact]
+    public void EnsureHook_FailureStopsAccessAndIsRetried()
+    {
+        var fail = true;
+        var calls = 0;
+        var store = new JournalStore(_dir, () => { calls++; if (fail) throw new UnauthorizedAccessException("not elevated"); });
+        Assert.Throws<UnauthorizedAccessException>(() => store.List());
+        Assert.Throws<UnauthorizedAccessException>(() => store.Save(Journal("20261025-120000")));
+        Assert.False(Directory.Exists(_dir));
+        fail = false;
+        Assert.Empty(store.List());
+        Assert.Equal(3, calls);
+    }
 }
