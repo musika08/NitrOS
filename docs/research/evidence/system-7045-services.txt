@@ -1,0 +1,41 @@
+﻿Source: System event log, event ID 7045 (service installed), read without elevation 2026-10-25 02:19.
+
+== Window 2026-10-20 03:00 to 2026-10-24 17:34, grouped by service name and folder ==
+1139x first=2026-10-20 03:02:16 last=2026-10-24 15:03:12 | D | kernel mode driver | C:\WINDOWS\TEMP\*
+25x first=2026-10-20 04:00:38 last=2026-10-24 15:02:46 | cpuz163 | kernel mode driver | C:\ProgramData\CPUID Software\sdk\\*
+6x first=2026-10-20 04:00:02 last=2026-10-24 01:55:51 | EasyAntiCheat_EOSSys | kernel mode driver | C:\Program Files (x86)\EasyAntiCheat_EOS\*
+2x first=2026-10-20 03:28:52 last=2026-10-23 23:58:14 | IOMap | kernel mode driver | C:\WINDOWS\system32\drivers\*
+1x first=2026-10-23 23:57:47 last=2026-10-23 23:57:47 | amduw23g-205321-a9c55ce7 | kernel mode driver | \SystemRoot\System32\DriverStore\FileRepository\u0205321.inf_amd64_21c962b296b835a0\B026676\*
+1x first=2026-10-23 21:12:06 last=2026-10-23 21:12:06 | Microsoft Edge Elevation Service (MicrosoftEdgeElevationService) | user mode service | "C:\Program Files (x86)\Microsoft\Edge\Application\155.0.4283.62\*
+2x first=2026-10-22 04:04:06 last=2026-10-23 21:06:46 | GameInput Redist Service | user mode service | "C:\Program Files\Microsoft GameInput\x64\*
+2x first=2026-10-23 21:05:30 last=2026-10-23 21:05:30 | Gaming Services | user mode service | "C:\Program Files\WindowsApps\Microsoft.GamingServices_39.118.21002.0_x64__8wekyb3d8bbwe\*
+1x first=2026-10-23 17:47:33 last=2026-10-23 17:47:33 | Claude | user mode service | "C:\Program Files\WindowsApps\Claude_3.6556.2.0_x64__pzs8sxrjxfjjc\app\resources\*
+1x first=2026-10-23 12:34:11 last=2026-10-23 12:34:11 | Claude | user mode service | "C:\Program Files\WindowsApps\Claude_3.1623.4.0_x64__pzs8sxrjxfjjc\app\resources\*
+1x first=2026-10-22 16:20:25 last=2026-10-22 16:20:25 | Claude | user mode service | "C:\Program Files\WindowsApps\Claude_3.1623.3.0_x64__pzs8sxrjxfjjc\app\resources\*
+1x first=2026-10-22 05:58:01 last=2026-10-22 05:58:01 | Claude | user mode service | "C:\Program Files\WindowsApps\Claude_3.1623.1.0_x64__pzs8sxrjxfjjc\app\resources\*
+2x first=2026-10-22 04:24:44 last=2026-10-22 04:24:44 | Gaming Services | user mode service | "C:\Program Files\WindowsApps\Microsoft.GamingServices_38.118.9001.0_x64__8wekyb3d8bbwe\*
+4x first=2026-10-22 04:03:27 last=2026-10-22 04:10:17 | Gaming Services | user mode service | "C:\Program Files\WindowsApps\Microsoft.GamingServices_38.117.27001.0_x64__8wekyb3d8bbwe\*
+1x first=2026-10-22 04:03:43 last=2026-10-22 04:03:43 | gameflt | kernel mode driver | \SystemRoot\System32\DriverStore\FileRepository\gameflt.inf_amd64_c03f7ce96acee3d6\*
+1x first=2026-10-22 04:03:41 last=2026-10-22 04:03:41 | XVDD Port Driver | kernel mode driver | \SystemRoot\System32\DriverStore\FileRepository\xvdd.inf_amd64_1e22073ba7136f03\*
+1x first=2026-10-22 02:58:09 last=2026-10-22 02:58:09 | postgresql-x64-17 | user mode service | "C:\Program Files\PostgreSQL\17\bin\pg_ctl.exe" runservice -N "postgresql-x64-17" -D "C:\Program Files\PostgreSQL\17\*
+1x first=2026-10-21 19:24:42 last=2026-10-21 19:24:42 | Claude | user mode service | "C:\Program Files\WindowsApps\Claude_3.1623.0.0_x64__pzs8sxrjxfjjc\app\resources\*
+1x first=2026-10-20 12:50:50 last=2026-10-20 12:50:50 | Shadow Defender Service | user mode service | C:\Program Files\Shadow Defender\*
+1x first=2026-10-20 03:44:36 last=2026-10-20 03:44:36 | ACSEHIDRemap Service | kernel mode driver | \SystemRoot\System32\drivers\*
+1x first=2026-10-20 03:44:36 last=2026-10-20 03:44:36 | ACSEVirtualBus Service | kernel mode driver | \SystemRoot\System32\drivers\*
+1x first=2026-10-20 03:44:25 last=2026-10-20 03:44:25 | ASUS AURA SYNC lighting service | user mode service | "C:\Program Files (x86)\LightingService\*
+1x first=2026-10-20 03:44:09 last=2026-10-20 03:44:09 | ARMOURY CRATE SE Service | user mode service | "C:\Program Files\ASUS\Armoury Crate SE Service\*
+1x first=2026-10-20 03:44:01 last=2026-10-20 03:44:01 | ASUS Update Service (asusm) | user mode service | "C:\Program Files (x86)\ASUS\Update\*
+1x first=2026-10-20 03:44:01 last=2026-10-20 03:44:01 | ASUS Update Service (asus) | user mode service | "C:\Program Files (x86)\ASUS\Update\*
+1x first=2026-10-20 03:43:54 last=2026-10-20 03:43:54 | ROG Live Service | user mode service | "C:\Program Files\ASUS\ROG Live Service\*
+1x first=2026-10-20 03:42:28 last=2026-10-20 03:42:28 | AsusROGLSLService Download ROGLSLoader | user mode service | "C:\Program Files (x86)\ASUS\AsusROGLSLService\*
+1x first=2026-10-20 03:28:51 last=2026-10-20 03:28:51 | Asus Certificate Service | user mode service | "C:\Program Files (x86)\ASUS\AsusCertService\*
+1x first=2026-10-20 03:28:51 last=2026-10-20 03:28:51 | Asusgio3 | kernel mode driver | C:\WINDOWS\system32\drivers\*
+
+== Service 'D' (file C:\WINDOWS\TEMP\D.sys), all events since 2026-10-19 ==
+count=1395 first=2026-10-19 17:51:23 last=2026-10-24 23:03:07
+distinct file names: C:\WINDOWS\TEMP\D.sys
+D.sys present now: not checkable without elevation (C:\Windows\Temp is access denied)
+
+== Shadow Defender files ==
+C:\Program Files\Shadow Defender\user.dat created=2026-10-20 12:50:50 written=2026-10-20 12:57:44 desc='' ver= company=
+C:\Windows\System32\drivers\diskpt.sys created=2026-10-20 12:50:50 written=2020-08-01 18:56:38 desc='Shadow Defender Filter Driver' ver=1.5.0.726 company=SHADOWDEFENDER.COM

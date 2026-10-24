@@ -1,0 +1,166 @@
+﻿Source: pnputil /enum-drivers and Select-String over C:\Windows\INF\oem*.inf, without elevation 2026-10-25 02:19.
+
+packages: 224
+== count by class ==
+140 Extension
+20 SoftwareComponent
+20 System
+9 MEDIA
+4 AudioProcessingObject
+4 Firmware
+3 Printer
+3 Display
+3 Net
+3 Biometric
+2 Sensor
+2 Bluetooth
+2 HIDClass
+2 ComputeAccelerator
+1 SCSIAdapter
+1 SecurityDevices
+1 NetService
+1 MTD
+1 HSM
+1 Mouse
+1 Keyboard
+
+== SoftwareComponent, Firmware and ASUS-named (non-Extension) packages ==
+oem212.inf | acsehidremap.inf | ASUSTeK COMPUTER INC. | System | 03/02/2026 1.0.0.19
+oem211.inf | acsevirtualbus.inf | ASUSTeK COMPUTER INC. | System | 03/02/2026 1.0.0.19
+oem36.inf | armourycratecontrolinterface.inf | ASUSTek Computer Inc. | System | 03/02/2026 1.2.0.2
+oem52.inf | asussci2.inf | ASUSTeK COMPUTER INC. | System | 09/14/2026 3.1.72.0
+oem6.inf | asussci2.inf | ASUSTeK COMPUTER INC. | System | 08/19/2026 3.1.70.0
+oem15.inf | asus_xinputhid.inf | ASUSTeK Computer Inc. | HIDClass | 09/01/2008 2.0.9999.0
+oem37.inf | laptopmcufirmwareupdate.inf | ASUSTek COMPUTER INC. | Firmware | 03/05/2026 10.82.0.24
+oem33.inf | rc73xa-pd_20-0015.inf | ASUSTeK COMPUTER INC. | Firmware | 10/31/2025 10.1.2.15
+oem32.inf | rc73xa-touchpanel_30-2002.inf | ASUSTeK COMPUTER INC. | Firmware | 10/31/2025 10.1.2.2002
+oem40.inf | rc73xa_317.inf | ASUSTeK COMPUTER INC. | Firmware | 03/31/2026 10.1.2.317
+oem51.inf | rogkb.inf | ASUSTeK Computer Inc. | Keyboard | 11/18/2024 1.0.41.0
+oem50.inf | rogms.inf | ASUSTeK Computer Inc. | Mouse | 11/18/2024 1.0.59.0
+oem219.inf | amdocl.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 10/18/2026 32.0.32015.7029
+oem30.inf | amdocl.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 10/31/2025 32.0.21025.27003
+oem61.inf | amdocl.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 10/10/2026 32.0.32015.5008
+oem220.inf | amdogl.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 10/18/2026 32.0.32015.7029
+oem62.inf | amdogl.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 10/10/2026 32.0.32015.5008
+oem63.inf | amdvlk.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 10/10/2026 32.0.32015.5008
+oem221.inf | amdvlk.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 10/18/2026 32.0.32015.7029
+oem64.inf | amdwin-u0205130.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 10/10/2026 32.0.32015.5008
+oem222.inf | amdwin-u0205321.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 10/18/2026 32.0.32015.7029
+oem31.inf | amdwin-u0420841.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 10/31/2025 32.0.21025.27003
+oem47.inf | dax3_swc_hsa.inf | Dolby | SoftwareComponent | 12/05/2025 3.30900.900.0
+oem10.inf | hdxacpasus.inf | Realtek Semiconductor Corp. | MEDIA | 09/02/2025 6.0.9882.1
+oem200.inf | hdxasus.inf | Realtek Semiconductor Corp. | MEDIA | 09/02/2025 6.0.9882.1
+oem201.inf | hdxsstasus.inf | Realtek Semiconductor Corp. | MEDIA | 09/02/2025 6.0.9882.1
+oem20.inf | ovwrap2.inf | Realtek | SoftwareComponent | 03/19/2025 11.0.6000.50
+oem202.inf | ovwrapn.inf | Realtek | SoftwareComponent | 03/31/2025 11.0.6000.51
+oem203.inf | realtekapo.inf | Realtek | SoftwareComponent | 07/10/2025 12.0.6000.1905
+oem19.inf | realtekasio.inf | Realtek | SoftwareComponent | 08/28/2024 1.0.13.1
+oem46.inf | realtekhsa.inf | Realtek | SoftwareComponent | 08/28/2025 11.0.6000.376
+oem39.inf | realtekservice.inf | Realtek | SoftwareComponent | 09/02/2025 1.0.894.8
+oem205.inf | realtekuapo2.inf | Realtek | SoftwareComponent | 09/02/2025 12.3449.1929.630
+oem41.inf | uwppair.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 10/07/2025 32.2610.0.0
+oem59.inf | uwppair.inf | Advanced Micro Devices, Inc. | SoftwareComponent | 03/23/2026 32.2620.0.0
+
+== AddSoftware and SoftwareType/SoftwareID lines in oem*.inf ==
+oem219.inf:55: AddSoftware=AMDOCLComponent,1,AMDOCLSoftware
+oem219.inf:58: SoftwareType=1
+oem220.inf:55: AddSoftware=AMDOGLComponent,1,AMDOGLSoftware
+oem220.inf:58: SoftwareType=1
+oem221.inf:59: AddSoftware=AMDVLKComponent,1,AMDVLKSoftware
+oem221.inf:62: SoftwareType=1
+oem30.inf:55: AddSoftware=AMDOCLComponent,,AMDOCLSoftware
+oem30.inf:58: SoftwareType=1
+oem41.inf:32: AddSoftware=AMDRadeonsettings,,AMDRadeonsettingsSoftware
+oem41.inf:35: SoftwareType=2
+oem41.inf:36: SoftwareID=pfn://AdvancedMicroDevicesInc-2.AMDRadeonSoftware_0a9344xs7nr4m
+oem46.inf:39: AddSoftware=RealtekAudioControl,,Realtek_Audio_Control_Install
+oem46.inf:42: SoftwareType=2
+oem46.inf:43: SoftwareID=pfn://RealtekSemiconductorCorp.RealtekAudioControl_dt26b99r8h8gj
+oem47.inf:53: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbySettings_SoftwareInstall
+oem47.inf:61: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbySettings_SoftwareInstall
+oem47.inf:62: AddSoftware = DolbyCodecPackComponent_componentsoftware,, DdpCodecPack_SoftwareInstall
+oem47.inf:65: SoftwareType = 2
+oem47.inf:66: SoftwareID  = pfn://DolbyLaboratories.DolbySettings_rz1tebttyb220
+oem47.inf:76: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbyAccess_SoftwareInstall
+oem47.inf:84: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbyAccess_SoftwareInstall
+oem47.inf:85: AddSoftware = DolbyCodecPackComponent_componentsoftware,, DdpCodecPack_SoftwareInstall
+oem47.inf:88: SoftwareType = 2
+oem47.inf:89: SoftwareID  = pfn://DolbyLaboratories.DolbyAccess_rz1tebttyb220
+oem47.inf:98: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbyAccessOEM_SoftwareInstall
+oem47.inf:106: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbyAccessOEM_SoftwareInstall
+oem47.inf:107: AddSoftware = DolbyCodecPackComponent_componentsoftware,, DdpCodecPack_SoftwareInstall
+oem47.inf:110: SoftwareType = 2
+oem47.inf:111: SoftwareID  = pfn://DolbyLaboratories.DolbyAccessOEM_rz1tebttyb220
+oem47.inf:120: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbyAtmos_SoftwareInstall
+oem47.inf:123: SoftwareType = 2
+oem47.inf:124: SoftwareID  = pfn://DolbyLaboratories.DolbyAtmos_rz1tebttyb220
+oem47.inf:133: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbyAtmosSpeakerSystem_SoftwareInstall
+oem47.inf:136: SoftwareType = 2
+oem47.inf:137: SoftwareID  = pfn://DolbyLaboratories.DolbyAtmosSpeakerSystem_rz1tebttyb220
+oem47.inf:146: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbyAtmosSoundSystem_SoftwareInstall
+oem47.inf:149: SoftwareType = 2
+oem47.inf:150: SoftwareID  = pfn://DolbyLaboratories.DolbyAtmosSoundSystem_rz1tebttyb220
+oem47.inf:159: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbyAudio_SoftwareInstall
+oem47.inf:162: SoftwareType = 2
+oem47.inf:163: SoftwareID  = pfn://DolbyLaboratories.DolbyAudio_rz1tebttyb220
+oem47.inf:172: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbyAudioPremium_SoftwareInstall
+oem47.inf:175: SoftwareType = 2
+oem47.inf:176: SoftwareID  = pfn://DolbyLaboratories.DolbyAudioPremium_rz1tebttyb220
+oem47.inf:185: AddSoftware = DolbyUWPComponent_componentsoftware,, DolbyAudioSpeakerSystem_SoftwareInstall
+oem47.inf:188: SoftwareType = 2
+oem47.inf:189: SoftwareID  = pfn://DolbyLaboratories.DolbyAudioSpeakerSystem_rz1tebttyb220
+oem47.inf:198: AddSoftware = DolbyUWPComponent_componentsoftware,, Gaming_SoftwareInstall
+oem47.inf:201: SoftwareType = 2
+oem47.inf:202: SoftwareID  = pfn://DolbyLaboratories.DolbyAtmosforGaming_rz1tebttyb220
+oem47.inf:211: AddSoftware = DolbyCodecPackComponent_componentsoftware,, DdpCodecPack_SoftwareInstall
+oem47.inf:214: SoftwareType = 2
+oem47.inf:215: SoftwareID  = pfn://DolbyLaboratories.DolbyDigitalPlusDecoderOEM_rz1tebttyb220
+oem59.inf:32: AddSoftware=AMDRadeonsettings,,AMDRadeonsettingsSoftware
+oem59.inf:35: SoftwareType=2
+oem59.inf:36: SoftwareID=pfn://AdvancedMicroDevicesInc-2.AMDRadeonSoftware_0a9344xs7nr4m
+oem61.inf:55: AddSoftware=AMDOCLComponent,1,AMDOCLSoftware
+oem61.inf:58: SoftwareType=1
+oem62.inf:55: AddSoftware=AMDOGLComponent,1,AMDOGLSoftware
+oem62.inf:58: SoftwareType=1
+oem63.inf:59: AddSoftware=AMDVLKComponent,1,AMDVLKSoftware
+oem63.inf:62: SoftwareType=1
+
+== oem36.inf and oem52.inf: class, hardware ID, services ==
+oem36.inf:14: Class               = System
+oem36.inf:38: %DeviceDesc1% = ACDS, ACPI\ASUS9001
+oem36.inf:54: AddService = %ServiceName%, 0x800, ACDServiceInstall
+oem36.inf:59: ServiceBinary = %11%\%ACCIFolder%\%DriverName%.exe
+oem52.inf:16: Class = System
+oem52.inf:28: %DeviceDesc1% = NO_DRV64, ACPI\ASUS2018
+oem52.inf:29: %DeviceDesc2% = NO_DRV64, ACPI\ASUS2025
+oem52.inf:51: AddService = ATKWMIACPIIO, , Optimization_Drv_ServiceInstall							;Optimization driver
+oem52.inf:52: AddService = ASUSOptimization, 0x00000800, Optimization_Srv_ServiceInstall				;Optimization service
+oem52.inf:53: AddService = ASUSSystemDiagnosis, 0x00000800, SystemDiagnosisServiceInstall     		;System Diagnosis service
+oem52.inf:54: AddService = ASUSSystemAnalysis, 0x00000800, Analysis_ServiceInstall		     		;Analysis service
+oem52.inf:55: AddService = ASUSSoftwareManager, 0x00000800, SoftwareManager_Usersrv_ServiceInstall    ;Software Manager service
+oem52.inf:56: AddService = AsusAppService, 0x00000800, AppService_ServiceInstall    					;App service
+oem52.inf:57: AddService = ASUSSwitch, 0x00000800, Switch_Srv_ServiceInstall							;Switch service
+oem52.inf:130: ServiceBinary  = %13%\%SoftwareManagerFolder%\AsusSoftwareManager.exe
+oem52.inf:163: ServiceBinary  = %13%\%OptimizationFolder%\AsusWmiAcpi.sys
+oem52.inf:170: ServiceBinary  = %13%\%OptimizationFolder%\AsusOptimization.exe
+oem52.inf:187: ServiceBinary  = %13%\%SystemDiagnosisFolder%\AsusSystemDiagnosis.exe
+oem52.inf:205: ServiceBinary  = %13%\%AnalysisFolder%\AsusSystemAnalysis.exe
+oem52.inf:224: ServiceBinary  = %13%\%AppServiceFolder%\AsusAppService.exe
+oem52.inf:245: ServiceBinary  = %13%\%SwitchFolder%\AsusSwitch.exe
+
+== Present PnP devices: ASUS ACPI and SoftwareComponent ==
+System | ASUS System Control Interface v3 | ACPI\ASUS2018\2&DABA3FF&0 | OK
+SoftwareComponent | AMD-OpenCL User Mode Driver | SWD\DRIVERENUM\AMDOCL&5&56474D9&0 | OK
+SoftwareComponent | AMD-UWP Version Control | SWD\DRIVERENUM\AMDUWP&5&56474D9&0 | OK
+Keyboard | PC/AT Enhanced PS/2 Keyboard (101/102-Key) | ACPI\ATK3001\4&37FE62B1&0 | OK
+SoftwareComponent | DolbyAPO Software Device (HSA) | SWD\DRIVERENUM\{25C1BC6B-97B1-465A-A9FF-A003EBFC2259}#DOLBYAPO_DAX3HSA_DOLBYACCESS&6&BBBA3BD&0 | OK
+SoftwareComponent | Generic software component | SWD\DRIVERENUM\AMDDRTM&3&2B156EF8&0 | OK
+SoftwareComponent | AMD-Vulkan User Mode Driver | SWD\DRIVERENUM\AMDVLK&5&56474D9&0 | OK
+SoftwareComponent | Realtek Audio Universal Service | SWD\DRIVERENUM\{C3A63EDD-2D27-4B66-B155-5E94B43D926A}#REALTEKSRV&6&BBBA3BD&0 | OK
+SoftwareComponent | Realtek Hardware Support Application | SWD\DRIVERENUM\{C3A63EDD-2D27-4B66-B155-5E94B43D926A}#REALTEKHSA&6&BBBA3BD&0 | OK
+SoftwareComponent | AMD-OpenGL User Mode Driver | SWD\DRIVERENUM\AMDOGL&5&56474D9&0 | OK
+SoftwareComponent | Realtek Asio Component | SWD\DRIVERENUM\{C3A63EDD-2D27-4B66-B155-5E94B43D926A}#REALTEKASIO&6&BBBA3BD&0 | OK
+SoftwareComponent | AMD-Windows Support Components | SWD\DRIVERENUM\AMDWIN&5&56474D9&0 | OK
+System | Armoury Crate Control Interface | ACPI\ASUS9001\2&DABA3FF&0 | OK
+SoftwareComponent | Generic software component | SWD\DRIVERENUM\{25C1BC6B-97B1-465A-A9FF-A003EBFC2259}#DOLBYAPO_DAX3APOSVC&6&BBBA3BD&0 | OK
+SoftwareComponent | Realtek OVWrap2 Component | SWD\DRIVERENUM\{C3A63EDD-2D27-4B66-B155-5E94B43D926A}#REALTEKOVWRAP2&6&BBBA3BD&0 | OK

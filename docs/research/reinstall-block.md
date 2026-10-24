@@ -3,7 +3,9 @@
 Research 2026-10-25 (plan 3, task 11). Read-only checks on the owner's Ally X
 (RC73XA, Windows build 26300) plus Microsoft Learn and ASUS pages. Nothing on
 the PC was changed. "Unverified" marks anything not backed by a primary
-source or a live check.
+source or a live check. Raw output from the PC is in `docs/research/evidence/`
+and each section names its file. "Checked live, output not saved" marks the
+few items without one.
 
 ## Short answer
 
@@ -26,6 +28,8 @@ Neither goes in the catalog in this task.
 ## What is on this PC (checked 2026-10-25)
 
 ### Driver packages that name Store apps
+
+Source: `evidence/driver-store.txt`.
 
 `pnputil /enum-drivers` lists 224 packages: 140 Extension, 20
 SoftwareComponent, 4 Firmware. Searching `C:\Windows\INF\oem*.inf` for
@@ -52,6 +56,10 @@ on this PC.
 
 ### ASUS packages
 
+Source: `evidence/driver-store.txt` (packages, INF lines, present devices)
+and `evidence/asus-armoury-crate-logs.txt` (the `System32\ASUSACCI` file
+list).
+
 | INF | Class | Version | What it adds |
 |---|---|---|---|
 | oem52.inf `asussci2.inf` (ASUS System Control Interface v3) | System | 3.1.72.0 | Services `ASUSOptimization`, `ASUSSystemDiagnosis`, `ASUSSystemAnalysis`, `ASUSSoftwareManager`, `AsusAppService`, `ASUSSwitch`, all run from the DriverStore |
@@ -69,6 +77,8 @@ documented either (unverified).
 
 ### WPBT
 
+Source: `evidence/firmware-tables-and-policies.txt`.
+
 `EnumSystemFirmwareTables('ACPI')` on this Ally X returns: ABLT APIC BGRT
 ECDT FACP FIDT FPDT HPET IVRS MCFG MSDM PCCT SSDT TPM2 UEFI VFCT WSMT. No
 WPBT, and `C:\Windows\System32\wpbbin.exe` does not exist. On this device
@@ -78,12 +88,16 @@ documentation, so NitrOS should not rely on it.
 
 ### Policies already set
 
+Source: `evidence/firmware-tables-and-policies.txt`.
+
 - `HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\ExcludeWUDriversInQualityUpdate` = 1.
-  Windows Update currently offers **no drivers** on the owner's PC. This is a
-  Winhance setting (see `winhance-settings.md`). It stops driver and,
-  most likely, firmware updates from Windows Update (BIOS 314 and
-  power-delivery firmware came that way before); Microsoft's text names only
-  "drivers", so the firmware part is unverified.
+  Windows Update currently offers **no drivers** on the owner's PC. Winhance
+  set it: its change history logs "Driver Updates via Windows Update: Enabled
+  → Disabled" at 2026-10-19 17:08 (same file). Whether it also stops
+  firmware from Windows Update is unverified; Microsoft's text names only
+  "drivers". The earlier note that BIOS 314 and power-delivery firmware came
+  through Windows Update (`device-updates.md`) has no saved source and is
+  unverified.
 - `Device Metadata\PreventDeviceMetadataFromNetwork` = 0 (not blocked), no
   policy value.
 - `DriverSearching\SearchOrderConfig` = 1 (default).
@@ -91,7 +105,9 @@ documentation, so NitrOS should not rely on it.
 
 ### The October 2026 Armoury Crate return
 
-ASUS logs under `C:\ProgramData\ASUS` show:
+ASUS logs under `C:\ProgramData\ASUS` show (source:
+`evidence/asus-armoury-crate-logs.txt`; the dism.log entry for the ASUS
+installer's provisioning at 03:37 is in `evidence/dism-log-excerpts.txt`):
 
 - 2026-10-20 03:22 to 03:23: Armoury Crate uninstaller and MSI uninstall logs.
 - 03:28:50: "Armoury Crate Full Installation Package" 1.4.4.3 starts
@@ -101,7 +117,8 @@ ASUS logs under `C:\ProgramData\ASUS` show:
   -guideuser`, reads `ModelName = RC73XA`, and logs the "Next" and
   "DownloadAndInstall" button steps.
 - 03:38 to 03:44: Armoury Crate SE, ROG Live Service, Aura and the AsIO3
-  driver are back; Armoury Crate is running today.
+  driver are back. Armoury Crate's services were running on 2026-10-25
+  (checked live, output not saved).
 
 The logs show button clicks in the user's session, which looks like a person
 ran the full installer, not Windows Update or a silent agent. What started the
@@ -126,9 +143,13 @@ reinstall.
    Windows 10 1809+). When enabled, "Windows doesn't download applications
    associated with device metadata for installed devices" and it overrides the
    Device Installation Settings dialog. It does not mention drivers. Whether
-   it also stops `AddSoftware` Store links is not stated (unverified; a
-   Level1Techs forum thread reports the dialog did not stop maker stub
-   installers). Source: DeviceInstallation Policy CSP, ms.date 2026-10-14,
+   it also stops `AddSoftware` Store links is not stated (unverified). A
+   Level1Techs forum thread, "Does the 'Device Installation Settings'
+   actually do anything?",
+   https://forum.level1techs.com/t/does-the-device-installation-settings-actually-do-anything-blocking-auto-installed-bloatware/258882 ,
+   reportedly says the dialog did not stop maker stub installers. I saw only a
+   search-result summary, not the thread, so that is unverified and
+   anecdotal. Source: DeviceInstallation Policy CSP, ms.date 2026-10-14,
    updated 2026-10-23,
    https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-deviceinstallation
 3. **Device installation restrictions.** "Prevent installation of devices

@@ -81,8 +81,30 @@ W 'Registry: can the elevated token open these keys for writing? (nothing is wri
             $h = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($k, [Microsoft.Win32.RegistryKeyPermissionCheck]::ReadWriteSubTree, $rights)
             if ($null -eq $h) { "MISSING  HKLM\$k" } else { "WRITE-OK HKLM\$k"; $h.Close() }
         } catch {
-            "DENIED   HKLM\$k ($($_.Exception.GetType().Name))"
+            # Unwrap PowerShell's MethodInvocationException to the real cause.
+            $ex = $_.Exception
+            while ($ex.InnerException) { $ex = $ex.InnerException }
+            "REFUSED  HKLM\$k inner={0} HResult=0x{1:X8} msg={2}" -f $ex.GetType().FullName, $ex.HResult, $ex.Message
         }
+    }
+}
+
+W 'Registry: same keys through RegOpenKeyEx (Win32 error code; nothing is written)' {
+    if (-not ('NitrOSVerify.Reg' -as [type])) {
+        Add-Type -Namespace NitrOSVerify -Name Reg -MemberDefinition @'
+[DllImport("advapi32.dll", CharSet=CharSet.Unicode)] public static extern int RegOpenKeyExW(IntPtr h, string sub, int opt, int sam, out IntPtr res);
+[DllImport("advapi32.dll")] public static extern int RegCloseKey(IntPtr h);
+'@
+    }
+    $hklm = [IntPtr]::new(-2147483646)   # HKEY_LOCAL_MACHINE
+    $sam = 0x20019 -bor 0x0002 -bor 0x0004 # KEY_READ | KEY_SET_VALUE | KEY_CREATE_SUB_KEY
+    foreach ($k in 'SOFTWARE', 'SOFTWARE\Policies', 'SOFTWARE\Microsoft\Windows\CurrentVersion\Appx',
+                   'SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore\InboxApplications',
+                   'SOFTWARE\Microsoft\Windows\CurrentVersion\AppModel') {
+        $h = [IntPtr]::Zero
+        $rc = [NitrOSVerify.Reg]::RegOpenKeyExW($hklm, $k, 0, $sam, [ref]$h)
+        if ($rc -eq 0) { "WRITE-OK HKLM\$k"; [void][NitrOSVerify.Reg]::RegCloseKey($h) }
+        else { "REFUSED  HKLM\$k Win32 error $rc ($([ComponentModel.Win32Exception]::new($rc).Message))" }
     }
 }
 

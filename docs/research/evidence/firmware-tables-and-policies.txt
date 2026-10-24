@@ -1,0 +1,20 @@
+﻿Source: kernel32 EnumSystemFirmwareTables('ACPI') and registry reads, without elevation 2026-10-25 02:19.
+
+ACPI tables: 
+ABLT APIC BGRT ECDT FACP FIDT FPDT HPET IVRS MCFG MSDM PCCT SSDT TPM2 UEFI VFCT WSMT
+C:\Windows\System32\wpbbin.exe exists: False
+
+HKLM\SYSTEM\CurrentControlSet\Control\Session Manager DisableWpbtExecution: 
+HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate ExcludeWUDriversInQualityUpdate: 1
+HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Metadata PreventDeviceMetadataFromNetwork: 0
+HKLM\SOFTWARE\Policies\Microsoft\Windows\Device Metadata exists: False
+HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching SearchOrderConfig: 1
+HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall exists: False
+
+Winhance change history lines mentioning drivers:
+[2026-10-19 16:44] Update Behavior — Driver Updates via Windows Update: Enabled → Disabled
+[2026-10-19 16:44] Update Behavior — Driver Co-Installers: Enabled → Disabled
+[2026-10-19 17:03] Update Behavior — Driver Updates via Windows Update: Disabled → Enabled
+[2026-10-19 17:03] Update Behavior — Driver Co-Installers: Disabled → Enabled
+[2026-10-19 17:08] Update Behavior — Driver Updates via Windows Update: Enabled → Disabled
+[2026-10-19 17:08] Update Behavior — Driver Co-Installers: Enabled → Disabled

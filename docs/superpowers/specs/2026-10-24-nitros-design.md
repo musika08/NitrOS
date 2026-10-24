@@ -389,10 +389,22 @@ updates screen.
   alone is the device-metadata apps policy, which is not proven to stop
   either route. VM and Ally tests are still open.
 - Why DISM's provisioned-app query is denied even when elevated on the
-  owner's PC. Answered 2026-10-25 in `docs/research/dism-access-denied.md`.
-  The likely cause is Shadow Defender: SYSTEM still works, the elevated admin
-  is refused below the registry permissions. Not yet proven. NitrOS detects
-  the refusal and tells the user, and never changes permissions.
+  owner's PC. Partly answered 2026-10-25 in
+  `docs/research/dism-access-denied.md`. DISM's Appx provider probably fails
+  opening a registry key for writing; the log names no key or access mode.
+  SYSTEM still gets the list, and the elevated admin does not. The likely
+  cause is Shadow Defender, not yet proven. NitrOS detects the refusal and
+  tells the user, and never changes permissions.
+- On the owner's PC, `ExcludeWUDriversInQualityUpdate` = 1 is already set
+  (by Winhance), so Windows Update offers no drivers. Device updates must
+  cover drivers, or the owner clears the value.
+- On the owner's PC, the elevated admin appears to be refused write access to
+  `HKLM\SOFTWARE` itself, which its permissions allow (to be confirmed with
+  the updated `tools/verify/collect-dism-evidence.ps1`). NitrOS must
+  test-open HKLM target keys for writing before applying.
+- Open question for the owner: a kernel driver `C:\WINDOWS\TEMP\D.sys`
+  (service name `D`) has been installed over 1,300 times since 2026-10-20.
+  Which program loads it is unknown.
 - What the Ally X controller, back buttons and power controls do without
   Armoury Crate, and how to change the GPU memory reserve without it.
 - Primary BattlEye, Easy Anti-Cheat and FACEIT requirement pages (the

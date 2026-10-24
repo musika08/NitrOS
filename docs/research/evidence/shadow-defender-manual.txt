@@ -1,0 +1,9 @@
+﻿Source: Shadow Defender's own manual, C:\Program Files\Shadow Defender\Help.chm (335391 bytes, written 2018-01-14), decompiled with hh.exe -decompile into a scratch folder 2026-10-25 02:19. Only the quoted sentence is reproduced.
+
+Page registry.htm, title 'Registry Exclusion List', one sentence:
+  "When accessing these registry items, the changes will automatically be saved to the original volume."
+
+Pages in the manual: about.htm, administration.html, cache.htm, commit.htm, contact.htm, enter.htm, eula.htm, exclusion.htm, exit.htm, install.htm, register.htm, registry.htm, requirements.htm, shadowmode.htm, start.htm, work.htm
+Search for 'denied', 'DISM' or 'servicing': the only hit is 'Force dismount volume' on exit.htm, which is unrelated. The manual does not mention access denied, DISM or Windows servicing.
+
+CmdTool.txt (same folder) documents '/list: List all the drives in Shadow Mode.' It does not say what an empty result means.

@@ -1,0 +1,152 @@
+﻿Source: ASUS log files under C:\ProgramData\ASUS and C:\Program Files, read without elevation 2026-10-25 02:19. Verbatim excerpts.
+
+== Files written 2026-10-20 03:20 to 03:46 (logs only) ==
+03:21:38 C:\ProgramData\ASUS\ACUTLog\LOG\ACDiagnosis\ROG Live Service\ROGLiveService_2026-10-20.log
+03:23:00 C:\ProgramData\ASUS\ACUTLog\LOG\ACDiagnosis\SetupLog\ArmouryCrate.Uninstaller_20261020_032258.log
+03:23:01 C:\ProgramData\ASUS\ACUTLog\LOG\ACS\ArmouryCrate.Service_2026-10-20_01.log
+03:23:07 C:\ProgramData\ASUS\ACUTLog\LOG\ACS\ArmouryCrate.UserSessionHelper_2026-10-20_04.log
+03:23:24 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ArmouryCrate_Uninstall.log
+03:23:25 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\SetupLog\msi_uninstall_2026-10-20.log
+03:23:25 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ASUS Update\ACS\SetupLog\msi_uninstall_2026-10-20.log
+03:23:25 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\SetupLog\ArmouryCrate.Uninstaller_20261020_032310.log
+03:23:25 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ASUS Update\ACS\SetupLog\ArmouryCrate.Uninstaller_20261020_032310.log
+03:23:26 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ASUS Update\ACS\SetupLog\ArmouryCrate.Uninstaller_20261020_032258.log
+03:23:26 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\SetupLog\ArmouryCrate.Uninstaller_20261020_032258.log
+03:23:28 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\AacAmbientHal\AacAmbientLighting.log
+03:23:31 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\AURA Service_20261020032330_000_Setup.log
+03:23:32 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\AURA Service_20261020032330_001_SdkSetup64.log
+03:23:32 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\AURA Service_20261020032330.log
+03:23:46 C:\ProgramData\ASUS\ACUTLog\MB_Home\Uninstaller_01_20261020032345.log
+03:23:46 C:\ProgramData\ASUS\ACUTLog\DeviceUninstall.txt
+03:23:48 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\ASUS Aac_NBDT HAL_20261020032347_000_Setup.log
+03:23:48 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\ASUS Aac_NBDT HAL_20261020032347.log
+03:23:52 C:\ProgramData\ASUS\ACUTLog\LOG\UninstallLog.log
+03:28:51 C:\ProgramData\ASUS\AsIO3\AsusCertService.exe.log
+03:28:51 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\install\AsIO3.log
+03:29:03 C:\ProgramData\ASUS\ALL\SupersetUI_App_20261020032903.log
+03:29:04 C:\ProgramData\ASUS\ALL\SupersetUI_ACAlreadyInstalledDialog_20261020032904.log
+03:29:09 C:\ProgramData\ASUS\ALL\SupersetUI_ACGuideUserDialog_20261020032903.log
+03:29:14 C:\ProgramData\ASUS\ALL\SupersetUI_ACInstallDialog_20261020032903.log
+03:34:46 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\FrameworkServiceSetup.txt
+03:34:48 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\keyboard.txt
+03:34:49 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\mouse.txt
+03:34:51 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\headset.txt
+03:34:53 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\fanCard.txt
+03:34:54 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\mousepad.txt
+03:34:56 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\motherboard.txt
+03:34:58 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\fanXpert.txt
+03:34:59 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\aio.txt
+03:35:01 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\gamepad.txt
+03:35:02 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\unifyDongle.txt
+03:35:04 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\vga.txt
+03:35:05 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\MainSDKPluginSetup.log
+03:35:37 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\MainSDK.txt
+03:35:49 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\6862.txt
+03:36:05 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\AcSdkInstallLog\UnifyDongleSDK.txt
+03:38:53 C:\ProgramData\ASUS\ArmouryCrate\AsusGCGridServiceSetup2026-10-20_033852.log
+03:39:06 C:\ProgramData\ASUS\ALL\AsusAppxLauncher_01_20261020033853.log
+03:39:06 C:\ProgramData\ASUS\ALL\SupersetUI_ACProgressBar_20261020032914.log
+03:39:06 C:\ProgramData\ASUS\ALL\Armoury Crate Full Installation Package_01_20261020032850.log
+03:39:18 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ArmouryCrate.Win32Manager.txt
+03:42:28 C:\ProgramData\ASUS\ALL\ACLoader\ArmouryCrateInstaller.log
+03:42:29 C:\ProgramData\ASUS\ALL\ACLoader\ROGLSLoaderUI_App_20261020034229.log
+03:42:29 C:\ProgramData\ASUS\ALL\ACLoader\ROGLSLoaderUI.Util_Util_20261020034229.log
+03:42:32 C:\ProgramData\ASUS\ALL\ACLoader\ROGLSLoaderUI_ACInstallerDialog_20261020034229.log
+03:42:34 C:\ProgramData\ASUS\ALL\QueryUWP.log
+03:42:34 C:\ProgramData\ASUS\ALL\ACLoader\CheckTool.log
+03:42:34 C:\ProgramData\ASUS\ALL\ACLoader\ROGLSLoaderUI_App_20261020034234.log
+03:42:35 C:\ProgramData\ASUS\ALL\ACLoader\ROGLSLoaderUI.Util_Util_20261020034234.log
+03:42:37 C:\ProgramData\ASUS\ALL\ACLoader\ROGLSLoaderUI_ACDownLoadProgress_20261020034234.log
+03:42:41 C:\ProgramData\ASUS\ALL\ACLoader\onePackageLoader_App_20261020034241.log
+03:42:41 C:\ProgramData\ASUS\ALL\ACLoader\onePackageLoader_AppInstallFunction_20261020034241.log
+03:42:41 C:\ProgramData\ASUS\ALL\ACLoader\ROGLSLoaderUI_App_20261020034241.log
+03:42:42 C:\ProgramData\ASUS\ALL\ACLoader\ROGLSLoaderUI.Util_Util_20261020034241.log
+03:42:42 C:\ProgramData\ASUS\ALL\ACLoader\ROGLSLoaderUI_ACDownLoadProgress_20261020034241.log
+03:43:36 C:\ProgramData\ASUS\ALL\ACLoader\onePackageLoader_App_20261020034335.log
+03:43:36 C:\ProgramData\ASUS\ALL\ACLoader\onePackageLoader_AppInstallFunction_20261020034335.log
+03:43:36 C:\ProgramData\ASUS\ALL\ACLoader\ROGLSLoader_04_20261020034237.log
+03:43:53 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\rlsse_unistalllog.log
+03:43:53 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\rls_unistalllog.log
+03:43:54 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\rls_installlog.log
+03:44:02 C:\ProgramData\ASUS\ROG Live Service\RLSSetup.log
+03:44:02 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\RLSSetup.log
+03:44:03 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\LMx64.log
+03:44:04 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\LMx86.log
+03:44:06 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\AuraLayerManagerUpdater.log
+03:44:09 C:\ProgramData\ASUS\ArmouryCrateSetupLog.txt
+03:44:09 C:\ProgramData\ASUS\ArmouryCrateSESetupLog.txt
+03:44:22 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\ASUS Ambient HAL_20261020034413_002_Setup64.log
+03:44:22 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\ASUS Ambient HAL_20261020034422.log
+03:44:22 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\ASUS Ambient HAL_20261020034413.log
+03:44:22 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\ASUS Ambient HAL Cleaner.log
+03:44:24 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\AURA Service_20261020034423_002_SdkSetup64.log
+03:44:25 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\AURA Service_20261020034423_003_Setup.log
+03:44:25 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\AURA Service_20261020034423.log
+03:44:42 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\ASUS Aac_NBDT HAL_20261020034441_001_Setup.log
+03:44:42 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ROG Live Service\InstallLog\MsiInstallLog\ASUS Aac_NBDT HAL_20261020034441.log
+03:44:42 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\AacNBDTSetup\InstallLog\InstallLog_2026_10_20_x64_Admin.log
+03:44:50 C:\ProgramData\ASUS\ARMOURY CRATE Diagnosis\ArmouryCrate.ACSetup.txt
+
+== C:\ProgramData\ASUS\ALL\SupersetUI_App_20261020032903.log ==
+10/20/2026 3:29:03 AM: enter
+10/20/2026 3:29:03 AM: e.Args[0] = -supersetstart
+10/20/2026 3:29:03 AM: e.Args[1] = -win
+10/20/2026 3:29:03 AM: e.Args[2] = armourycrate
+10/20/2026 3:29:03 AM: e.Args[3] = -guideuser
+10/20/2026 3:29:03 AM: enter armourycrate eula
+
+== C:\ProgramData\ASUS\ALL\SupersetUI_ACGuideUserDialog_20261020032903.log ==
+10/20/2026 3:29:04 AM: isFirst = False ,forcelang = 
+10/20/2026 3:29:04 AM: Shell_TrayWnd exist
+10/20/2026 3:29:04 AM: after InitializeComponent
+10/20/2026 3:29:05 AM: WinLoad
+10/20/2026 3:29:05 AM: Shell_TrayWnd exist
+10/20/2026 3:29:09 AM: Next
+
+== C:\ProgramData\ASUS\ALL\SupersetUI_ACInstallDialog_20261020032903.log ==
+10/20/2026 3:29:03 AM: isFirst = False ,forcelang = 
+10/20/2026 3:29:03 AM: Shell_TrayWnd exist
+10/20/2026 3:29:04 AM: after InitializeComponent
+10/20/2026 3:29:04 AM: Production = Gaming
+10/20/2026 3:29:04 AM: ACINSTALLDIALOG_USBDEVICE = USBDevice
+10/20/2026 3:29:04 AM: isSupportMB = false
+10/20/2026 3:29:04 AM: isSupportFanXpert = false
+10/20/2026 3:29:04 AM: isGamingProduct = true
+10/20/2026 3:29:04 AM: ModelName = RC73XA
+10/20/2026 3:29:04 AM: SeriesName = RC73
+10/20/2026 3:29:04 AM: VGAName = 
+10/20/2026 3:29:09 AM: WinLoad
+10/20/2026 3:29:09 AM: Shell_TrayWnd exist
+10/20/2026 3:29:14 AM: DownloadAndInstall
+
+== C:\ProgramData\ASUS\ALL\AsusAppxLauncher_01_20261020033853.log ==
+2026-10-20 03:38:53  Start C:\Program Files (x86)\ASUS\Superset\AsusGamingCenterInstallPackage\AsusAppxLauncher.exe
+2026-10-20 03:38:53  File Version: 1.0.0.3
+2026-10-20 03:38:53  Launch the B9ECED6F.ArmouryCrate_qmba6cd70vzyy!App.
+2026-10-20 03:39:06  The ArmouryCrate has been successfully launched.
+
+== C:\ProgramData\ASUS\ALL\Armoury Crate Full Installation Package_01_20261020032850.log (first 12 lines) ==
+2026-10-20 03:28:50  Start wmain
+2026-10-20 03:28:50  Success writing to Registry. value=1
+2026-10-20 03:28:50  File Version: 1.4.4.3
+2026-10-20 03:28:50  [wmain] ***** Select Mode *****
+2026-10-20 03:28:50  [Installer][copyFilesToDisk] Begin. (7)
+2026-10-20 03:28:50  VC_redist.x64.exe resFileToDisk, result = 1
+2026-10-20 03:28:50  VC_redist.x86.exe resFileToDisk, result = 1
+2026-10-20 03:28:50  [Installer][copyFilesToDisk] End. (1)
+2026-10-20 03:28:50  [Installer][copyFilesToDisk] Begin. (0)
+2026-10-20 03:28:50  Armoury Crate Full Installation Package UI.exe resFileToDisk, result = 1
+2026-10-20 03:28:50  [Installer][copyFilesToDisk] End. (1)
+2026-10-20 03:28:50  [Installer][copyFilesToDisk] Begin. (1)
+
+== Install folder creation times ==
+C:\Program Files\ASUS\Armoury Crate SE Service created=2026-10-20 03:44:08
+C:\Program Files (x86)\ASUS\Superset created=2026-10-20 03:28:50
+C:\Windows\System32\ASUSACCI created=2026-10-19 16:12:19
+
+== C:\Windows\System32\ASUSACCI files ==
+ArmouryCrateControlInterface.exe | Armoury Crate Control Interface
+ArmouryCrateKeyControl.exe | ArmouryCrateKeyControl
+AsCheckASCI.exe | ASUS Check ASCI Driver
+AsCheckASCI.log | 
+ProductInfoLib.dll | ProductInfoLib

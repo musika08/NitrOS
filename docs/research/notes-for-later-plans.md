@@ -17,9 +17,9 @@ Date: 2026-10-24. Collected from the final whole-branch review of plan 2 (the ca
 - Recall already has a "disabled with payload removed" state on some PCs; the engine must treat it as already done.
 - Armoury Crate may come back until the reinstall block ships (ASUS Update Helper is left installed on purpose). See `reinstall-block.md` (2026-10-25): Dolby, Realtek and AMD apps come back through their drivers' Store links. Armoury Crate is tied to the BIOS device `ACPI\ASUS9001`. A proposed `device-companion-apps-off` switch is written up there, not in the catalog.
 - Defender writes can be refused while Tamper Protection is on.
-- DISM's provisioned-app query is denied for the elevated admin on the owner's PC, while SYSTEM still works. Likely cause: Shadow Defender, installed 2026-10-20 (see `dism-access-denied.md`). The engines must treat 0x80070005 as "refused", not "no packages", name Shadow Defender when it is present, skip only the provisioned part, and never change permissions. The elevated token was also refused write access to `HKLM\SOFTWARE` itself, so test-open HKLM target keys for writing before applying.
-- `ExcludeWUDriversInQualityUpdate` = 1 is already set on the owner's PC (a Winhance setting), so Windows Update gives it no drivers. Device updates must cover drivers and firmware, or the owner clears it.
-- A kernel driver `D` from `C:\WINDOWS\TEMP\D.sys` was installed 1,139 times since 2026-10-20. Which program loads it is unknown; do not blame NitrOS for it.
+- DISM's provisioned-app query is denied for the elevated admin on the owner's PC, while SYSTEM still works. DISM's Appx provider probably fails opening a registry key for writing; the log names no key or access mode. Likely cause: Shadow Defender, installed 2026-10-20 (see `dism-access-denied.md`). The engines must treat 0x80070005 as "refused", not "no packages", name Shadow Defender when it is present, skip only the provisioned part, and never change permissions. The elevated token also appears to be refused write access to `HKLM\SOFTWARE` itself (inferred; re-run the updated evidence script), so test-open HKLM target keys for writing before applying.
+- `ExcludeWUDriversInQualityUpdate` = 1 is already set on the owner's PC (set by Winhance 2026-10-19), so Windows Update gives it no drivers. Device updates must cover drivers, or the owner clears it.
+- A kernel driver `D` from `C:\WINDOWS\TEMP\D.sys` has been installed over 1,300 times since 2026-10-20 (1,395 by 2026-10-25 02:19). Which program loads it is unknown; do not blame NitrOS for it.
 
 ## Plan 4 (VM)
 
@@ -34,6 +34,9 @@ Date: 2026-10-24. Collected from the final whole-branch review of plan 2 (the ca
 - Task 11: remove Dolby Access or Realtek Audio Control, then restart and install a newer driver. Does the app come back with and without `PreventDeviceMetadataFromNetwork` = 1?
 - Task 11: on a clean VM, record the permissions on `Appx`, `AppModel` and `InboxApplications`. Then install Shadow Defender 1.5.0.726 and rerun `tools/verify/collect-dism-evidence.ps1` to confirm or rule it out.
 - Task 11, on the Ally with the owner: look in the BIOS for an Armoury Crate download option, and log what `ArmouryCrateControlInterface` and `ASUSSoftwareManager` do after Armoury Crate is removed.
+- Task 11: `ExcludeWUDriversInQualityUpdate` = 1 is already set on the owner's PC, so Windows Update offers no drivers. Check that Device updates still covers every driver and firmware item, or have the owner clear the value.
+- Task 11: re-run the updated `tools/verify/collect-dism-evidence.ps1` elevated on the Ally, to confirm whether writes to `HKLM\SOFTWARE` are really refused (inner error and Win32 code). Compare with a clean VM.
+- Task 11, open question for the owner: which program installs the kernel driver `C:\WINDOWS\TEMP\D.sys` (service `D`) over and over (more than 1,300 times since 2026-10-20)?
 
 ## Plan 5 (app)
 
