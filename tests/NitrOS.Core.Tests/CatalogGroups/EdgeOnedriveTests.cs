@@ -24,6 +24,13 @@ public class EdgeOnedriveTests
     }
 
     [Fact]
+    public void EdgeOnedrive_BreaksOnePerSentence()
+    {
+        Assert.Equal(3, Group().Switches.Single(s => s.Id == "edge-remove").Breaks.Count);
+        Assert.Equal(2, Group().Switches.Single(s => s.Id == "onedrive-remove").Breaks.Count);
+    }
+
+    [Fact]
     public void EdgeOnedrive_SpotCheck()
     {
         var sw = Group().Switches.Single(s => s.Id == "edge-remove");

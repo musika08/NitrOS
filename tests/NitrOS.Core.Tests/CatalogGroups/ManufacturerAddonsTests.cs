@@ -28,6 +28,13 @@ public class ManufacturerAddonsTests
     }
 
     [Fact]
+    public void ManufacturerAddons_ArmouryCrateBreaksOnePerSentence()
+    {
+        var sw = Group().Switches.Single(s => s.Id == "armoury-crate-remove");
+        Assert.Equal(4, sw.Breaks.Count);
+    }
+
+    [Fact]
     public void ManufacturerAddons_SpotCheck()
     {
         var sw = Group().Switches.Single(s => s.Id == "armoury-crate-remove");

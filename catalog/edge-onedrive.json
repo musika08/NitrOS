@@ -6,7 +6,11 @@
       "id": "edge-remove", "name": "Remove Microsoft Edge", "feature": "Microsoft Edge",
       "description": "Uninstalls the Edge browser; the WebView2 runtime apps need stays.",
       "risk": "caution",
-      "breaks": ["Microsoft Edge is gone; web links open in your other browser. A big Windows update may put Edge back. Copilot and Game Assist inside Edge go with it."],
+      "breaks": [
+        "Microsoft Edge is gone; web links open in your other browser.",
+        "A big Windows update may put Edge back.",
+        "Copilot and Game Assist inside Edge go with it."
+      ],
       "modes": ["live", "image"], "reversible": false,
       "cards": { "recommended": "off", "gamer": "on", "streamer": "on", "maxLean": "on" },
       "live": [
@@ -27,7 +31,10 @@
       "id": "onedrive-remove", "name": "Remove OneDrive", "feature": "OneDrive",
       "description": "Uninstalls OneDrive and turns off its sync.",
       "risk": "caution",
-      "breaks": ["Files kept only in OneDrive are not on this PC; get them at onedrive.com. Desktop or Documents folders backed up to OneDrive may look empty."],
+      "breaks": [
+        "Files kept only in OneDrive are not on this PC; get them at onedrive.com.",
+        "Desktop or Documents folders backed up to OneDrive may look empty."
+      ],
       "modes": ["live", "image"], "reversible": false,
       "cards": { "recommended": "off", "gamer": "on", "streamer": "on", "maxLean": "on" },
       "live": [

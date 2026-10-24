@@ -6,7 +6,12 @@
       "id": "armoury-crate-remove", "name": "Remove Armoury Crate", "feature": "Armoury Crate",
       "description": "Uninstalls Armoury Crate SE, Command Center and the ASUS helper services; keeps ASUS drivers.",
       "risk": "breaks",
-      "breaks": ["Control-mode switching and back-button mapping stop working. TDP and fan modes can no longer be changed in Armoury Crate. The GPU memory reserve setting is no longer available in Windows. BIOS, firmware and controller updates come from Device updates or the ASUS website by hand."],
+      "breaks": [
+        "Control-mode switching and back-button mapping stop working.",
+        "TDP and fan modes can no longer be changed in Armoury Crate.",
+        "The GPU memory reserve setting is no longer available in Windows.",
+        "BIOS, firmware and controller updates come from Device updates or the ASUS website by hand."
+      ],
       "modes": ["live"], "reversible": false,
       "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
       "live": [
