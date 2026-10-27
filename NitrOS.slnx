@@ -4,6 +4,7 @@
     <Project Path="src/NitrOS.Live/NitrOS.Live.csproj" />
     <Project Path="src/NitrOS.Cli/NitrOS.Cli.csproj" />
     <Project Path="src/NitrOS.Measure/NitrOS.Measure.csproj" />
+    <Project Path="src/NitrOS.Measure.Probe/NitrOS.Measure.Probe.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NitrOS.Core.Tests/NitrOS.Core.Tests.csproj" />

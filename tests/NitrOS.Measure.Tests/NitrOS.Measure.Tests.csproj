@@ -19,6 +19,11 @@
     <ProjectReference Include="..\..\src\NitrOS.Core\NitrOS.Core.csproj" />
     <ProjectReference Include="..\..\src\NitrOS.Live\NitrOS.Live.csproj" />
     <ProjectReference Include="..\..\src\NitrOS.Measure\NitrOS.Measure.csproj" />
+    <ProjectReference Include="..\..\src\NitrOS.Measure.Probe\NitrOS.Measure.Probe.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\tests\NitrOS.Live.Tests\Fakes\Fake*.cs" Exclude="..\..\tests\NitrOS.Live.Tests\Fakes\*Tests.cs" LinkBase="Fakes" />
   </ItemGroup>
 
 </Project>

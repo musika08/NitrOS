@@ -19,6 +19,8 @@ public sealed record CliEnvironment(
     /// <summary>Secures the journal folder before any journal is read or written; returns hard-linked files it left alone.</summary>
     public Func<IReadOnlyList<string>> SecureJournalDir { get; init; } = () => [];
 
+    public IMemoryFacts? Memory { get; init; } = null;
+
     /// <summary>The real PC. WinSystems.Create (which creates the locked-down backup folder) runs only when a command asks for the systems.</summary>
     public static CliEnvironment Real() => new(
         WinSystems.Create,
@@ -29,5 +31,6 @@ public sealed record CliEnvironment(
         WinSystems.BackupPath)
     {
         SecureJournalDir = () => BackupFolder.Ensure(WinSystems.BackupPath),
+        Memory = new WinMemoryFacts(),
     };
 }

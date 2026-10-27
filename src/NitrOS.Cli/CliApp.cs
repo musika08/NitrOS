@@ -131,6 +131,13 @@ public static class CliApp
         o.WriteLine($"Battery: {YesNo(d.HasBattery)}");
         o.WriteLine($"Touchscreen: {YesNo(d.HasTouchscreen)}");
         o.WriteLine($"Handheld: {YesNo(d.IsHandheld)}");
+        if (env.Memory is not null)
+        {
+            var mem = env.Memory.Read();
+            o.WriteLine($"Memory installed: {mem.InstalledMb} MB");
+            o.WriteLine($"Memory available to Windows: {mem.VisibleMb} MB");
+            o.WriteLine($"Reserved for hardware (mostly the GPU): {mem.ReservedMb} MB");
+        }
         return Ok;
     }
 

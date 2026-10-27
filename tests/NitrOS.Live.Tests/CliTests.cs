@@ -147,6 +147,21 @@ public class CliTests : IDisposable
         Assert.Contains("Battery: no", text);
         Assert.Contains("Handheld: no", text);
     }
+    private sealed class FakeMemory(MemoryInfo info) : IMemoryFacts
+    {
+        public MemoryInfo Read() => info;
+    }
+
+    [Fact]
+    public void Detect_PrintsMemoryLinesWhenSet()
+    {
+        var env = Env() with { Memory = new FakeMemory(new MemoryInfo(24576, 16384, 8192)) };
+        var (code, text) = Run(env, "detect");
+        Assert.Equal(0, code);
+        Assert.Contains("Memory installed: 24576 MB", text);
+        Assert.Contains("Memory available to Windows: 16384 MB", text);
+        Assert.Contains("Reserved for hardware (mostly the GPU): 8192 MB", text);
+    }
 
     [Fact]
     public void JournalCommands_RefuseWhenTheFolderCannotBeSecured()
