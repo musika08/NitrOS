@@ -1,0 +1,29 @@
+{
+  "group": "test-group",
+  "title": "Test Group",
+  "switches": [
+    {
+      "id": "switch-a",
+      "name": "Switch A",
+      "feature": "Feature A",
+      "description": "Desc A",
+      "risk": "safe",
+      "modes": ["live"],
+      "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "registry.delete", "hive": "HKCU", "key": "Software\\Test", "name": "ValA" } ]
+    },
+    {
+      "id": "switch-b",
+      "name": "Switch B",
+      "feature": "Feature B",
+      "description": "Desc B",
+      "risk": "safe",
+      "modes": ["live"],
+      "reversible": true,
+      "cards": { "recommended": "on", "gamer": "on", "streamer": "on", "maxLean": "on" },
+      "live": [ { "type": "registry.delete", "hive": "HKCU", "key": "Software\\Test", "name": "ValB" } ],
+      "measured": { "memoryMb": 10, "processes": 1, "windowsBuild": "26100.1", "date": "2026-10-24" }
+    }
+  ]
+}
