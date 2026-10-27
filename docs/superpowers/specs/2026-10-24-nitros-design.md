@@ -380,7 +380,7 @@ updates screen.
 - Current .NET and Windows App SDK versions.
 - The free Microsoft tool for writing the final ISO (oscdimg from the Windows
   ADK) and its download source.
-- How to restore the Store and Xbox after Max Lean.
+- How to restore the Store and Xbox after Max Lean. Answered in `docs/research/add-xbox-back.md` and implemented in `NitrOS.Live` (`XboxRestore`) and CLI (`restore-xbox`).
 - How Windows Update reinstalls manufacturer apps, and how to block it.
   Partly answered 2026-10-25 in `docs/research/reinstall-block.md`. Driver
   packages bring back Dolby, Realtek and AMD apps through Store links. On the

@@ -22,7 +22,16 @@ Date: 2026-10-24. Collected from the final whole-branch review of plan 2 (the ca
 - `ExcludeWUDriversInQualityUpdate` = 1 is already set on the owner's PC (set by Winhance 2026-10-19), so Windows Update gives it no drivers. Device updates must cover drivers, or the owner clears it.
 - A kernel driver `D` from `C:\WINDOWS\TEMP\D.sys` had 1,139 installs from 2026-10-20 03:02:16 to 2026-10-24 15:03:12 (1,395 events for service `D` from 2026-10-19 17:51:23 to 2026-10-24 23:03:07). Which program loads it is unknown; do not blame NitrOS for it.
 
-## Plan 4 (VM)
+## Plan 4 (VM and Host Checklists)
+
+Status update (2026-10-28):
+- Add Xbox back: researched in `docs/research/add-xbox-back.md`, engine implemented in `src/NitrOS.Live/XboxRestore.cs`, CLI `nitros restore-xbox --yes`, unit tests in `XboxRestoreTests.cs`.
+- Anti-cheat checklist: created in `docs/testing/anti-cheat-checklist.md` for host testing on Ally X hardware.
+- Ally X hardware verification and owner questions: moved to `docs/testing/ally-checklist.md`.
+- HKLM registry write-open probe: created in `measure/scripts/Test-CatalogKeysWritable.ps1`.
+- Clean VM investigation and measurement loop: scripts ready in `measure/scripts/` (`Test-HostReady.ps1`, `Enable-HyperV.ps1`, `New-MeasureVm.ps1`, `Invoke-MeasureRun.ps1`, `Start-Measurement.ps1`), awaiting owner Hyper-V enablement and ISO.
+
+Items for the test VM:
 
 - Location off versus automatic time zone: does the time zone stop updating?
 - Defender removal live, with Tamper Protection on.
