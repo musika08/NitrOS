@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>nitros-measure</AssemblyName>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NitrOS.Core\NitrOS.Core.csproj" />
+    <ProjectReference Include="..\NitrOS.Live\NitrOS.Live.csproj" />
+    <ProjectReference Include="..\NitrOS.Measure\NitrOS.Measure.csproj" />
+  </ItemGroup>
+
+</Project>

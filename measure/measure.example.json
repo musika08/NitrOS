@@ -1,0 +1,8 @@
+{
+  "isoPath": "<owner supplies>",
+  "vmRoot": "X:\\NitrOS-VM",
+  "vmName": "nitros-measure",
+  "checkpoint": "clean",
+  "user": "nitros-test",
+  "passwordProtected": "<written by New-MeasureConfig.ps1>"
+}

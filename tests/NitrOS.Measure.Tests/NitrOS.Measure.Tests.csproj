@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\src\NitrOS.Live\NitrOS.Live.csproj" />
     <ProjectReference Include="..\..\src\NitrOS.Measure\NitrOS.Measure.csproj" />
     <ProjectReference Include="..\..\src\NitrOS.Measure.Probe\NitrOS.Measure.Probe.csproj" />
+    <ProjectReference Include="..\..\src\NitrOS.Measure.Host\NitrOS.Measure.Host.csproj" />
   </ItemGroup>
 
   <ItemGroup>
