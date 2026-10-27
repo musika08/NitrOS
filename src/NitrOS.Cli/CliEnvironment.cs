@@ -21,6 +21,8 @@ public sealed record CliEnvironment(
 
     public IMemoryFacts? Memory { get; init; } = null;
 
+    public Func<LiveSystems, NitrOS.Core.Model.Catalog?, IXboxRestore>? XboxRestore { get; init; } = null;
+
     /// <summary>The real PC. WinSystems.Create (which creates the locked-down backup folder) runs only when a command asks for the systems.</summary>
     public static CliEnvironment Real() => new(
         WinSystems.Create,

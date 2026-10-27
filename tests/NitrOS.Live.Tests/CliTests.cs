@@ -429,4 +429,47 @@ public class CliTests : IDisposable
         Run(env, "drift", "missing");
         Assert.Equal(1, calls);
     }
+
+    [Fact]
+    public void RestoreXbox_RefusesWithoutYes()
+    {
+        var (code, text) = Run(Env(), "restore-xbox");
+        Assert.Equal(1, code);
+        Assert.Contains("Refused: restore-xbox modifies this PC", text);
+        Assert.Equal(0, _systemsCalls);
+    }
+
+    [Fact]
+    public void RestoreXbox_RefusesWhenNotElevated()
+    {
+        var nonElevated = new Session("S-1-5-21-1", "S-1-5-21-1", false, 26200);
+        var (code, text) = Run(Env(session: nonElevated), "restore-xbox", "--yes");
+        Assert.Equal(1, code);
+        Assert.Contains("Refused:", text);
+        Assert.Equal(0, _systemsCalls);
+    }
+
+    [Fact]
+    public void RestoreXbox_RunsWithYesAndElevation()
+    {
+        var restored = false;
+        var env = Env() with
+        {
+            XboxRestore = (systems, catalog) => new FakeXboxRestore(() => restored = true)
+        };
+
+        var (code, text) = Run(env, "restore-xbox", "--yes");
+        Assert.Equal(0, code);
+        Assert.True(restored);
+        Assert.Contains("Restore Xbox completed successfully.", text);
+    }
+
+    private sealed class FakeXboxRestore(Action onRun) : IXboxRestore
+    {
+        public XboxRestoreResult Run(IProgress<string>? progress, CancellationToken ct)
+        {
+            onRun();
+            return new XboxRestoreResult(true, [("Microsoft Store", true, null), ("Xbox App", true, null)]);
+        }
+    }
 }

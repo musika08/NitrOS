@@ -4,6 +4,7 @@ using NitrOS.Core.Selecting;
 using NitrOS.Live;
 using NitrOS.Live.Journal;
 using NitrOS.Live.Systems;
+using NitrOS.Live.Windows;
 
 namespace NitrOS.Cli;
 
@@ -41,6 +42,7 @@ public static class CliApp
                 "drift" => Drift(p, output, env),
                 "health" => Health(p, output, env),
                 "journals" => Journals(p, output, env),
+                "restore-xbox" => RestoreXbox(p, output, env, ct),
                 _ => throw new UsageException($"Unknown command '{command}'."),
             };
         }
@@ -71,6 +73,7 @@ public static class CliApp
           nitros drift <journal>
           nitros health
           nitros journals
+          nitros restore-xbox --yes [--catalog <dir>]
         """;
 
     private static Parsed Parse(string[] args)
@@ -445,6 +448,49 @@ public static class CliApp
             if (d.Exists && (d.Attributes & FileAttributes.ReparsePoint) != 0) throw new UsageException(outside);
         if ((File.GetAttributes(full) & FileAttributes.ReparsePoint) != 0) throw new UsageException(outside);
         return full;
+    }
+
+    private static int RestoreXbox(Parsed p, TextWriter o, CliEnvironment env, CancellationToken ct)
+    {
+        NoPositional(p);
+        if (!p.Yes)
+        {
+            o.WriteLine("Refused: restore-xbox modifies this PC. Run the same command again with --yes to go ahead.");
+            return Refused;
+        }
+        var guard = SessionGuard.Check(env.Session);
+        if (!guard.Ok)
+        {
+            o.WriteLine($"Refused: {guard.Reason}");
+            return Refused;
+        }
+
+        var catalogDir = p.Catalog ?? env.CatalogDir;
+        var load = CatalogLoader.Load(catalogDir);
+        var catalog = load.Ok ? load.Catalog : null;
+
+        var restorer = env.XboxRestore is not null
+            ? env.XboxRestore(env.Systems(), catalog)
+            : new XboxRestore(env.Systems(), new WinXboxRestore(), catalog);
+
+        var progress = new Progress<string>(o.WriteLine);
+        var result = restorer.Run(progress, ct);
+
+        foreach (var part in result.Parts)
+        {
+            var status = part.Ok ? "OK" : "FAILED";
+            var detail = string.IsNullOrWhiteSpace(part.Detail) ? "" : $" ({part.Detail})";
+            o.WriteLine($"  {part.Part}: {status}{detail}");
+        }
+
+        if (!result.Ok)
+        {
+            o.WriteLine("Restore Xbox failed: not all parts were restored.");
+            return Refused;
+        }
+
+        o.WriteLine("Restore Xbox completed successfully.");
+        return Ok;
     }
 
     private static string YesNo(bool b) => b ? "yes" : "no";
