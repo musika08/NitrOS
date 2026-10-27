@@ -3,9 +3,11 @@
     <Project Path="src/NitrOS.Core/NitrOS.Core.csproj" />
     <Project Path="src/NitrOS.Live/NitrOS.Live.csproj" />
     <Project Path="src/NitrOS.Cli/NitrOS.Cli.csproj" />
+    <Project Path="src/NitrOS.Measure/NitrOS.Measure.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NitrOS.Core.Tests/NitrOS.Core.Tests.csproj" />
     <Project Path="tests/NitrOS.Live.Tests/NitrOS.Live.Tests.csproj" />
+    <Project Path="tests/NitrOS.Measure.Tests/NitrOS.Measure.Tests.csproj" />
   </Folder>
 </Solution>

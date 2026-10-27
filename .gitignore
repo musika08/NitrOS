@@ -483,3 +483,7 @@ $RECYCLE.BIN/
 
 # Local scratch
 .superpowers/
+
+# NitrOS Measure
+measure/measure.local.json
+measure/work/
