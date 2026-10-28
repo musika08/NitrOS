@@ -12,6 +12,7 @@ public interface IImageFiles
     void WriteText(string path, string text);
     string? ReadText(string path);
     IReadOnlyList<string> SubFolders(string path);
+    IReadOnlyList<string> EnumerateFiles(string path, string searchPattern = "*", bool recursive = true);
     long FreeBytes(string folder);
     string FileSystem(string folder);
     void DeleteWorkTree(string path);

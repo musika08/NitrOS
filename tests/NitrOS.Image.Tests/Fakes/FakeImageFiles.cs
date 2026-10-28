@@ -79,7 +79,9 @@ public sealed class FakeImageFiles : IImageFiles
     public bool Exists(string path)
     {
         Check(nameof(Exists));
-        return Files.ContainsKey(path) || Reparse.Contains(path);
+        // A drive root or folder prefix exists if any file starts with it
+        var prefix = path.TrimEnd('\\') + "\\";
+        return Files.ContainsKey(path) || Reparse.Contains(path) || Files.Keys.Any(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }
 
     public string FileSystem(string folder)
@@ -133,6 +135,26 @@ public sealed class FakeImageFiles : IImageFiles
             }
         }
         return set.ToList();
+    }
+
+    public IReadOnlyList<string> EnumerateFiles(string path, string searchPattern = "*", bool recursive = true)
+    {
+        Check(nameof(EnumerateFiles));
+        var prefix = path.TrimEnd('\\') + "\\";
+        var list = new List<string>();
+        foreach (var key in Files.Keys)
+        {
+            if (key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                var rel = key[prefix.Length..];
+                if (!recursive && rel.Contains('\\'))
+                {
+                    continue;
+                }
+                list.Add(key);
+            }
+        }
+        return list;
     }
 
     public void WriteText(string path, string text)
