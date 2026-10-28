@@ -6,6 +6,7 @@ namespace NitrOS.App.Logic.Running;
 public sealed class RunGate : ObservableObject
 {
     private bool _isBusy;
+    private string? _busyMessage;
 
     public bool IsBusy
     {
@@ -13,9 +14,18 @@ public sealed class RunGate : ObservableObject
         private set => SetProperty(ref _isBusy, value);
     }
 
-    public IDisposable? TryEnter()
+    public string? BusyMessage
+    {
+        get => _busyMessage;
+        private set => SetProperty(ref _busyMessage, value);
+    }
+
+    public IDisposable? TryEnter() => TryEnter(null);
+
+    public IDisposable? TryEnter(string? closeMessage)
     {
         if (_isBusy) return null;
+        _busyMessage = closeMessage;
         IsBusy = true;
         return new Releaser(this);
     }
@@ -34,7 +44,10 @@ public sealed class RunGate : ObservableObject
         {
             var g = Interlocked.Exchange(ref _gate, null);
             if (g is not null)
+            {
+                g.BusyMessage = null;
                 g.IsBusy = false;
+            }
         }
     }
 }

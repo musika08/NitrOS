@@ -421,24 +421,11 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
     - Page and folder buttons call `OpenPage` / `ShowInFolder`; a false return shows the address or path in `Result` with `IRelayCommand CopyText` (copy through `IDialogs.ShowAsync` text in plan 5's dialogs; no clipboard API in Logic).
 - `Texts.cs` additions: `WuDriversExcludedNote`, `InstallingCloseMessage`, `DeviceUpdatesNoItems` ("NitrOS found no BIOS, firmware or driver updates for this PC."), the confirm texts above.
 
-- [ ] **Step 1:** Write the failing tests (`FakeDeviceUpdates` returns a canned `CheckReport` built from the Ally fixtures and records every call):
-  - `DeviceUpdates_NothingInstallsUntilInstall`: construct, `OnShown`, read every property: zero `InstallAsync`, `StartHandedOff`, `OpenPage`, `ShowInFolder` calls and zero dialogs.
-  - `DeviceUpdates_ChecksOnlyOnOpenAndCheck`: exactly one `CheckAsync` after `OnShown`, two after `Check`, none from anything else (toggling rows, reading properties).
-  - `DeviceUpdates_RowsShowStatesAndSources` (BIOS "Up to date", PD "New version" with "Also offered by" text, MCU "Can't tell", AMD driver "Up to date").
-  - `DeviceUpdates_FirmwareInstallAsksWithWarning` (exactly one confirm with the three `Items`; "no" → no install).
-  - `DeviceUpdates_DriverInstallAsksOnce`.
-  - `DeviceUpdates_InstallDisabledWhenSessionRefusedOrBusy` (session not Ok; gate held; lock probe true).
-  - `DeviceUpdates_GateHeldDuringInstallWithItsMessage` (`gate.BusyMessage == Texts.InstallingCloseMessage` while the fake install waits).
-  - `DeviceUpdates_PolicyNoteShownWhenExcluded`.
-  - `DeviceUpdates_NoticesAndLinksFromReport` (ASUS unavailable notice with its page button).
-  - `DeviceUpdates_HandOffOffersStartAndFolder` and `DeviceUpdates_StartUpdaterRechecksCharger` (power fake flips to battery: refused, no start).
-  - `DeviceUpdates_PageOpenFailureShowsAddress`.
-  - `DeviceUpdates_RestartOfferedOnlyWhenNeeded`.
-  - `RunGate_TryEnterWithMessageSetsBusyMessage`.
-- [ ] **Step 2:** Run `dotnet test --filter "DeviceUpdates_|RunGate_"`. Expected: build fails.
-- [ ] **Step 3:** Implement.
-- [ ] **Step 4:** Run `dotnet test`. Expected: all pass.
-- [ ] **Step 5:** Commit with the message `Add Device updates screen logic`.
+- [x] **Step 1:** Write the tests
+- [x] **Step 2:** Run `dotnet test`
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** Run `dotnet test`. Expected: all pass.
+- [x] **Step 5:** Commit with the message `Add Device updates screen logic`.
 
 ---
 
