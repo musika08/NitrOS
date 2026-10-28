@@ -443,15 +443,11 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
   - `CreateSmoke` registers the screen with a `IDeviceUpdates` whose check returns the recorded Ally report from embedded test data (no network) and whose install, start, page and folder calls throw. `SmokeRunner` also visits Device updates once and saves its PNG.
   - `DeviceUpdatesPage`: one column (plan 5's `Sizes.xaml`, 48-pixel rows, `XYFocusKeyboardNavigation="Enabled"`), first focus on Check. Top: Check button, progress text, last checked, the policy note, notices with their page buttons. List: one card per row with name, kind, installed, latest, state badge, also-offered line, blocked reason, and the row's buttons; the result and progress lines under the buttons. Bottom: support links. Firmware rows show the "do not turn off" line on the card itself, not only in the confirm. No logic in code-behind beyond `DataContext` and first focus.
 
-- [ ] **Step 1:** Change and write the tests:
-  - Replace plan 5's `Composition_DeviceUpdatesNotRegistered` with `Composition_DeviceUpdatesRegistered`; change `Composition_RegistersEveryScreenOfThisPlan` to include every `ScreenKeys` value.
-  - `Composition_CreateRealCreatesNoDownloadsFolder` (temp root: no `downloads` folder after `CreateReal`).
-  - `Composition_DeviceUpdatesHasNoBackgroundWork` (after `CreateReal`, no timer, task registration or check has run: the fake-backed overload records zero `CheckAsync` calls until the screen is shown).
-  - `Smoke_DeviceUpdatesCannotInstall` (in `CreateSmoke`, every install, start, page and folder call throws; the check returns the recorded report).
-- [ ] **Step 2:** Run `dotnet test --filter "Composition|Smoke_"`. Expected: fail.
-- [ ] **Step 3:** Implement the composition changes, the page and the smoke visit.
-- [ ] **Step 4:** Run `dotnet build` (timeout 10 minutes), then `dotnet test`. Expected: all pass.
-- [ ] **Step 5:** Commit with the message `Add Device updates page and register the screen`.
+- [x] **Step 1:** Change and write the tests
+- [x] **Step 2:** Run `dotnet test`
+- [x] **Step 3:** Implement the composition changes, the page and the smoke visit.
+- [x] **Step 4:** Run `dotnet build`, then `dotnet test`. Expected: all pass.
+- [x] **Step 5:** Commit with the message `Add Device updates page and register the screen`.
 
 ---
 

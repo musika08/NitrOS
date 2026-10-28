@@ -21,6 +21,7 @@
     <ProjectReference Include="..\NitrOS.Core\NitrOS.Core.csproj" />
     <ProjectReference Include="..\NitrOS.Live\NitrOS.Live.csproj" />
     <ProjectReference Include="..\NitrOS.Image\NitrOS.Image.csproj" />
+    <ProjectReference Include="..\NitrOS.Updates\NitrOS.Updates.csproj" />
   </ItemGroup>
 
   <ItemGroup>

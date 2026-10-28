@@ -108,7 +108,14 @@ public static class SmokeRunner
             var reviewIsoVm = composition.Navigator.Current as ReviewViewModel;
             string? reviewGoReasonIso = reviewIsoVm?.GoUnavailableReason;
 
-            // 4. Build JSON report
+            // 4. Device updates walk
+            if (composition.Navigator.IsRegistered(ScreenKeys.DeviceUpdates))
+            {
+                composition.Navigator.GoTo(ScreenKeys.DeviceUpdates);
+                await CaptureScreenAsync("DeviceUpdates");
+            }
+
+            // 5. Build JSON report
             var report = new SmokeReport(
                 CatalogSwitches: composition.Catalog?.Switches.Count ?? 0,
                 Device: composition.AppContext.Device.ToString().ToLowerInvariant(),

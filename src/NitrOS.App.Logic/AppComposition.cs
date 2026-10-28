@@ -61,7 +61,8 @@ public sealed class AppComposition
         IAfterUpdateTask afterUpdateTask,
         AfterRestartLaunch afterRestartLaunch,
         JournalAccess journalAccess,
-        string exePath)
+        string exePath,
+        IDeviceUpdates? deviceUpdates = null)
     {
         Navigator = navigator ?? throw new ArgumentNullException(nameof(navigator));
         RunGate = runGate ?? throw new ArgumentNullException(nameof(runGate));
@@ -84,7 +85,10 @@ public sealed class AppComposition
         AfterRestartLaunch = afterRestartLaunch ?? throw new ArgumentNullException(nameof(afterRestartLaunch));
         JournalAccess = journalAccess ?? throw new ArgumentNullException(nameof(journalAccess));
         ExePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
+        DeviceUpdates = deviceUpdates;
     }
+
+    public IDeviceUpdates? DeviceUpdates { get; }
 
     public void RegisterScreens()
     {
@@ -106,6 +110,10 @@ public sealed class AppComposition
         Navigator.Register(ScreenKeys.Myths, () => new MythsViewModel(Navigator));
         Navigator.Register(ScreenKeys.Settings, () => new SettingsViewModel(AfterUpdateTask, AppState, Session, ExePath, Navigator));
         Navigator.Register(ScreenKeys.Blocked, () => new BlockedViewModel());
+        if (DeviceUpdates != null)
+        {
+            Navigator.Register(ScreenKeys.DeviceUpdates, () => new DeviceUpdatesViewModel(DeviceUpdates, Dialogs, RunGate, TuneLockProbe, Session, Restarter));
+        }
     }
 
     public static AppComposition CreateReal(string exePath, IDialogs dialogs) =>
@@ -182,6 +190,40 @@ public sealed class AppComposition
         var healthService = new LiveHealthService(healthProbe);
         var driftService = new LiveDriftService(journalAccess, WinSystems.CreateAdapters, session);
 
+        var downloadsDir = customProgramData is not null ? Path.Combine(customProgramData, "NitrOS", "downloads") : Path.Combine(programData, "NitrOS", "downloads");
+        var deviceReader = new NitrOS.Updates.Reading.DeviceReader(
+            new NitrOS.Updates.Windows.WinIdentity(),
+            new NitrOS.Updates.Windows.WinInstalledDevices(),
+            new NitrOS.Updates.Windows.WinFirmwareTable());
+        var updateSources = NitrOS.Updates.Sources.SourceSet.Default(
+            new NitrOS.Updates.Windows.WinUpdateAgent(),
+            NitrOS.Updates.Net.HttpFactory.Create(),
+            NitrOS.Updates.Firmware.FirmwareMap.Shipped());
+        var updateChecker = new NitrOS.Updates.Checking.UpdateChecker(
+            deviceReader,
+            updateSources,
+            NitrOS.Updates.KnownBad.KnownBadList.Shipped(),
+            NitrOS.Updates.Firmware.FirmwareMap.Shipped(),
+            new NitrOS.Updates.Reading.WindowsUpdatePolicy(new WinRegistry()),
+            TimeProvider.System);
+        var updateInstaller = new NitrOS.Updates.Installing.UpdateInstaller(
+            new NitrOS.Updates.Windows.WinUpdateAgent(),
+            new NitrOS.Updates.Installing.Downloader(NitrOS.Updates.Net.HttpFactory.Create()),
+            new NitrOS.Updates.Windows.WinFileVerifier(),
+            new NitrOS.Updates.Windows.WinPackageRunner(),
+            new NitrOS.Live.Windows.WinPowerSource(),
+            new NitrOS.Live.Windows.WinRestorePoint(),
+            NitrOS.Updates.KnownBad.KnownBadList.Shipped(),
+            NitrOS.Updates.Installing.SourcePolicy.Shipped(),
+            downloadsDir,
+            p => BackupFolder.Ensure(p));
+        var liveUpdates = new LiveDeviceUpdates(
+            updateChecker,
+            updateInstaller,
+            new NitrOS.Updates.Windows.WinPackageRunner(),
+            new NitrOS.Updates.Windows.WinUnelevatedLauncher(),
+            new NitrOS.Live.Windows.WinPowerSource());
+
         return new AppComposition(
             navigator,
             gate,
@@ -203,7 +245,8 @@ public sealed class AppComposition
             afterUpdateTask,
             afterRestart,
             journalAccess,
-            exePath);
+            exePath,
+            liveUpdates);
     }
 
     public static AppComposition CreateSmoke(string exePath, IDialogs dialogs) =>
@@ -266,6 +309,8 @@ public sealed class AppComposition
         var healthService = new EmptyHealthService();
         var driftService = new EmptyDriftService();
 
+        var smokeUpdates = new SmokeDeviceUpdates();
+
         return new AppComposition(
             navigator,
             gate,
@@ -287,7 +332,8 @@ public sealed class AppComposition
             afterUpdateTask,
             afterRestart,
             journalAccess,
-            exePath);
+            exePath,
+            smokeUpdates);
     }
 
     private sealed class DummyFilePicker : IFilePicker
@@ -340,5 +386,57 @@ public sealed class AppComposition
     {
         public Task<HealthReport> RunAsync(IReadOnlySet<string> appliedSwitchIds, CancellationToken ct) =>
             Task.FromResult(new HealthReport([]));
+    }
+
+    private sealed class SmokeDeviceUpdates : IDeviceUpdates
+    {
+        public IPowerSource Power => new WinPowerSource();
+
+        public Task<NitrOS.Updates.Checking.CheckReport> CheckAsync(IProgress<NitrOS.Updates.Checking.CheckProgress>? progress, CancellationToken ct)
+        {
+            var device = new NitrOS.Updates.Model.DeviceInfo(
+                NitrOS.Updates.Model.MakerId.Asus,
+                "ASUSTeK COMPUTER INC.",
+                "ROG Xbox Ally X RC73XA_RC73XA",
+                "RC73XA",
+                "RC73XA.319",
+                null,
+                [],
+                []);
+
+            var biosItem = new NitrOS.Updates.Model.UpdateItem(
+                "fw:68e0fa36-7c6c-4861-ba1b-d10fbde48a1c",
+                "BIOS Update for Windows",
+                NitrOS.Updates.Model.UpdateKind.Bios,
+                "319",
+                "319",
+                null,
+                null,
+                null,
+                "asus",
+                "ASUS");
+
+            var report = new NitrOS.Updates.Checking.CheckReport(
+                device,
+                [new NitrOS.Updates.Merging.MergedItem(biosItem, NitrOS.Updates.Merging.ItemState.UpToDate, null, [])],
+                [],
+                [],
+                false,
+                DateTimeOffset.UtcNow);
+
+            return Task.FromResult(report);
+        }
+
+        public Task<NitrOS.Updates.Installing.InstallOutcome> InstallAsync(NitrOS.Updates.Installing.InstallRequest request, IProgress<NitrOS.Updates.Installing.InstallProgress>? progress, CancellationToken ct) =>
+            throw new InvalidOperationException("Smoke test cannot install updates.");
+
+        public void StartHandedOff(string path) =>
+            throw new InvalidOperationException("Smoke test cannot start updaters.");
+
+        public bool OpenPage(Uri page) =>
+            throw new InvalidOperationException("Smoke test cannot open browser pages.");
+
+        public bool ShowInFolder(string path) =>
+            throw new InvalidOperationException("Smoke test cannot show folders.");
     }
 }

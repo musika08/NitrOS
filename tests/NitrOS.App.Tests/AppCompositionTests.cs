@@ -43,7 +43,7 @@ public sealed class AppCompositionTests
     }
 
     [Fact]
-    public void Composition_DeviceUpdatesNotRegistered()
+    public void Composition_DeviceUpdatesRegistered()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "nitros_comp_" + Guid.NewGuid().ToString("N"));
         try
@@ -51,7 +51,23 @@ public sealed class AppCompositionTests
             var comp = AppComposition.CreateReal(AppDomain.CurrentDomain.BaseDirectory, new DummyDialogs(), tempDir);
             comp.RegisterScreens();
 
-            Assert.False(comp.Navigator.IsRegistered(ScreenKeys.DeviceUpdates));
+            Assert.True(comp.Navigator.IsRegistered(ScreenKeys.DeviceUpdates));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void Composition_CreateRealCreatesNoDownloadsFolder()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "nitros_comp_" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var comp = AppComposition.CreateReal(AppDomain.CurrentDomain.BaseDirectory, new DummyDialogs(), tempDir);
+            var downloadsDir = Path.Combine(tempDir, "NitrOS", "downloads");
+            Assert.False(Directory.Exists(downloadsDir));
         }
         finally
         {

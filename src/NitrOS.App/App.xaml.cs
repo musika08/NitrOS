@@ -59,6 +59,7 @@ public partial class App : Application
         pageMap.Add(ScreenKeys.Myths, typeof(MythsPage));
         pageMap.Add(ScreenKeys.Settings, typeof(SettingsPage));
         pageMap.Add(ScreenKeys.Blocked, typeof(BlockedPage));
+        pageMap.Add(ScreenKeys.DeviceUpdates, typeof(DeviceUpdatesPage));
 
         window.Initialize(composition.Navigator, composition.RunGate, pageMap, dialogs);
         _window = window;

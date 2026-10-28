@@ -59,7 +59,8 @@ public sealed partial class ShellWindow : Window
             args.Cancel = true;
             if (_dialogs is not null)
             {
-                await _dialogs.ShowAsync("NitrOS", "NitrOS is changing this PC. Press Cancel on the Working screen first.");
+                var msg = _gate.BusyMessage ?? "NitrOS is changing this PC. Press Cancel on the Working screen first.";
+                await _dialogs.ShowAsync("NitrOS", msg);
             }
         }
     }
