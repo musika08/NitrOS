@@ -25,7 +25,9 @@ public partial class App : Application
         var window = new ShellWindow();
         var dialogs = new ContentDialogs(window);
 
-        var composition = AppComposition.CreateReal(exePath, dialogs);
+        var composition = mode is LaunchMode.SmokeMode
+            ? AppComposition.CreateSmoke(exePath, dialogs)
+            : AppComposition.CreateReal(exePath, dialogs);
         composition.RegisterScreens();
 
         var decision = await StartupRouter.DecideAsync(
@@ -63,6 +65,12 @@ public partial class App : Application
         composition.Navigator.GoTo(decision.First, decision.Argument);
 
         window.Activate();
+
+        if (mode is LaunchMode.SmokeMode smoke)
+        {
+            _ = SmokeRunner.RunAsync(window, composition, smoke.ResultPath);
+            return;
+        }
 
         if (decision.RunDriftInBackground)
         {

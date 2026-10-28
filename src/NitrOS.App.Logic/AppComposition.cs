@@ -115,6 +115,15 @@ public sealed class AppComposition
         var exeDir = Path.GetDirectoryName(exePath);
         if (string.IsNullOrWhiteSpace(exeDir)) exeDir = AppDomain.CurrentDomain.BaseDirectory;
         var catalogDir = Path.Combine(exeDir, "catalog");
+        if (!Directory.Exists(catalogDir))
+        {
+            var cur = new DirectoryInfo(exeDir);
+            while (cur is not null && !Directory.Exists(Path.Combine(cur.FullName, "catalog")))
+            {
+                cur = cur.Parent;
+            }
+            if (cur is not null) catalogDir = Path.Combine(cur.FullName, "catalog");
+        }
         var loadResult = CatalogLoader.Load(catalogDir);
         var catalog = loadResult.Catalog;
         var errors = loadResult.Errors;
@@ -189,5 +198,135 @@ public sealed class AppComposition
             afterRestart,
             journalAccess,
             exePath);
+    }
+
+    public static AppComposition CreateSmoke(string exePath, IDialogs dialogs) =>
+        CreateSmoke(exePath, dialogs, null);
+
+    internal static AppComposition CreateSmoke(string exePath, IDialogs dialogs, string? customProgramData)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(exePath);
+        ArgumentNullException.ThrowIfNull(dialogs);
+
+        var exeDir = Path.GetDirectoryName(exePath);
+        if (string.IsNullOrWhiteSpace(exeDir)) exeDir = AppDomain.CurrentDomain.BaseDirectory;
+        var catalogDir = Path.Combine(exeDir, "catalog");
+        if (!Directory.Exists(catalogDir))
+        {
+            var cur = new DirectoryInfo(exeDir);
+            while (cur is not null && !Directory.Exists(Path.Combine(cur.FullName, "catalog")))
+            {
+                cur = cur.Parent;
+            }
+            if (cur is not null) catalogDir = Path.Combine(cur.FullName, "catalog");
+        }
+        var loadResult = CatalogLoader.Load(catalogDir);
+        var catalog = loadResult.Catalog;
+        var errors = loadResult.Errors;
+
+        var device = DeviceDetector.Detect(new WinDeviceFacts());
+        var session = new WinSessionFacts();
+        var meter = new WinMachineMeter();
+        var mem = meter.Memory();
+        var sessionCheck = SessionGuard.Check(session);
+
+        var appContext = new AppContextInfo(catalog, errors, device, mem, sessionCheck)
+        {
+            ConsoleUserSid = session.ConsoleUserSid
+        };
+
+        var gate = new RunGate();
+        var navigator = new Navigator(gate);
+        var draft = new Draft(catalog ?? new Catalog([], new CardMeasurements()), device);
+        var version = new WinWindowsVersion();
+
+        var programData = customProgramData ?? Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+        var backupsDir = customProgramData is not null ? Path.Combine(customProgramData, "NitrOS", "backups") : WinSystems.BackupPath;
+        var appDir = Path.Combine(programData, "NitrOS", "app");
+
+        var journalAccess = new JournalAccess(backupsDir, session, _ => FolderState.Missing, _ => throw new InvalidOperationException("Smoke test cannot create folders."));
+        var appStateStore = new AppStateStore(appDir, _ => FolderState.Missing, _ => throw new InvalidOperationException("Smoke test cannot write app state."), session);
+
+        var lockProbe = new LiveTuneLockProbe();
+        var tuneRunner = new ForbiddenRunner(RunKind.Tune);
+        var isoRunner = new ForbiddenRunner(RunKind.Iso);
+        var runners = new RunnerSet([tuneRunner, isoRunner]);
+        var xboxRestorer = new UnprovenXboxRestorer();
+
+        var undoService = new ForbiddenUndoService();
+        var restarter = new ForbiddenRestarter();
+        var afterUpdateTask = new ForbiddenAfterUpdateTask();
+        var afterRestart = new AfterRestartLaunch(new NoOpRegistry());
+        var healthService = new EmptyHealthService();
+        var driftService = new EmptyDriftService();
+
+        return new AppComposition(
+            navigator,
+            gate,
+            appContext,
+            appStateStore,
+            meter,
+            version,
+            driftService,
+            healthService,
+            undoService,
+            runners,
+            draft,
+            catalog,
+            dialogs,
+            session,
+            lockProbe,
+            restarter,
+            xboxRestorer,
+            afterUpdateTask,
+            afterRestart,
+            journalAccess,
+            exePath);
+    }
+
+    private sealed class ForbiddenUndoService : IUndoService
+    {
+        public Task<UndoOutcome> UndoAsync(string journalPath, IReadOnlyCollection<string>? switchIds, CancellationToken ct) =>
+            throw new InvalidOperationException("Smoke test cannot undo.");
+    }
+
+    private sealed class ForbiddenRestarter : IRestarter
+    {
+        public void Restart() =>
+            throw new InvalidOperationException("Smoke test cannot restart.");
+    }
+
+    private sealed class ForbiddenAfterUpdateTask : IAfterUpdateTask
+    {
+        public bool IsRegistered() => false;
+        public void Register(string exePath, string userSid) =>
+            throw new InvalidOperationException("Smoke test cannot register tasks.");
+        public void Remove() =>
+            throw new InvalidOperationException("Smoke test cannot remove tasks.");
+    }
+
+    private sealed class NoOpRegistry : IRegistry
+    {
+        public RegValue? GetValue(LiveHive h, string key, string name, RegView v) => null;
+        public void SetValue(LiveHive h, string key, string name, RegValue value, RegView v) { }
+        public void DeleteValue(LiveHive h, string key, string name, RegView v) { }
+        public IReadOnlyList<string> GetValueNames(LiveHive h, string key, RegView v) => [];
+        public RegTree? ExportKey(LiveHive h, string key, RegView v) => null;
+        public void ImportKey(LiveHive h, RegTree tree, RegView v) { }
+        public void DeleteKey(LiveHive h, string key, RegView v) { }
+        public bool KeyExists(LiveHive h, string key, RegView v) => false;
+        public bool CanWrite(LiveHive h, string key, RegView v) => false;
+    }
+
+    private sealed class EmptyDriftService : IDriftService
+    {
+        public Task<DriftFindings> CheckAsync(CancellationToken ct) =>
+            Task.FromResult(new DriftFindings([], [], null));
+    }
+
+    private sealed class EmptyHealthService : IHealthService
+    {
+        public Task<HealthReport> RunAsync(IReadOnlySet<string> appliedSwitchIds, CancellationToken ct) =>
+            Task.FromResult(new HealthReport([]));
     }
 }
