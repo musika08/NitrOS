@@ -1,0 +1,151 @@
+{
+  "Maker": "Asus",
+  "Manufacturer": "ASUSTeK COMPUTER INC.",
+  "Model": "ROG Xbox Ally X RC73XA_RC73XA",
+  "ModelCode": "RC73XA",
+  "BiosVersion": "RC73XA.319",
+  "BiosDate": "2026-09-23",
+  "Devices": [
+    {
+      "InstanceId": "PCI\\VEN_1002&DEV_150E&SUBSYS_33591043&REV_C7\\0",
+      "Name": "AMD Radeon(TM) 890M Graphics",
+      "DeviceClass": "Display",
+      "HardwareIds": [
+        "PCI\\VEN_1002&DEV_150E&SUBSYS_33591043&REV_C7",
+        "PCI\\VEN_1002&DEV_150E&SUBSYS_33591043",
+        "PCI\\VEN_1002&DEV_150E"
+      ],
+      "DriverVersion": "32.0.32015.7029",
+      "DriverDate": "2026-10-01",
+      "DriverProvider": "Advanced Micro Devices, Inc."
+    },
+    {
+      "InstanceId": "USB\\VID_0BDA&PID_8153\\0001",
+      "Name": "Realtek USB GbE Family Controller",
+      "DeviceClass": "Net",
+      "HardwareIds": [
+        "USB\\VID_0BDA&PID_8153&REV_3100",
+        "USB\\VID_0BDA&PID_8153"
+      ],
+      "DriverVersion": "11.19.602.2025",
+      "DriverDate": "2025-06-02",
+      "DriverProvider": "Realtek"
+    },
+    {
+      "InstanceId": "PCI\\VEN_14C3&DEV_7925\\0",
+      "Name": "MediaTek Wi-Fi 7 MT7925",
+      "DeviceClass": "Net",
+      "HardwareIds": [
+        "PCI\\VEN_14C3&DEV_7925"
+      ],
+      "DriverVersion": "3.6.2.1438",
+      "DriverDate": "2026-08-15",
+      "DriverProvider": "MediaTek, Inc."
+    },
+    {
+      "InstanceId": "USB\\VID_0489&PID_E111\\0",
+      "Name": "MediaTek Bluetooth Adapter",
+      "DeviceClass": "Bluetooth",
+      "HardwareIds": [
+        "USB\\VID_0489&PID_E111"
+      ],
+      "DriverVersion": "1.1147.2.620",
+      "DriverDate": "2026-08-10",
+      "DriverProvider": "MediaTek, Inc."
+    },
+    {
+      "InstanceId": "USB\\VID_05E3&PID_0764\\0",
+      "Name": "Genesys Logic USB3.0 Card Reader",
+      "DeviceClass": "USB",
+      "HardwareIds": [
+        "USB\\VID_05E3&PID_0764"
+      ],
+      "DriverVersion": "1.2.31.0",
+      "DriverDate": "2024-05-10",
+      "DriverProvider": "Genesys Logic, Inc."
+    },
+    {
+      "InstanceId": "USB\\VID_2808&PID_0438\\0",
+      "Name": "FocalTech Fingerprint Sensor",
+      "DeviceClass": "Biometric",
+      "HardwareIds": [
+        "USB\\VID_2808&PID_0438"
+      ],
+      "DriverVersion": "4.5.7901.6673",
+      "DriverDate": "2024-06-12",
+      "DriverProvider": "FocalTech SYSTEMS CO.,LTD."
+    },
+    {
+      "InstanceId": "HDAUDIO\\FUNC_01&VEN_10EC&DEV_0294\\0",
+      "Name": "Texas Instruments Smart Amplifier",
+      "DeviceClass": "MEDIA",
+      "HardwareIds": [
+        "HDAUDIO\\FUNC_01&VEN_10EC&DEV_0294"
+      ],
+      "DriverVersion": "3.1.52.0",
+      "DriverDate": "2024-04-18",
+      "DriverProvider": "Texas Instruments"
+    },
+    {
+      "InstanceId": "ACPI\\ASUS2018\\0",
+      "Name": "ASUS System Control Interface v3",
+      "DeviceClass": "System",
+      "HardwareIds": [
+        "ACPI\\ASUS2018",
+        "ACPI\\ASUS2025"
+      ],
+      "DriverVersion": "3.1.72.0",
+      "DriverDate": "2026-07-20",
+      "DriverProvider": "ASUSTeK COMPUTER INC."
+    },
+    {
+      "InstanceId": "ACPI\\VEN_ASUS&DEV_9001\\0",
+      "Name": "Armoury Crate Control Interface",
+      "DeviceClass": "System",
+      "HardwareIds": [
+        "ACPI\\VEN_ASUS&DEV_9001"
+      ],
+      "DriverVersion": "1.0.0.1",
+      "DriverDate": "2024-01-01",
+      "DriverProvider": "ASUSTeK COMPUTER INC."
+    }
+  ],
+  "Firmware": [
+    {
+      "Id": "68e0fa36-5d2a-5046-91c6-e0bfe84f77f3",
+      "Type": 1,
+      "Version": 793,
+      "LastAttemptVersion": 793,
+      "LastAttemptStatus": 0,
+      "PackageVersion": "10.1.2.317",
+      "Name": "ROG Xbox Ally X UEFI"
+    },
+    {
+      "Id": "cbf5a488-f654-3fce-b3fc-8a1d94ead498",
+      "Type": 2,
+      "Version": 21,
+      "LastAttemptVersion": 21,
+      "LastAttemptStatus": 0,
+      "PackageVersion": "10.1.2.15",
+      "Name": "ITE PD"
+    },
+    {
+      "Id": "222a79d6-d2aa-358b-b1ac-8771faf8fec0",
+      "Type": 2,
+      "Version": 9,
+      "LastAttemptVersion": 9,
+      "LastAttemptStatus": 0,
+      "PackageVersion": "10.1.2.2002",
+      "Name": "NOVATEK TouchPanel"
+    },
+    {
+      "Id": "22cc2999-e6fd-3ea9-800c-cff443d45585",
+      "Type": 2,
+      "Version": 1,
+      "LastAttemptVersion": 0,
+      "LastAttemptStatus": 0,
+      "PackageVersion": "10.1.0.1",
+      "Name": "Device Firmware"
+    }
+  ]
+}

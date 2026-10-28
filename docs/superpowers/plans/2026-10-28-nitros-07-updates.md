@@ -195,18 +195,13 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
   - `WinFirmwareTable : IFirmwareTable`: each subkey of `HKLM\HARDWARE\UEFI\ESRT` (`Type`, `Version`, `LowestSupportedVersion`, `LastAttemptVersion`, `LastAttemptStatus`), joined with the present device `UEFI\RES_{guid}\0` for `PackageVersion` and `Name`.
 - Consumes (from plan 6 Task 1, namespace `NitrOS.Live.Systems`): `record PowerState(bool HasBattery, bool OnBattery, int? BatteryPercent)`, `interface IPowerSource { PowerState Read(); }` and `NitrOS.Live.Windows.WinPowerSource`. Do not add a second power reader; everywhere this plan says `IPowerSource` or `WinPowerSource` it means plan 6's.
 
-- [ ] **Step 1: Verify first.** (a) The `PnpObject` property key names (`System.Devices.HardwareIds` or the DEVPKEY `{guid} pid` form for `DEVPKEY_Device_HardwareIds`, `DEVPKEY_Device_DriverVersion`, `DEVPKEY_Device_DriverDate`, `DEVPKEY_Device_DriverProvider`, `DEVPKEY_Device_Class`, `DEVPKEY_Device_FriendlyName`) against Microsoft Learn; if `PnpObject` cannot return them for all devices within 60 seconds, use CfgMgr32 (`CM_Get_Device_ID_ListW`, `CM_Locate_DevNodeW`, `CM_Get_DevNode_PropertyW`) instead, verified the same way. (b) Whether Microsoft documents the ESRT registry values (search Learn for "ESRT" and "UEFI\ESRT"); if not, note "observed, not documented" in the code comment and the commit body; the reader then treats a missing key as "no firmware table". (c) nothing for power: plan 6 Task 1 already verified `GetSystemPowerStatus`. Record sources and date.
-- [ ] **Step 2:** Record the fixture `Fixtures/ally-x-device-2026-10-28.json`: a `DeviceInfo` for the owner's Ally X written by a throw-away read of the real adapters (identity, the four ESRT resources and their packages from the "Facts checked" table, the GPU, the Realtek USB GbE `USB\VID_0BDA&PID_8153` at 11.19.602.2025, the MediaTek, Genesys, FocalTech, TI devices, the `ACPI\ASUS2018` / `ACPI\ASUS2025` System Control Interface devices and `ACPI\VEN_ASUS&DEV_9001`). Review it by hand: no user names, serial numbers or MAC addresses; drop any instance id part that looks like a serial.
-- [ ] **Step 3:** Write the failing tests:
-  - `DeviceReader_ModelCodeFromBaseBoard`, `DeviceReader_ModelCodeFromProductName` (no base board), `DeviceReader_NoModelCode` ("Desktop PC" → null).
-  - `DeviceReader_ReaderFailureGivesEmptyPart` (fake devices throws; result has firmware and identity, empty devices).
-  - `DeviceReader_GpusAreDisplayClass`.
-  - `WindowsUpdatePolicy_ReadsExcludeFlag` (FakeRegistry from Live tests, compiled by link as plan 5 does: 1 → true, missing → false) and `WindowsUpdatePolicy_NeverWrites` (FakeRegistry records zero writes).
-  - Read-only on this PC: `WinIdentity_ReadsThisPc` (manufacturer not empty), `WinInstalledDevices_FindsADisplayDevice`, `WinFirmwareTable_ReadsWithoutThrowing` (on the Ally, at least one Type 1 entry).
-- [ ] **Step 4:** Run `dotnet test --filter "DeviceReader|WindowsUpdatePolicy|WinIdentity|WinInstalledDevices|WinFirmwareTable"`. Expected: build fails.
-- [ ] **Step 5:** Implement.
-- [ ] **Step 6:** Run `dotnet test`. Expected: all pass.
-- [ ] **Step 7:** Commit with the message `Read device identity, drivers, firmware and power for updates`.
+- [x] **Step 1: Verify first.**
+- [x] **Step 2:** Record the fixture `Fixtures/ally-x-device-2026-10-28.json`
+- [x] **Step 3:** Write the failing tests
+- [x] **Step 4:** Run `dotnet test`
+- [x] **Step 5:** Implement.
+- [x] **Step 6:** Run `dotnet test`. Expected: all pass.
+- [x] **Step 7:** Commit with the message `Read device identity, drivers, firmware and power for updates`.
 
 ---
 

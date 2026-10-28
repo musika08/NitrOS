@@ -25,6 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\NitrOS.Live.Tests\Fakes\Fake*.cs" Exclude="..\NitrOS.Live.Tests\Fakes\*Tests.cs" LinkBase="LiveFakes" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
