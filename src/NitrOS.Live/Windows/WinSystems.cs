@@ -7,14 +7,9 @@ public static class WinSystems
     /// <summary>The journal folder, %ProgramData%\NitrOS\backups, locked down by <see cref="Create"/>.</summary>
     public static string BackupPath => BackupFolder.DefaultPath;
 
-    /// <summary>
-    /// The real Windows adapters. Also creates (or tightens) the backup folder so only Administrators and SYSTEM can
-    /// write journals. Needs an elevated process.
-    /// </summary>
-    public static LiveSystems Create()
-    {
-        BackupFolder.Ensure(BackupPath);
-        return new LiveSystems(
+    /// <summary>The real Windows adapters without ensuring the backup folder.</summary>
+    public static LiveSystems CreateAdapters() =>
+        new LiveSystems(
             Registry: new WinRegistry(),
             Services: new WinServiceConfig(),
             Tasks: new WinTaskScheduler(),
@@ -25,5 +20,14 @@ public static class WinSystems
             Files: new WinFileSystem(),
             Scripts: new WinScriptRunner(),
             RestorePoint: new WinRestorePoint());
+
+    /// <summary>
+    /// The real Windows adapters. Also creates (or tightens) the backup folder so only Administrators and SYSTEM can
+    /// write journals. Needs an elevated process.
+    /// </summary>
+    public static LiveSystems Create()
+    {
+        BackupFolder.Ensure(BackupPath);
+        return CreateAdapters();
     }
 }

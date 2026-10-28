@@ -52,6 +52,38 @@ public sealed class BackupFolderTests : IDisposable
     }
 
     [Fact]
+    public void BackupFolder_CheckNeverCreates()
+    {
+        var root = Path.Combine(_dir, "missing-nitros");
+        var path = Path.Combine(root, "backups");
+        var state = BackupFolder.Check(path, Me);
+        Assert.Equal(FolderState.Missing, state);
+        Assert.False(Directory.Exists(root));
+        Assert.False(Directory.Exists(path));
+    }
+
+    [Fact]
+    public void BackupFolder_CheckSecureAfterEnsure()
+    {
+        var root = Path.Combine(_dir, "secure-nitros");
+        var path = Path.Combine(root, "backups");
+        BackupFolder.Ensure(path, Me);
+        var state = BackupFolder.Check(path, Me);
+        Assert.Equal(FolderState.Secure, state);
+    }
+
+    [Fact]
+    public void BackupFolder_CheckThrowsOnInsecureLevel()
+    {
+        var root = Path.Combine(_dir, "insecure-nitros");
+        var path = Path.Combine(root, "backups");
+        Directory.CreateDirectory(root);
+        Weaken(root);
+        var ex = Assert.Throws<InvalidOperationException>(() => BackupFolder.Check(path, Me));
+        Assert.Equal(BackupFolder.InsecureMessage(root), ex.Message);
+    }
+
+    [Fact]
     public void Ensure_CreatesBothLevelsLockedDown()
     {
         var root = Path.Combine(_dir, "NitrOS");

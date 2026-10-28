@@ -67,6 +67,17 @@ public sealed class TuneEngine
     /// <summary>System-wide lock held for the whole of Apply and Undo, so two runs never change the PC at the same time.</summary>
     public const string RunMutexName = @"Global\NitrOS.Tune";
 
+    /// <summary>True when another NitrOS process is currently applying or undoing changes.</summary>
+    public static bool IsRunInProgress()
+    {
+        if (Mutex.TryOpenExisting(RunMutexName, out var m))
+        {
+            m.Dispose();
+            return true;
+        }
+        return false;
+    }
+
     /// <summary>Detail on an entry saved before its Apply ran. A crash leaves it; Undo treats it as applied, which is safe because the prior was read first.</summary>
     public const string PendingDetail = "Not finished: the run stopped before this action reported back.";
 

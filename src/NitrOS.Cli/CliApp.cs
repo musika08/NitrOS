@@ -261,14 +261,14 @@ public static class CliApp
         }
         var journal = store.Load(path);
         var checker = new DriftChecker(env.Systems());
-        var drifted = checker.Check(journal, env.Session.ProcessUserSid);
-        foreach (var (id, err) in checker.LastErrors) o.WriteLine($"Could not check: {id}: {err}");
-        if (drifted.Count == 0)
+        var report = checker.Check(journal, env.Session.ProcessUserSid);
+        foreach (var (id, err) in report.Errors) o.WriteLine($"Could not check: {id}: {err}");
+        if (report.Drifted.Count == 0)
         {
             o.WriteLine("No drift: every applied switch still holds.");
             return Ok;
         }
-        foreach (var id in drifted) o.WriteLine($"Drifted: {id}");
+        foreach (var id in report.Drifted) o.WriteLine($"Drifted: {id}");
         return Refused;
     }
 

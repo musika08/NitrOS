@@ -5,6 +5,8 @@ using System.Security.Principal;
 
 namespace NitrOS.Live.Windows;
 
+public enum FolderState { Missing, Secure }
+
 /// <summary>
 /// The journal folder and its NitrOS parent (%ProgramData%\NitrOS and %ProgramData%\NitrOS\backups), writable only by
 /// Administrators and SYSTEM, so a standard user cannot plant a journal that an elevated undo would replay.
@@ -27,6 +29,30 @@ public static class BackupFolder
         $"The NitrOS data folder was created or changed by another account. Delete {path} as an administrator and run NitrOS again.";
 
     /// <summary>Secures the folder and its parent. Needs an elevated process. Returns nothing to report (kept for callers): existing content is never re-permissioned.</summary>
+    /// <summary>Checks whether the folder and its parent are secure without creating or modifying either.</summary>
+    public static FolderState Check(string path) => Check(path, Administrators);
+
+    internal static FolderState Check(string path, SecurityIdentifier owner)
+    {
+        if (!Path.IsPathFullyQualified(path) || SecureFs.IsNetworkOrDevice(path))
+            throw new ArgumentException($"Backup folder '{path}' must be an absolute local path", nameof(path));
+        var full = Path.GetFullPath(path).TrimEnd('\\');
+        var parent = Path.GetDirectoryName(full) ?? throw new ArgumentException($"Backup folder '{path}' has no parent", nameof(path));
+        if (Path.GetDirectoryName(parent) is null) throw new ArgumentException($"Backup folder '{path}' is too close to the drive root", nameof(path));
+
+        RefuseReparseComponents(full);
+
+        bool parentExists = Directory.Exists(parent) || File.Exists(parent);
+        bool fullExists = Directory.Exists(full) || File.Exists(full);
+
+        if (!parentExists && !fullExists) return FolderState.Missing;
+
+        if (parentExists) CheckSecure(parent, owner);
+        if (fullExists) CheckSecure(full, owner);
+
+        return (parentExists && fullExists) ? FolderState.Secure : FolderState.Missing;
+    }
+
     public static IReadOnlyList<string> Ensure(string path) => Ensure(path, Administrators);
 
     /// <summary>

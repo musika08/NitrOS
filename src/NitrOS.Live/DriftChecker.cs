@@ -4,19 +4,18 @@ using NitrOS.Live.Systems;
 
 namespace NitrOS.Live;
 
+public sealed record DriftReport(IReadOnlyList<string> Drifted, IReadOnlyList<(string SwitchId, string Error)> Errors);
+
 /// <summary>Finds switches from a run that Windows (or the user) has since turned back.</summary>
 public sealed class DriftChecker(LiveSystems systems)
 {
-    /// <summary>Actions from the last <see cref="Check"/> whose state could not be read: drift unknown, not reported as drift.</summary>
-    public IReadOnlyList<(string SwitchId, string Error)> LastErrors { get; private set; } = [];
-
     /// <summary>
     /// Switch ids, in journal order, where an Applied, reversible action no longer holds the state it set. Skipped, failed and
     /// rolled-back entries, irreversible entries and scripts (which have no state to inspect) are ignored. A power.set is checked
     /// on the scheme it wrote to (from its prior), so switching power plans later is not drift. A journal written by another
     /// Windows account than <paramref name="userSid"/> throws <see cref="JournalOwnerException"/>.
     /// </summary>
-    public IReadOnlyList<string> Check(RunJournal journal, string userSid)
+    public DriftReport Check(RunJournal journal, string userSid)
     {
         ArgumentNullException.ThrowIfNull(journal);
         TuneEngine.RequireOwner(journal, userSid);
@@ -40,8 +39,7 @@ public sealed class DriftChecker(LiveSystems systems)
             }
             if (!held) drifted.Add(e.SwitchId);
         }
-        LastErrors = errors;
-        return drifted;
+        return new DriftReport(drifted, errors);
     }
 
     private bool PowerSetHolds(PowerSet a, string scheme)

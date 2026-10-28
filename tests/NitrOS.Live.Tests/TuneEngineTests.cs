@@ -86,6 +86,17 @@ public sealed class TuneEngineTests : IDisposable
     }
 
     [Fact]
+    public void TuneEngine_IsRunInProgressWhileApplying()
+    {
+        bool inProgressDuring = false;
+        var progress = new CallbackProgress(_ => inProgressDuring = TuneEngine.IsRunInProgress());
+        var result = Engine().Apply(Tune.Select(Tune.Sw("sw.a", Tune.Set("A"))), Tune.Options, progress, CancellationToken.None);
+        Assert.False(result.Refused);
+        Assert.True(inProgressDuring);
+        Assert.False(TuneEngine.IsRunInProgress());
+    }
+
+    [Fact]
     public void Apply_RollsBackSwitchWhenAnActionFails()
     {
         Tune.Put(_f, "A", "0");
@@ -535,7 +546,7 @@ public sealed class TuneEngineTests : IDisposable
             Assert.Equal(ActionOutcome.Failed, e.Outcome);
             Assert.DoesNotContain("Rollback failed", e.Detail);
         });
-        Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
+        Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid).Drifted);
         var undo = Engine().Undo(result.JournalPath, null, Tune.Options.UserSid);
         Assert.Empty(undo.CannotUndo);
         Assert.Equal(Tune.Dword("0"), _f.Registry.GetValue(LiveHive.CurrentUser, UserKey, "V", RegView.Default));

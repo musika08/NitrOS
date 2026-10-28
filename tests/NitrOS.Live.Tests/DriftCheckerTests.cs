@@ -16,7 +16,7 @@ public sealed class DriftCheckerTests : IDisposable
         var e = Assert.Throws<JournalOwnerException>(() => new DriftChecker(_f.ToLive()).Check(journal, "S-1-5-21-2"));
 
         Assert.Equal("This journal belongs to another account.", e.Message);
-        Assert.Equal(["sw.a"], new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
+        Assert.Equal(["sw.a"], new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid).Drifted);
     }
 
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "nitros-drift-" + Guid.NewGuid().ToString("N"));
@@ -43,12 +43,12 @@ public sealed class DriftCheckerTests : IDisposable
             Tune.Sw("sw.kept", Tune.Set("A")),
             Tune.Sw("sw.turned", Tune.Set("B"), Tune.Set("C")),
             Tune.Sw("sw.deleted", Tune.Set("D")));
-        Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
+        Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid).Drifted);
 
         Tune.Put(_f, "C", "0");
         _f.Registry.DeleteValue(Systems.LiveHive.LocalMachine, Tune.Key, "D", Systems.RegView.Default);
 
-        Assert.Equal(["sw.turned", "sw.deleted"], new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
+        Assert.Equal(["sw.turned", "sw.deleted"], new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid).Drifted);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class DriftCheckerTests : IDisposable
         _f.Appx.Installed.Add("Missing.App"); // and a skipped target appeared
         Tune.Put(_f, "A", "1");
 
-        Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
+        Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid).Drifted);
     }
 
     [Fact]
@@ -81,29 +81,31 @@ public sealed class DriftCheckerTests : IDisposable
 
         _f.Power.Active = Other; // the user picked another plan later; the tuned plan still holds its value
         var checker = new DriftChecker(_f.ToLive());
-        Assert.Empty(checker.Check(journal, Tune.Options.UserSid));
-        Assert.Empty(checker.LastErrors);
+        var report = checker.Check(journal, Tune.Options.UserSid);
+        Assert.Empty(report.Drifted);
+        Assert.Empty(report.Errors);
 
         _f.Power.Settings[(Balanced, "sub", "set")] = (10, 0); // Windows reset the tuned plan
-        Assert.Equal(["sw.power"], checker.Check(journal, Tune.Options.UserSid));
+        Assert.Equal(["sw.power"], checker.Check(journal, Tune.Options.UserSid).Drifted);
     }
 
     [Fact]
-    public void Drift_ReportsCheckErrorsSeparately()
+    public void Drift_ReturnsErrorsInReport()
     {
         var journal = Run(Tune.Sw("sw.reg", Tune.Set("A")), Tune.Sw("sw.other", Tune.Set("B")));
         Tune.Put(_f, "B", "0");
         _f.Registry.FailOn = "A";
 
         var checker = new DriftChecker(_f.ToLive());
-        Assert.Equal(["sw.other"], checker.Check(journal, Tune.Options.UserSid));
-        var error = Assert.Single(checker.LastErrors);
+        var report = checker.Check(journal, Tune.Options.UserSid);
+        Assert.Equal(["sw.other"], report.Drifted);
+        var error = Assert.Single(report.Errors);
         Assert.Equal("sw.reg", error.SwitchId);
         Assert.Contains("FakeRegistry failure", error.Error);
 
         _f.Registry.FailOn = null;
-        checker.Check(journal, Tune.Options.UserSid);
-        Assert.Empty(checker.LastErrors);
+        var clean = checker.Check(journal, Tune.Options.UserSid);
+        Assert.Empty(clean.Errors);
     }
 
     [Fact]
@@ -113,7 +115,7 @@ public sealed class DriftCheckerTests : IDisposable
         new TuneEngine(_f.ToLive(), _store).Undo(_store.List()[0], null, Tune.Options.UserSid);
         var undone = _store.Load(_store.List()[0]);
 
-        Assert.Empty(new DriftChecker(_f.ToLive()).Check(undone, Tune.Options.UserSid));
-        Assert.Equal(["sw.reg"], new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid));
+        Assert.Empty(new DriftChecker(_f.ToLive()).Check(undone, Tune.Options.UserSid).Drifted);
+        Assert.Equal(["sw.reg"], new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid).Drifted);
     }
 }
