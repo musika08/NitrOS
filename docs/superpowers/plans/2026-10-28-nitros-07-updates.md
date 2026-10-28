@@ -325,18 +325,12 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
   - `SupportPageSource(MakerId maker)`: `Id` "page-<maker>", applies when `device.Maker == maker` and the maker has no listing source (MSI, Lenovo, Dell, HP; ASUS never, it has `AsusSource`). Returns `Ok` with no items and `FallbackPage = SupportPages.For(maker)`, which the checker shows as a button (ruling 9).
   - `public static class SourceSet { IReadOnlyList<IUpdateSource> Default(IWindowsUpdateAgent agent, HttpClient http, FirmwareMap map); }`: Windows Update, ASUS, each GPU source (Reliable or page), each support-page source. Order matters for ties after Windows Update: ASUS before GPU vendors.
 
-- [ ] **Step 1: Verify first.** The PCI vendor ids, and that Task 1's doc is committed. Implement only what it says; if Task 1 marked all three Page only, create no `Gpu<Vendor>Source` and say so in the commit body.
-- [ ] **Step 2:** Write the failing tests:
-  - `GpuVendors_FromHardwareId`.
-  - `GpuPage_OneItemPerGpuWithPage` (Ally fixture: one AMD item, installed 32.0.32015.7029, `PageOnly`, AMD's page).
-  - `GpuPage_NotForAbsentVendor`.
-  - `SupportPage_MsiGetsPageButton`, `SupportPage_NeverForAsus`, `SupportPage_OtherMakerHasNone`.
-  - `SourceSet_OrderWindowsUpdateFirstThenAsus`.
-  - For each Reliable vendor: `Gpu<Vendor>_ItemFromFixture`, `Gpu<Vendor>_FailureFallsBackToDriverPage`, `Gpu<Vendor>_DropsOtherHosts`, and `Gpu<Vendor>Live_ListingStillParses` `[Trait("Lane","LiveNet")]`.
-- [ ] **Step 3:** Run `dotnet test --filter "Gpu|SupportPage|SourceSet"`. Expected: build fails.
-- [ ] **Step 4:** Implement.
-- [ ] **Step 5:** Run `dotnet test`. Expected: all pass, LiveNet lane skipped.
-- [ ] **Step 6:** Commit with the message `Add GPU vendor and support-page sources`.
+- [x] **Step 1: Verify first.**
+- [x] **Step 2:** Write the tests
+- [x] **Step 3:** Run `dotnet test`
+- [x] **Step 4:** Implement.
+- [x] **Step 5:** Run `dotnet test`. Expected: all pass, LiveNet lane skipped.
+- [x] **Step 6:** Commit with the message `Add GPU vendor and support-page sources`.
 
 ---
 
