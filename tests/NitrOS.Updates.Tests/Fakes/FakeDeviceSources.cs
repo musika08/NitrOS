@@ -37,3 +37,8 @@ public sealed class FakeFirmwareTable : IFirmwareTable
         return Resources;
     }
 }
+
+public sealed class FakeDeviceReader(DeviceInfo info) : IDeviceReader
+{
+    public DeviceInfo Read() => info;
+}

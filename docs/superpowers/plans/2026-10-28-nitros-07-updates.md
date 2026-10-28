@@ -354,19 +354,11 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
     - `WindowsUpdateDriversExcluded` = `policy.DriversExcluded()`.
     - It never downloads, installs or writes anything.
 
-- [ ] **Step 1:** Write the failing tests:
-  - `Checker_RunsOnlyApplicableSources`.
-  - `Checker_SourceFailureBecomesNoticeWithPage` (fake ASUS Unavailable with page → notice with that page, other sources' items still listed).
-  - `Checker_ThrowingSourceDoesNotStopOthers`.
-  - `Checker_SupportPageSourceBecomesLink` (MSI device).
-  - `Checker_OtherMakerSaysNoList`.
-  - `Checker_ReportsPolicyFlag` (FakeRegistry with the value 1 → true; zero writes).
-  - `Checker_MergesAcrossSources` (Ally fixtures for WU and ASUS through fakes: BIOS UpToDate, PD NewVersion, MCU CantTell, AMD driver UpToDate, Realtek UpToDate).
-  - `Checker_CancelStopsAndThrowsOperationCanceled`.
-- [ ] **Step 2:** Run `dotnet test --filter Checker_`. Expected: build fails.
-- [ ] **Step 3:** Implement.
-- [ ] **Step 4:** Run `dotnet test`. Expected: all pass.
-- [ ] **Step 5:** Commit with the message `Add update checker`.
+- [x] **Step 1:** Write the tests
+- [x] **Step 2:** Run `dotnet test`
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** Run `dotnet test`. Expected: all pass.
+- [x] **Step 5:** Commit with the message `Add update checker`.
 
 ---
 
