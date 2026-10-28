@@ -20,3 +20,9 @@ This folder contains scripts and templates for running automated NitrOS measurem
 3. Generate local configuration with `scripts/New-MeasureConfig.ps1 -IsoPath <path>`.
 4. Create and prepare test VM with `scripts/New-MeasureVm.ps1`.
 5. Run measurement campaigns or single switch runs with `scripts/Invoke-MeasureRun.ps1`.
+
+## ISO Builder VM Lane
+
+1. Create builder VM with 200 GB data disk on `W:` using `scripts/New-BuilderVm.ps1 -SourceIso <path>`.
+2. Build slim ISOs inside the builder VM using `scripts/Invoke-IsoBuild.ps1 -SourceIso <path> -Name <output-name> -Card <card>`.
+3. Run VM-lane image tests inside the builder VM using `scripts/Invoke-BuilderTests.ps1`.
