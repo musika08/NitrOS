@@ -160,8 +160,8 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
   - `public static class FirmwareNumber`: `bool TryEsrtHex(string? listingVersion, out uint esrt)` (the digits of the version's last part read as hex: `319` → 0x319 = 793, `0020` → 32, `10.1.2.319` → 793); `bool TryPackageLastField(string? packageVersion, out long last)`.
 - Produces, namespace `NitrOS.Updates.Model`: `public static class ListingParse`: `long? SizeBytes(string? text)` ("15.36 MB" → 15.36 × 1024 × 1024 rounded; KB, MB, GB, case-insensitive; else null), `DateOnly? AsusDate(string? text)` (`yyyy/MM/dd`, invariant culture).
 
-- [ ] **Step 1: Verify first.** Look up the SMBIOS `SystemManufacturer` strings for MSI, Lenovo, Dell and HP in each maker's or Microsoft's documentation (or a public hardware database page); record the sources in the commit body. ASUS is "ASUSTeK COMPUTER INC." (read on the owner's PC).
-- [ ] **Step 2:** Write the failing tests, each named case asserted exactly:
+- [x] **Step 1: Verify first.** Look up the SMBIOS `SystemManufacturer` strings for MSI, Lenovo, Dell and HP in each maker's or Microsoft's documentation (or a public hardware database page); record the sources in the commit body. ASUS is "ASUSTeK COMPUTER INC." (read on the owner's PC).
+- [x] **Step 2:** Write the failing tests, each named case asserted exactly:
   - `Version_BiosNumbers` ("319" > "310"; "RC73XA.319" = "319"; "V326" > "V325").
   - `Version_DottedDrivers` ("V32.0.32015.5008" < "32.0.32015.7029"; "11.19.20.602" < "11.19.602.2025"; "1.2.31.0" = "1.2.31"; "V3.1.72.0" = "3.1.72.0").
   - `Version_LeadingZeros` ("0020" > "0015"; "0020" = "20").
@@ -170,10 +170,10 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
   - `FirmwareNumber_EsrtHex` ("319" → 793; "0015" → 21; "0020" → 32; "10.1.2.20" → 32; "2002" → 8194).
   - `ListingParse_Sizes` ("15.36 MB", "1.07 GB", "4.2 MB", "818.9 MB", "" → null) and `ListingParse_AsusDate` ("2026/10/14" → 2026-10-14; "14/10/2026" → null).
   - `Makers_FromManufacturer` ("ASUSTeK COMPUTER INC." → Asus, "Micro-Star International Co., Ltd." → Msi, "Contoso" → Other).
-- [ ] **Step 3:** Run `dotnet test --filter "Version_|FirmwareNumber|ListingParse|Makers_"`. Expected: build fails.
-- [ ] **Step 4:** Implement.
-- [ ] **Step 5:** Run `dotnet test`. Expected: all pass.
-- [ ] **Step 6:** Commit with the message `Add update items, version comparison and listing parsing`.
+- [x] **Step 3:** Run `dotnet test --filter "Version_|FirmwareNumber|ListingParse|Makers_"`. Expected: build fails.
+- [x] **Step 4:** Implement.
+- [x] **Step 5:** Run `dotnet test`. Expected: all pass.
+- [x] **Step 6:** Commit with the message `Add update items, version comparison and listing parsing`.
 
 ---
 
