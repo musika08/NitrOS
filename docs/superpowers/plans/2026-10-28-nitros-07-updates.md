@@ -391,31 +391,12 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
     9. `MakerPackage` → `runner.Run(path, lock, SilentArgs, 60 min)`; exit 0 → Installed (`RestartLikely` → InstalledRestartNeeded); exit codes Task 2 proved as "restart needed" → InstalledRestartNeeded; anything else → Failed "The installer stopped with code <n>."; delete the file after.
     It never restarts the PC.
 
-- [ ] **Step 1: Verify first.** How an elevated process opens a URL or an Explorer window as the signed-in, unelevated user. Look for Microsoft documentation of the shell-dispatch approach (`IShellWindows` → desktop `IShellView` → `IShellDispatch2.ShellExecute`, as described on Raymond Chen's "The Old New Thing" blog on Microsoft Learn/devblogs) and check each interface name on Learn. Implement `WinUnelevatedLauncher` with it; if it cannot be made to work, `OpenPage` and `ShowInFolder` return false and the screen shows the address or path with a Copy button (ruling 9). Never `Process.Start` a URL from the elevated app. Record the sources and date.
-- [ ] **Step 2:** Write the failing tests (fakes, temp folders, `FakeHttpHandler` serving small byte arrays):
-  - `Install_RefusesOtherHost` (`https://example.com/x.exe` for source asus: Refused, no file in the folder).
-  - `Install_RefusesRedirectOffHost` (`dlcdnets.asus.com` → 302 to `evil.example`: Refused, `.part` deleted).
-  - `Install_RefusesHttp` (an `http:` hop).
-  - `Install_RefusesOversize` (body larger than size × 1.1).
-  - `Install_RefusesHashMismatch`, `Install_RefusesWrongSigner`, `Install_RefusesUnsigned` (file deleted in each).
-  - `Install_FirmwareNeedsCharger` (battery, not on mains: Refused with `NeedsCharger`, no download).
-  - `Install_FirmwareNeedsConfirmedWarning`.
-  - `Install_BiosIsHandedOffNotRun` (fake runner records zero `Run` calls; `HandOffPath` set).
-  - `Install_DriverRunsWithListingSwitchesWhenProven` (`MakerPackage` item: `Run` called once with `/SUPPRESSMSGBOXES /VERYSILENT /NORESTART`, file deleted after).
-  - `Install_NonZeroExitIsFailedWithCode`.
-  - `Install_WindowsUpdateMapsResultCodes` (2, 2 with reboot, 3, 4, 5).
-  - `Install_KnownBadRefusedAtInstallTime`.
-  - `Install_PageOnlyAndUpToDateRefused`.
-  - `Install_MakesRestorePointFirst` (and `Unavailable` does not block).
-  - `Install_NeverRestarts` (no restart port exists on the installer; assert the constructor signature in a reflection test).
-  - `Downloader_ProgressReportsBytes`.
-  - Read-only on this PC: `WinFileVerifier_HashOfTempFile`, `WinFileVerifier_SignersOfSystemFileOnline` (`notepad.exe`, revocation online; skipped with a reason when offline).
-  - `WinUnelevatedLauncher_ExistsAndNeverElevates` reads only: asserts the type has no `Process.Start` with `UseShellExecute` true on a URL (a source scan test over `src/NitrOS.Updates`), since opening a real page on the owner's PC is left to Task 14.
-  - VM lane, `[Trait("Lane","Vm")]`: `InstallVm_WindowsUpdateDriverInstallsWithPolicyOn` (in the VM, set `ExcludeWUDriversInQualityUpdate` = 1, search drivers, install the first non-firmware driver item if any, otherwise skip with a reason; record the result), `InstallVm_AsusDriverPackageSilentSwitches` (download one small ASUS driver package from the Ally fixture listing, verify, run with its listing switches, record the exit code; skip with a reason when the installer refuses the VM's hardware).
-- [ ] **Step 3:** Run `dotnet test --filter "Install_|Downloader|WinFileVerifier|WinUnelevatedLauncher"`. Expected: build fails.
-- [ ] **Step 4:** Implement.
-- [ ] **Step 5:** Run `dotnet test`. Expected: all pass, VM lane skipped.
-- [ ] **Step 6:** Commit with the message `Add verified download and install for device updates`.
+- [x] **Step 1: Verify first.**
+- [x] **Step 2:** Write the tests
+- [x] **Step 3:** Run `dotnet test`
+- [x] **Step 4:** Implement.
+- [x] **Step 5:** Run `dotnet test`. Expected: all pass, VM lane skipped.
+- [x] **Step 6:** Commit with the message `Add verified download and install for device updates`.
 
 ---
 
