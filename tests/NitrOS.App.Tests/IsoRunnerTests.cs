@@ -244,14 +244,19 @@ public sealed class IsoRunnerTests
         }
     }
 
+    private sealed class SynchronousProgress<T>(Action<T> handler) : IProgress<T>
+    {
+        public void Report(T value) => handler(value);
+    }
+
     [Fact]
     public async Task IsoRunner_ResumeLineReachesWorkingLog()
     {
         var (backend, runner, _, dir) = CreateRunner();
         try
         {
-            var logs = new List<string>();
-            var prog = new Progress<RunProgress>(p =>
+            var logs = new System.Collections.Concurrent.ConcurrentBag<string>();
+            var prog = new SynchronousProgress<RunProgress>(p =>
             {
                 if (p.LogLine != null) logs.Add(p.LogLine);
             });
