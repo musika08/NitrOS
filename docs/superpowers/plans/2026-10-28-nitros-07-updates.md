@@ -273,20 +273,13 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
   - Latest: `VersionText.FromTitle(Title)`; `ReleaseDate` from `DriverVerDate`; `SizeBytes` from `MaxDownloadSize`; `DownloadUrl` null; `Method` `WindowsUpdate`; `WindowsUpdateId` = `UpdateId`; `RestartLikely` = `RebootBehavior > 0`; `CompareRule` from the map link.
   - Name: `Title`.
 
-- [ ] **Step 1: Verify first.** (a) That `dynamic` late binding to a COM object created from a ProgID compiles and runs under .NET 10 on Windows with `TreatWarningsAsErrors` (Microsoft Learn on COM interop and `dynamic` in .NET); if it does not, declare the few `wuapi` interfaces with `[ComImport]` from the IDL GUIDs on Learn instead, and say which in the commit body. (b) The `IUpdateDownloader.Download`, `IUpdateInstaller.Install`, `IUpdate.InstallationBehavior.RebootBehavior` and `IUpdateSearcher.ServerSelection` reference pages. (c) Whether WUA calls must run on an STA thread. Record the sources and date.
-- [ ] **Step 2:** Record `Fixtures/wu-ally-x-2026-10-28.json` with the three records from the "Facts checked" table (fill `UpdateId` from a fresh read-only search, or a placeholder GUID marked as such when the search no longer returns them).
-- [ ] **Step 3:** Write the failing tests (fixture records through `FakeUpdateAgent`, Ally device fixture):
-  - `Wu_FirmwareOnSystemResourceIsBios` (`{68e0fa36-...}` → Bios, key `fw:68e0fa36-...`, installed "319").
-  - `Wu_FirmwareOnDeviceResourceIsFirmware` (`{cbf5a488-...}` → Firmware, installed "0015").
-  - `Wu_DriverMatchedToPresentDevice` (Realtek → `dev:` key, installed 11.19.602.2025, latest 11.19.20.602).
-  - `Wu_UnmatchedDriverHasOwnKey`.
-  - `Wu_SearchFailureIsUnavailable` (fake throws; `Problem` = `UpdateTexts.WindowsUpdateUnavailable` = "Windows Update did not answer. Try Check again later."; no fallback page).
-  - `Wu_EmptyIsOkWithNoItems`.
-  - `WindowsUpdateLive_SearchReadsOnly` `[Trait("Lane","LiveNet")]`: real `WinUpdateAgent.SearchDriversAsync` returns without throwing; nothing else is called.
-- [ ] **Step 4:** Run `dotnet test --filter "Wu_|WindowsUpdateLive"`. Expected: build fails.
-- [ ] **Step 5:** Implement.
-- [ ] **Step 6:** Run `dotnet test`. Expected: all pass, LiveNet lane skipped.
-- [ ] **Step 7:** Commit with the message `Add Windows Update source`.
+- [x] **Step 1: Verify first.**
+- [x] **Step 2:** Record `Fixtures/wu-ally-x-2026-10-28.json`
+- [x] **Step 3:** Write the tests
+- [x] **Step 4:** Run `dotnet test`
+- [x] **Step 5:** Implement.
+- [x] **Step 6:** Run `dotnet test`. Expected: all pass, LiveNet lane skipped.
+- [x] **Step 7:** Commit with the message `Add Windows Update source`.
 
 ---
 

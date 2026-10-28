@@ -1,0 +1,50 @@
+[
+  {
+    "UpdateId": "e1a2b3c4-0001-0000-0000-000000000001",
+    "Revision": 1,
+    "Title": "ASUSTeK COMPUTER INC. - Firmware - 10.1.2.319",
+    "DriverClass": "Firmware",
+    "DriverHardwareId": "UEFI\\RES_{68E0FA36-7C6C-4861-BA1B-D10FBDE48A1C}",
+    "DriverManufacturer": "ASUSTeK COMPUTER INC.",
+    "DriverProvider": "ASUSTeK COMPUTER INC.",
+    "DriverModel": "ASUSTeK System Firmware 319",
+    "DriverVerDate": "2026-09-23T00:00:00",
+    "MaxDownloadSize": 16000000,
+    "BrowseOnly": false,
+    "EulaAccepted": true,
+    "CanRequestUserInput": false,
+    "RebootBehavior": 1
+  },
+  {
+    "UpdateId": "e1a2b3c4-0002-0000-0000-000000000002",
+    "Revision": 1,
+    "Title": "ASUSTeK COMPUTER INC. - Firmware - 10.1.2.20",
+    "DriverClass": "Firmware",
+    "DriverHardwareId": "UEFI\\RES_{CBF5A488-F654-3FCE-B3FC-8A1D94EAD498}",
+    "DriverManufacturer": "ASUSTeK COMPUTER INC.",
+    "DriverProvider": "ASUSTeK COMPUTER INC.",
+    "DriverModel": "ASUS Component Firmware Update",
+    "DriverVerDate": "2026-09-20T00:00:00",
+    "MaxDownloadSize": 2500000,
+    "BrowseOnly": false,
+    "EulaAccepted": true,
+    "CanRequestUserInput": false,
+    "RebootBehavior": 1
+  },
+  {
+    "UpdateId": "e1a2b3c4-0003-0000-0000-000000000003",
+    "Revision": 1,
+    "Title": "Realtek - Net - 11.19.20.602",
+    "DriverClass": "Net",
+    "DriverHardwareId": "USB\\VID_0BDA&PID_8153",
+    "DriverManufacturer": "Realtek",
+    "DriverProvider": "Realtek",
+    "DriverModel": "Realtek USB GbE Family Controller",
+    "DriverVerDate": "2025-06-02T00:00:00",
+    "MaxDownloadSize": 1200000,
+    "BrowseOnly": false,
+    "EulaAccepted": true,
+    "CanRequestUserInput": false,
+    "RebootBehavior": 0
+  }
+]
