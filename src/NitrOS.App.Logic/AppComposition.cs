@@ -39,6 +39,7 @@ public sealed class AppComposition
     public AfterRestartLaunch AfterRestartLaunch { get; }
     public JournalAccess JournalAccess { get; }
     public string ExePath { get; }
+    public ISwitchProbe SwitchProbe { get; }
 
     public AppComposition(
         Navigator navigator,
@@ -62,7 +63,8 @@ public sealed class AppComposition
         AfterRestartLaunch afterRestartLaunch,
         JournalAccess journalAccess,
         string exePath,
-        IDeviceUpdates? deviceUpdates = null)
+        IDeviceUpdates? deviceUpdates = null,
+        ISwitchProbe? switchProbe = null)
     {
         Navigator = navigator ?? throw new ArgumentNullException(nameof(navigator));
         RunGate = runGate ?? throw new ArgumentNullException(nameof(runGate));
@@ -86,6 +88,7 @@ public sealed class AppComposition
         JournalAccess = journalAccess ?? throw new ArgumentNullException(nameof(journalAccess));
         ExePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
         DeviceUpdates = deviceUpdates;
+        SwitchProbe = switchProbe ?? FakeSwitchProbe.Empty;
     }
 
     public IDeviceUpdates? DeviceUpdates { get; }
@@ -99,8 +102,8 @@ public sealed class AppComposition
         var dummyPicker = new DummyFilePicker();
         var dummyRegistry = new NoOpRegistry();
         Navigator.Register(ScreenKeys.IsoSource, () => new IsoSourceViewModel(Navigator, Draft, dummyBackend, dummyPicker, Dialogs, new IsoBuildIndex(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NitrOS", "app"), _ => FolderState.Missing, _ => { }, Session), dummyRegistry));
-        Navigator.Register(ScreenKeys.Cards, () => new CardsViewModel(Navigator, Draft, AppContext));
-        Navigator.Register(ScreenKeys.Switches, () => new SwitchesViewModel(Navigator, Draft, AppContext));
+        Navigator.Register(ScreenKeys.Cards, () => new CardsViewModel(Navigator, Draft, AppContext, SwitchProbe));
+        Navigator.Register(ScreenKeys.Switches, () => new SwitchesViewModel(Navigator, Draft, AppContext, SwitchProbe));
         Navigator.Register(ScreenKeys.Review, () => new ReviewViewModel(dummyCatalog, Draft, Runners, Session, TuneLockProbe, RunGate, Dialogs, Navigator));
         Navigator.Register(ScreenKeys.Working, () => new WorkingViewModel(dummyCatalog, Runners, RunGate, Navigator));
         Navigator.Register(ScreenKeys.Done, () => new DoneViewModel(dummyCatalog, Navigator, Dialogs, Restarter, XboxRestorer, MachineMeter, RunGate));
@@ -224,6 +227,8 @@ public sealed class AppComposition
             new NitrOS.Updates.Windows.WinUnelevatedLauncher(),
             new NitrOS.Live.Windows.WinPowerSource());
 
+        var switchProbe = new LiveSwitchProbe(catalog, WinSystems.CreateAdapters);
+
         return new AppComposition(
             navigator,
             gate,
@@ -246,7 +251,8 @@ public sealed class AppComposition
             afterRestart,
             journalAccess,
             exePath,
-            liveUpdates);
+            liveUpdates,
+            switchProbe);
     }
 
     public static AppComposition CreateSmoke(string exePath, IDialogs dialogs) =>
@@ -333,7 +339,8 @@ public sealed class AppComposition
             afterRestart,
             journalAccess,
             exePath,
-            smokeUpdates);
+            smokeUpdates,
+            FakeSwitchProbe.Empty);
     }
 
     private sealed class DummyFilePicker : IFilePicker

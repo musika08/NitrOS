@@ -35,6 +35,17 @@
                                         <TextBlock Text="{x:Bind Title}"
                                                    Style="{ThemeResource SubtitleTextBlockStyle}"
                                                    FontWeight="SemiBold" />
+                                        <Border Visibility="{x:Bind IsInUse, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
+                                                BorderBrush="{ThemeResource SystemFillColorSuccessBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="6,2">
+                                            <TextBlock Text="In use"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                                        </Border>
                                         <Border Visibility="{x:Bind IsRecommended, Converter={StaticResource BoolToVisibilityConverter}}"
                                                 Background="{ThemeResource AccentFillColorDefaultBrush}"
                                                 CornerRadius="4"
@@ -44,6 +55,11 @@
                                                        Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
                                         </Border>
                                     </StackPanel>
+
+                                    <TextBlock Text="{x:Bind InUseText}"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               Visibility="{x:Bind InUseText, Converter={StaticResource NullToVisibilityConverter}}" />
 
                                     <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,4,0,0">
                                         <TextBlock Text="{x:Bind MemoryText}"

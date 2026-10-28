@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using NitrOS.App.Logic.Flow;
 using NitrOS.App.Logic.Formatting;
 using NitrOS.App.Logic.Navigation;
+using NitrOS.App.Logic.Ports;
+using NitrOS.App.Logic.Running;
 using NitrOS.App.Logic.Startup;
 using NitrOS.Core.Model;
 using NitrOS.Core.Selecting;
@@ -14,12 +16,14 @@ public sealed class SwitchesViewModel : ObservableObject, IScreen
     private readonly Navigator _navigator;
     private readonly Draft _draft;
     private readonly AppContextInfo _context;
+    private readonly ISwitchProbe _probe;
 
     private string _searchText = "";
     private IReadOnlyList<SwitchGroupView> _groups = [];
     private string _totalsText = "";
     private string _onCountText = "";
     private string _cardText = "";
+    private string _cardStatusText = "";
     private readonly List<SwitchRow> _allRows = [];
 
     public ScreenKey Key => ScreenKeys.Switches;
@@ -58,14 +62,21 @@ public sealed class SwitchesViewModel : ObservableObject, IScreen
         private set => SetProperty(ref _cardText, value);
     }
 
+    public string CardStatusText
+    {
+        get => _cardStatusText;
+        private set => SetProperty(ref _cardStatusText, value);
+    }
+
     public IRelayCommand Review { get; }
     public IRelayCommand OpenMyths { get; }
 
-    public SwitchesViewModel(Navigator navigator, Draft draft, AppContextInfo context)
+    public SwitchesViewModel(Navigator navigator, Draft draft, AppContextInfo context, ISwitchProbe? probe = null)
     {
         _navigator = navigator ?? throw new ArgumentNullException(nameof(navigator));
         _draft = draft ?? throw new ArgumentNullException(nameof(draft));
         _context = context ?? throw new ArgumentNullException(nameof(context));
+        _probe = probe ?? FakeSwitchProbe.Empty;
 
         Review = new RelayCommand(
             () => _navigator.GoTo(ScreenKeys.Review),
@@ -98,6 +109,7 @@ public sealed class SwitchesViewModel : ObservableObject, IScreen
         var selection = _draft.Selection;
         bool isTuneMode = _draft.Mode == TargetMode.TunePc;
         var allWarnings = WarningEngine.For(selection);
+        var activeSwitchIds = _probe.GetActiveSwitchIds();
 
         foreach (var group in catalog.Groups)
         {
@@ -105,6 +117,7 @@ public sealed class SwitchesViewModel : ObservableObject, IScreen
             {
                 var avail = selection.AvailabilityOf(def.Id);
                 bool isOn = selection.IsOn(def.Id);
+                bool isCurrentlyInEffect = activeSwitchIds.Contains(def.Id);
 
                 var warnings = isOn
                     ? def.Breaks.Concat(allWarnings.Where(w => w.Kind == WarningKind.Dependency && w.SwitchId == def.Id).Select(w => w.Message)).ToList()
@@ -117,7 +130,8 @@ public sealed class SwitchesViewModel : ObservableObject, IScreen
                     avail.Reason,
                     isTuneMode,
                     warnings,
-                    OnToggleSwitch);
+                    OnToggleSwitch,
+                    isCurrentlyInEffect);
 
                 _allRows.Add(row);
             }
@@ -173,6 +187,14 @@ public sealed class SwitchesViewModel : ObservableObject, IScreen
             CardId.MaxLean => "Max Lean",
             _ => "Your own mix"
         };
+
+        var activeSwitchIds = _probe.GetActiveSwitchIds();
+        int willChangeCount = sel.On.Count(id => !activeSwitchIds.Contains(id));
+        bool isAlreadyInUse = matchingCard is not null && sel.On.Count > 0 && willChangeCount == 0;
+
+        CardStatusText = isAlreadyInUse
+            ? "Already in use on this PC"
+            : (willChangeCount == 0 ? "All selected settings already applied" : $"{willChangeCount} settings will change");
 
         Review.NotifyCanExecuteChanged();
     }

@@ -57,6 +57,29 @@ public sealed class CardsViewModelTests
     }
 
     [Fact]
+    public void Cards_ShowsIfAlreadyUsingSetupOrNot()
+    {
+        var repo = TestCatalog.LoadRepo();
+        var recSel = Selection.FromCard(repo, CardId.Recommended, TargetMode.TunePc, DeviceProfile.Desktop);
+
+        var probe = new FakeSwitchProbe(recSel.On);
+        var nav = new Navigator(new RunGate());
+        var draft = new Draft(repo, DeviceProfile.Desktop);
+        draft.Start(TargetMode.TunePc);
+        var session = new SessionCheck(true, null);
+        var context = new AppContextInfo(repo, [], DeviceProfile.Desktop, new MemoryInfo(16000, 15000, 4000), session);
+        var vm = new CardsViewModel(nav, draft, context, probe);
+
+        var recCard = vm.Cards.First(c => c.Id == CardId.Recommended);
+        Assert.True(recCard.IsInUse);
+        Assert.Equal("Already in use on this PC", recCard.InUseText);
+
+        var gamerCard = vm.Cards.First(c => c.Id == CardId.Gamer);
+        Assert.False(gamerCard.IsInUse);
+        Assert.Contains("settings applied", gamerCard.InUseText);
+    }
+
+    [Fact]
     public void Cards_MeasuredValuesLabelledEstimate()
     {
         var repo = TestCatalog.LoadRepo();

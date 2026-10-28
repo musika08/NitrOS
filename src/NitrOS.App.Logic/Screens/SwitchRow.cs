@@ -19,12 +19,60 @@ public sealed class SwitchRow : ObservableObject
     public bool IsAvailable { get; }
     public string? UnavailableReason { get; }
     public bool CantUndoBadge { get; }
+    public bool CurrentlyInEffect { get; }
     public IRelayCommand Toggle { get; }
 
     public bool IsOn
     {
         get => _isOn;
-        set => SetProperty(ref _isOn, value);
+        set
+        {
+            if (SetProperty(ref _isOn, value))
+            {
+                OnPropertyChanged(nameof(ActionBadge));
+                OnPropertyChanged(nameof(ActionDetail));
+            }
+        }
+    }
+
+    public string ActionBadge
+    {
+        get
+        {
+            bool isTurnOnSwitch = Id == "svchost-grouping-on";
+            if (IsOn)
+            {
+                if (CurrentlyInEffect)
+                    return isTurnOnSwitch ? "Already ON" : "Already OFF";
+                return isTurnOnSwitch ? "Will turn ON" : "Will turn OFF";
+            }
+            else
+            {
+                if (CurrentlyInEffect)
+                    return isTurnOnSwitch ? "Currently ON" : "Currently OFF";
+                return isTurnOnSwitch ? "Keeps OFF" : "Keeps ON";
+            }
+        }
+    }
+
+    public string ActionDetail
+    {
+        get
+        {
+            bool isTurnOnSwitch = Id == "svchost-grouping-on";
+            if (IsOn)
+            {
+                if (CurrentlyInEffect)
+                    return "Already applied on this PC";
+                return isTurnOnSwitch ? "Setup will enable this" : "Setup will turn this OFF";
+            }
+            else
+            {
+                if (CurrentlyInEffect)
+                    return "Currently tuned on this PC";
+                return isTurnOnSwitch ? "Keeps default (disabled)" : "Setup leaves this ON";
+            }
+        }
     }
 
     public IReadOnlyList<string> Warnings
@@ -40,7 +88,8 @@ public sealed class SwitchRow : ObservableObject
         string? unavailableReason,
         bool isTuneMode,
         IReadOnlyList<string> warnings,
-        Action<string> onToggle)
+        Action<string> onToggle,
+        bool currentlyInEffect = false)
     {
         ArgumentNullException.ThrowIfNull(def);
         ArgumentNullException.ThrowIfNull(onToggle);
@@ -52,6 +101,7 @@ public sealed class SwitchRow : ObservableObject
         IsOn = isOn;
         IsAvailable = isAvailable;
         UnavailableReason = unavailableReason;
+        CurrentlyInEffect = currentlyInEffect;
         Warnings = warnings ?? [];
 
         MemoryText = def.Measured is not null

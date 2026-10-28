@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using NitrOS.App.Logic.Flow;
 using NitrOS.App.Logic.Formatting;
 using NitrOS.App.Logic.Navigation;
+using NitrOS.App.Logic.Ports;
+using NitrOS.App.Logic.Running;
 using NitrOS.App.Logic.Startup;
 using NitrOS.Core.Model;
 using NitrOS.Core.Selecting;
@@ -14,6 +16,7 @@ public sealed class CardsViewModel : ObservableObject, IScreen
     private readonly Navigator _navigator;
     private readonly Draft _draft;
     private readonly AppContextInfo _context;
+    private readonly ISwitchProbe _probe;
     private string _memoryLine = "";
     private IReadOnlyList<CardItem> _cards = [];
 
@@ -33,11 +36,12 @@ public sealed class CardsViewModel : ObservableObject, IScreen
 
     public IRelayCommand<CardId> Pick { get; }
 
-    public CardsViewModel(Navigator navigator, Draft draft, AppContextInfo context)
+    public CardsViewModel(Navigator navigator, Draft draft, AppContextInfo context, ISwitchProbe? probe = null)
     {
         _navigator = navigator ?? throw new ArgumentNullException(nameof(navigator));
         _draft = draft ?? throw new ArgumentNullException(nameof(draft));
         _context = context ?? throw new ArgumentNullException(nameof(context));
+        _probe = probe ?? FakeSwitchProbe.Empty;
 
         Pick = new RelayCommand<CardId>(card =>
         {
@@ -69,6 +73,7 @@ public sealed class CardsViewModel : ObservableObject, IScreen
 
         var items = new List<CardItem>();
         CardId[] presetCards = [CardId.Recommended, CardId.Gamer, CardId.Streamer, CardId.MaxLean];
+        var activeSwitchIds = _probe.GetActiveSwitchIds();
 
         foreach (var id in presetCards)
         {
@@ -119,7 +124,18 @@ public sealed class CardsViewModel : ObservableObject, IScreen
                 partlyNote = $"{sel.Dropped.Count} of this card's switches are kept on this PC.";
             }
 
-            items.Add(new CardItem(id, title, memText, procText, stopsText, partlyNote));
+            bool isInUse = false;
+            string? inUseText = null;
+            if (mode == TargetMode.TunePc && sel.On.Count > 0)
+            {
+                int appliedCount = sel.On.Count(swId => activeSwitchIds.Contains(swId));
+                isInUse = appliedCount == sel.On.Count;
+                inUseText = isInUse
+                    ? "Already in use on this PC"
+                    : (appliedCount > 0 ? $"{appliedCount} of {sel.On.Count} settings applied" : "Not in use");
+            }
+
+            items.Add(new CardItem(id, title, memText, procText, stopsText, partlyNote, isInUse, inUseText));
         }
 
         items.Add(new CardItem(
@@ -128,6 +144,8 @@ public sealed class CardsViewModel : ObservableObject, IScreen
             "",
             "",
             "Starts with nothing ticked. You pick every switch.",
+            null,
+            false,
             null));
 
         Cards = items;

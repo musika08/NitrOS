@@ -129,4 +129,40 @@ public sealed class SwitchesViewModelTests
         var irreversibleIso = vmIso.Groups.SelectMany(g => g.Rows).First(r => r.Id == irreversibleTune.Id);
         Assert.False(irreversibleIso.CantUndoBadge);
     }
+
+    [Fact]
+    public void Switches_ShowsWhetherSetupTurnsSettingOnOrOffAndIfInUse()
+    {
+        var repo = TestCatalog.LoadRepo();
+        var recSel = Selection.FromCard(repo, CardId.Recommended, TargetMode.TunePc, DeviceProfile.Desktop);
+
+        var activeId = recSel.On.First();
+        var probe = new FakeSwitchProbe([activeId]);
+
+        var nav = new Navigator(new RunGate());
+        var dev = DeviceProfile.Desktop;
+        var draft = new Draft(repo, dev);
+        draft.Start(TargetMode.TunePc);
+        draft.PickCard(CardId.Recommended);
+        var session = new SessionCheck(true, null);
+        var context = new AppContextInfo(repo, [], dev, new MemoryInfo(16000, 15000, 4000), session);
+        var vm = new SwitchesViewModel(nav, draft, context, probe);
+
+        Assert.Equal("Recommended", vm.CardText);
+        Assert.Contains("settings will change", vm.CardStatusText);
+
+        var rows = vm.Groups.SelectMany(g => g.Rows).ToList();
+        var appliedRow = rows.First(r => r.Id == activeId);
+        Assert.True(appliedRow.IsOn);
+        Assert.Equal("Already OFF", appliedRow.ActionBadge);
+
+        var notAppliedRow = rows.First(r => r.IsOn && r.Id != activeId);
+        Assert.Equal("Will turn OFF", notAppliedRow.ActionBadge);
+
+        var offRow = rows.First(r => !r.IsOn && r.Id != activeId && r.Id != "svchost-grouping-on");
+        Assert.Equal("Keeps ON", offRow.ActionBadge);
+
+        var svchostRow = rows.First(r => r.Id == "svchost-grouping-on");
+        Assert.Equal("Keeps OFF", svchostRow.ActionBadge);
+    }
 }
