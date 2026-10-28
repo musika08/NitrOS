@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="NitrOS.Live.Tests" />
+    <InternalsVisibleTo Include="NitrOS.App.Tests" />
   </ItemGroup>
 
 </Project>

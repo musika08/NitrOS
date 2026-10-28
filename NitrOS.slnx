@@ -6,10 +6,13 @@
     <Project Path="src/NitrOS.Measure/NitrOS.Measure.csproj" />
     <Project Path="src/NitrOS.Measure.Probe/NitrOS.Measure.Probe.csproj" />
     <Project Path="src/NitrOS.Measure.Host/NitrOS.Measure.Host.csproj" />
+    <Project Path="src/NitrOS.App.Logic/NitrOS.App.Logic.csproj" />
+    <Project Path="src/NitrOS.App/NitrOS.App.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NitrOS.Core.Tests/NitrOS.Core.Tests.csproj" />
     <Project Path="tests/NitrOS.Live.Tests/NitrOS.Live.Tests.csproj" />
     <Project Path="tests/NitrOS.Measure.Tests/NitrOS.Measure.Tests.csproj" />
+    <Project Path="tests/NitrOS.App.Tests/NitrOS.App.Tests.csproj" />
   </Folder>
 </Solution>
