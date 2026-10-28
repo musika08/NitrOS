@@ -1,0 +1,13 @@
+{
+  "entries": [
+    {
+      "maker": "Lenovo",
+      "model": "*",
+      "kind": "bios",
+      "version": "N3CN42WW",
+      "reason": "Lenovo pulled this BIOS after boot failures.",
+      "source": "https://hwbusters.com/news/lenovo-pulls-the-legion-go-bios-that-was-bricking-handhelds-and-says-nothing-about-it/",
+      "added": "2026-10-24"
+    }
+  ]
+}

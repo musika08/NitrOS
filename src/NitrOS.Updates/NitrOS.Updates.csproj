@@ -12,6 +12,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="KnownBad\known-bad.json" />
+    <EmbeddedResource Include="Firmware\firmware-map.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\NitrOS.Core\NitrOS.Core.csproj" />
     <ProjectReference Include="..\NitrOS.Live\NitrOS.Live.csproj" />
   </ItemGroup>

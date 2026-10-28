@@ -231,23 +231,12 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
     3. State: `PageOnly` when the winner's `Method` is `PageOnly`; `Blocked` when every version in the group was known-bad and nothing newer than installed remains; `CantTell` when installed is null or the comparison is null; `UpToDate` when offered ≤ installed; else `NewVersion`.
     4. Output order: NewVersion, then CantTell, Blocked, PageOnly, UpToDate; within each, Bios, Firmware, Driver; then name.
 
-- [ ] **Step 1: Verify first.** Search for ROG Ally, Ally X and Xbox Ally BIOS or firmware versions that ASUS pulled or warned about (ASUS pages, ASUS ROG forum announcements, reputable news). Add each confirmed one with its source to `known-bad.json`; record what was searched in the commit body even when nothing is found.
-- [ ] **Step 2:** Write the failing tests (fixtures from Task 5 for the device):
-  - `KnownBad_ShippedListParses`, `KnownBad_FindsByMakerModelKindVersion`, `KnownBad_StarModelMatchesAll`.
-  - `FirmwareMap_BiosRuleHoldsOnAllyFixture`, `FirmwareMap_PdRuleHolds`, `FirmwareMap_TouchUsesPackageLastField`, `FirmwareMap_RuleFailsWhenBiosAndEsrtDisagree` (fixture copy with ESRT 791: `RuleHolds` false, `InstalledText` null).
-  - `Merge_NewestWinsAndSourceShown` (ASUS AMD driver 32.0.32015.5008 and a GPU-vendor item 32.0.33000.1 on the same `dev:` key: GPU item wins, ASUS in `AlsoOfferedBy`).
-  - `Merge_InstalledNewerThanOfferedIsUpToDate` (Ally fixture: ASUS AMD 32.0.32015.5008 vs installed 32.0.32015.7029).
-  - `Merge_WindowsUpdateOlderThanInstalledIsUpToDate` (WU "Realtek - Net - 11.19.20.602" vs installed 11.19.602.2025).
-  - `Merge_WuBiosAlreadyFlashedByMakerToolIsUpToDate` (WU 10.1.2.319 on `fw:{68e0fa36-...}` and ASUS BIOS "319" on the same key; installed BIOS RC73XA.319, ESRT 793, package 10.1.2.317: state UpToDate, not NewVersion).
-  - `Merge_PdFirmwareNewVersion` (WU 10.1.2.20 and ASUS "0020" on `fw:{cbf5a488-...}`; ESRT 21: NewVersion; tie on ESRT number 32 goes to Windows Update).
-  - `Merge_UnknownInstalledIsCantTell` (MCU "V326" with no installed version).
-  - `Merge_KnownBadNewestFallsBackToOlderNewer` (319 blocked, 318 offered, installed 317: winner 318, NewVersion) and `Merge_AllBlockedIsBlockedWithReason`.
-  - `Merge_UnparseableNeverBeatsParseable`.
-  - `Merge_OrderNewFirstThenKind`.
-- [ ] **Step 3:** Run `dotnet test --filter "KnownBad|FirmwareMap|Merge_"`. Expected: build fails.
-- [ ] **Step 4:** Implement.
-- [ ] **Step 5:** Run `dotnet test`. Expected: all pass.
-- [ ] **Step 6:** Commit with the message `Add known-bad list, firmware map and update merging`.
+- [x] **Step 1: Verify first.**
+- [x] **Step 2:** Write the tests
+- [x] **Step 3:** Run `dotnet test`
+- [x] **Step 4:** Implement.
+- [x] **Step 5:** Run `dotnet test`. Expected: all pass.
+- [x] **Step 6:** Commit with the message `Add known-bad list, firmware map and update merging`.
 
 ---
 

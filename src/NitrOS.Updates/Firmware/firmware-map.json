@@ -1,0 +1,25 @@
+{
+  "models": [
+    {
+      "maker": "Asus",
+      "model": "RC73XA",
+      "items": [
+        {
+          "title": "BIOS Update for Windows",
+          "esrt": "system",
+          "rule": "EsrtHex"
+        },
+        {
+          "title": "PD_FW Firmware",
+          "esrt": "cbf5a488-f654-3fce-b3fc-8a1d94ead498",
+          "rule": "EsrtHex"
+        },
+        {
+          "title": "Touch_Panel_FW Firmware",
+          "esrt": "222a79d6-d2aa-358b-b1ac-8771faf8fec0",
+          "rule": "PackageLastField"
+        }
+      ]
+    }
+  ]
+}
