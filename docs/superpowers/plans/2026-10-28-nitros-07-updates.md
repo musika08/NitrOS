@@ -126,15 +126,15 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
     - `string NormaliseName(string name)` and `bool NamesMatch(string a, string b)` (moved, same suffix and alias rules)
   - `WinUninstaller.NormaliseName`, `NamesMatch`, `TrustedSignerNames` and `OpenLocked` stay as one-line forwards, so plan 3's tests are untouched. New constants `WTD_REVOKE_WHOLECHAIN = 1`, `WTD_REVOCATION_CHECK_CHAIN = 0x40` in `NativeMethods`.
 
-- [ ] **Step 1:** Write the failing tests:
+- [x] **Step 1:** Write the failing tests:
   - `UpdatesSmoke_ReferencesLive`.
   - `Authenticode_SignedSystemFileHasMicrosoftSigner` (read-only: `%windir%\System32\notepad.exe` or `msiexec.exe` returns a name that `NamesMatch` pairs with "Microsoft Windows" or "Microsoft Corporation"; both modes).
   - `Authenticode_UnsignedFileReturnsNull` (a text file in the test's temp folder).
   - `Authenticode_NamesMatchUnchanged` (the plan 3 cases: "Valve Corp." = "Valve Corporation", "ASUS" = "ASUSTeK COMPUTER INC.", "Valve GmbH" is not "Valve Corporation").
-- [ ] **Step 2:** Run `dotnet test --filter "UpdatesSmoke|Authenticode"`. Expected: build fails.
-- [ ] **Step 3:** Create the projects, add both to `NitrOS.slnx` (`/src/` and `/tests/`), move the code into `Authenticode` and make `WinUninstaller` forward to it.
-- [ ] **Step 4:** Run `dotnet test`. Expected: all pass, including every plan 3 `WinUninstaller` test.
-- [ ] **Step 5:** Commit with the message `Add NitrOS.Updates projects and share the signature check`.
+- [x] **Step 2:** Run `dotnet test --filter "UpdatesSmoke|Authenticode"`. Expected: build fails.
+- [x] **Step 3:** Create the projects, add both to `NitrOS.slnx` (`/src/` and `/tests/`), move the code into `Authenticode` and make `WinUninstaller` forward to it.
+- [x] **Step 4:** Run `dotnet test`. Expected: all pass, including every plan 3 `WinUninstaller` test.
+- [x] **Step 5:** Commit with the message `Add NitrOS.Updates projects and share the signature check`.
 
 ---
 

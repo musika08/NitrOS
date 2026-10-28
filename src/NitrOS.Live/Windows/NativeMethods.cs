@@ -114,11 +114,13 @@ internal static class NativeMethods
     public static readonly Guid WINTRUST_ACTION_GENERIC_VERIFY_V2 = new("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
     public const uint WTD_UI_NONE = 2;
     public const uint WTD_REVOKE_NONE = 0;
+    public const uint WTD_REVOKE_WHOLECHAIN = 1;
     public const uint WTD_CHOICE_FILE = 1;
     public const uint WTD_CHOICE_CATALOG = 2;
     public const uint WTD_STATEACTION_VERIFY = 1;
     public const uint WTD_STATEACTION_CLOSE = 2;
     public const uint WTD_REVOCATION_CHECK_NONE = 0x00000010;
+    public const uint WTD_REVOCATION_CHECK_CHAIN = 0x00000040;
     public const uint WTD_CACHE_ONLY_URL_RETRIEVAL = 0x00001000;
     public const int TRUST_E_NOSIGNATURE = unchecked((int)0x800B0100);
 
