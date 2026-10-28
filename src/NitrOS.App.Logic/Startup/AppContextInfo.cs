@@ -10,4 +10,7 @@ public sealed record AppContextInfo(
     IReadOnlyList<CatalogError> CatalogErrors,
     DeviceProfile Device,
     MemoryInfo Memory,
-    SessionCheck Session);
+    SessionCheck Session)
+{
+    public string? ConsoleUserSid { get; init; }
+}
