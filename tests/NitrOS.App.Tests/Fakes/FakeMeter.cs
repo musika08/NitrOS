@@ -9,9 +9,15 @@ public sealed class FakeMeter : IMachineMeter
     public MachineSnapshot CurrentSnapshot { get; set; } = new(6000, 150, DateTimeOffset.Now);
     public DateTimeOffset CurrentLastBoot { get; set; } = DateTimeOffset.Now.AddDays(-1);
 
+    public int ReadCalls { get; private set; }
+
     public MemoryInfo Memory() => CurrentMemory;
 
-    public MachineSnapshot ReadOnce() => CurrentSnapshot;
+    public MachineSnapshot ReadOnce()
+    {
+        ReadCalls++;
+        return CurrentSnapshot;
+    }
 
     public DateTimeOffset LastBoot() => CurrentLastBoot;
 }
