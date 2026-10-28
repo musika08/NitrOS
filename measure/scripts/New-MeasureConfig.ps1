@@ -20,7 +20,9 @@ if (-not (Test-Path $IsoPath)) {
 # Generate 24-character password using RandomNumberGenerator
 $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+"
 $bytes = [byte[]]::new(24)
-[System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+$rng.Dispose()
 
 $sb = [System.Text.StringBuilder]::new(24)
 foreach ($b in $bytes) {
