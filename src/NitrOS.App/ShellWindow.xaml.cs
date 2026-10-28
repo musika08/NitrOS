@@ -21,7 +21,10 @@ public sealed partial class ShellWindow : Window
         Title = "NitrOS";
         SystemBackdrop = new MicaBackdrop();
 
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 720));
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(DragRegion);
+
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 750));
         AppWindow.Closing += OnAppWindowClosing;
     }
 
@@ -44,7 +47,84 @@ public sealed partial class ShellWindow : Window
             var pageType = _pageMap.For(screen.Key);
             ContentFrame.Navigate(pageType, screen);
             BackButton.Visibility = _navigator.CanGoBack ? Visibility.Visible : Visibility.Collapsed;
+            UpdateActiveNav(screen.Key);
         });
+    }
+
+    private void UpdateActiveNav(ScreenKey key)
+    {
+        var activeBrush = Application.Current.Resources.TryGetValue("SubtleFillColorSecondaryBrush", out var b)
+            ? (Brush)b
+            : new SolidColorBrush(Windows.UI.Color.FromArgb(30, 128, 128, 128));
+
+        var transparentBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0, 0, 0, 0));
+
+        NavOverview.Background = (key == ScreenKeys.Start) ? activeBrush : transparentBrush;
+        NavTune.Background = (key == ScreenKeys.Cards || key == ScreenKeys.Switches || key == ScreenKeys.Review || key == ScreenKeys.Working || key == ScreenKeys.Done) ? activeBrush : transparentBrush;
+        NavUpdates.Background = (key == ScreenKeys.DeviceUpdates) ? activeBrush : transparentBrush;
+        NavHealth.Background = (key == ScreenKeys.Health) ? activeBrush : transparentBrush;
+        NavUndo.Background = (key == ScreenKeys.Undo) ? activeBrush : transparentBrush;
+        NavMyths.Background = (key == ScreenKeys.Myths) ? activeBrush : transparentBrush;
+        NavSettings.Background = (key == ScreenKeys.Settings) ? activeBrush : transparentBrush;
+
+        HeaderTitleText.Text = key.Name switch
+        {
+            "start" => "Overview",
+            "cards" => "Tuning Profiles",
+            "switches" => "Tuning Switches",
+            "review" => "Review Changes",
+            "working" => "Applying Changes",
+            "done" => "Completed",
+            "device-updates" => "Device Updates",
+            "health" => "System Health",
+            "undo" => "Undo Changes",
+            "myths" => "Myths We Tested",
+            "settings" => "Settings",
+            "iso-source" => "Build Slim ISO",
+            _ => "NitrOS"
+        };
+    }
+
+    private void OnNavOverviewClicked(object sender, RoutedEventArgs e)
+    {
+        if (_navigator is not null && _navigator.IsRegistered(ScreenKeys.Start))
+            _navigator.ResetTo(ScreenKeys.Start);
+    }
+
+    private void OnNavTuneClicked(object sender, RoutedEventArgs e)
+    {
+        if (_navigator is not null && _navigator.IsRegistered(ScreenKeys.Cards))
+            _navigator.GoTo(ScreenKeys.Cards);
+    }
+
+    private void OnNavUpdatesClicked(object sender, RoutedEventArgs e)
+    {
+        if (_navigator is not null && _navigator.IsRegistered(ScreenKeys.DeviceUpdates))
+            _navigator.GoTo(ScreenKeys.DeviceUpdates);
+    }
+
+    private void OnNavHealthClicked(object sender, RoutedEventArgs e)
+    {
+        if (_navigator is not null && _navigator.IsRegistered(ScreenKeys.Health))
+            _navigator.GoTo(ScreenKeys.Health);
+    }
+
+    private void OnNavUndoClicked(object sender, RoutedEventArgs e)
+    {
+        if (_navigator is not null && _navigator.IsRegistered(ScreenKeys.Undo))
+            _navigator.GoTo(ScreenKeys.Undo);
+    }
+
+    private void OnNavMythsClicked(object sender, RoutedEventArgs e)
+    {
+        if (_navigator is not null && _navigator.IsRegistered(ScreenKeys.Myths))
+            _navigator.GoTo(ScreenKeys.Myths);
+    }
+
+    private void OnNavSettingsClicked(object sender, RoutedEventArgs e)
+    {
+        if (_navigator is not null && _navigator.IsRegistered(ScreenKeys.Settings))
+            _navigator.GoTo(ScreenKeys.Settings);
     }
 
     private void OnBackClicked(object sender, RoutedEventArgs e)
