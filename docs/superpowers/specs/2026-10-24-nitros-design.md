@@ -417,7 +417,7 @@ updates screen.
 - How ASUS's BIOS and MCU updaters run silently or with progress, and their
   exit codes.
 - Lenovo (Legion Go), Dell and HP listings, each tried live before shipping.
-- How to check AMD, NVIDIA and Intel's latest driver versions.
+- How to check AMD, NVIDIA and Intel's latest driver versions: answered in [gpu-driver-sources.md](../../research/gpu-driver-sources.md) (verdict: Page only for all three; open vendor support/download page).
 
 ## 12. Research
 
