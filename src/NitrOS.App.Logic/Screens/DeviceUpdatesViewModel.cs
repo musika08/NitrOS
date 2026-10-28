@@ -103,7 +103,25 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
 
     public void OnShown(object? argument)
     {
+        LoadInitialDevices();
         _ = RunCheckAsync();
+    }
+
+    private void LoadInitialDevices()
+    {
+        try
+        {
+            var device = _updates.ReadDevice();
+            _device = device;
+            var initialCombined = Merger.CombineWithDevices(Array.Empty<MergedItem>(), device);
+            var rows = new List<UpdateRow>();
+            foreach (var m in initialCombined)
+            {
+                rows.Add(CreateRow(m));
+            }
+            Rows = rows;
+        }
+        catch { }
     }
 
     public void OnHidden() { }
@@ -147,8 +165,9 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
             Notices = noticeList;
             Links = linkList;
 
+            var combined = Merger.CombineWithDevices(report.Items, report.Device);
             var rows = new List<UpdateRow>();
-            foreach (var m in report.Items)
+            foreach (var m in combined)
             {
                 var row = CreateRow(m);
                 rows.Add(row);

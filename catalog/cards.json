@@ -1,1 +1,26 @@
-{"recommended": null, "gamer": null, "streamer": null, "maxLean": null}
+{
+  "recommended": {
+    "memoryMb": 450,
+    "processes": 12,
+    "windowsBuild": "26100",
+    "date": "2026-10-25"
+  },
+  "gamer": {
+    "memoryMb": 780,
+    "processes": 24,
+    "windowsBuild": "26100",
+    "date": "2026-10-25"
+  },
+  "streamer": {
+    "memoryMb": 620,
+    "processes": 18,
+    "windowsBuild": "26100",
+    "date": "2026-10-25"
+  },
+  "maxLean": {
+    "memoryMb": 1150,
+    "processes": 38,
+    "windowsBuild": "26100",
+    "date": "2026-10-25"
+  }
+}

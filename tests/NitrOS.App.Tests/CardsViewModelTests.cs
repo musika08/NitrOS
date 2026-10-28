@@ -37,11 +37,23 @@ public sealed class CardsViewModelTests
     public void Cards_NullMeasurementShowsNotMeasuredYet()
     {
         var repo = TestCatalog.LoadRepo();
-        var (vm, _, _) = Create(repo);
+        var nullCatalog = repo with { Cards = new CardMeasurements(null, null, null, null) };
+        var (vm, _, _) = Create(nullCatalog);
 
         var gamer = vm.Cards.First(c => c.Id == CardId.Gamer);
         Assert.Equal("Memory saved: not measured yet", gamer.MemoryText);
         Assert.Equal("Fewer processes: not measured yet", gamer.ProcessesText);
+    }
+
+    [Fact]
+    public void Cards_RepoCatalogHasMeasurements()
+    {
+        var repo = TestCatalog.LoadRepo();
+        var (vm, _, _) = Create(repo);
+
+        var gamer = vm.Cards.First(c => c.Id == CardId.Gamer);
+        Assert.Equal("About 780 MB less memory in use (estimate from our test PC)", gamer.MemoryText);
+        Assert.Equal("About 24 fewer processes (estimate)", gamer.ProcessesText);
     }
 
     [Fact]

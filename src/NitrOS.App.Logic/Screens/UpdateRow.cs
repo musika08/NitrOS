@@ -33,6 +33,9 @@ public sealed class UpdateRow : ObservableObject
             if (Merged.State == ItemState.PageOnly)
                 return $"Check {Item.SourceName}'s site";
 
+            if (Merged.State == ItemState.UpToDate)
+                return "Latest: Up to date";
+
             var sizeStr = Item.SizeBytes.HasValue ? $", {Item.SizeBytes.Value / 1024.0 / 1024.0:F1} MB" : "";
             var dateStr = Item.ReleaseDate.HasValue ? $", {Item.ReleaseDate.Value:d MMM yyyy}" : "";
             return $"Latest: {Item.LatestVersion} from {Item.SourceName}{dateStr}{sizeStr}";

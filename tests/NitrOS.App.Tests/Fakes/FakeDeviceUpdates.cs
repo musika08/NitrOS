@@ -19,11 +19,16 @@ public sealed class FakeDeviceUpdates : IDeviceUpdates
 
     public bool OpenPageResult { get; set; } = true;
     public bool ShowInFolderResult { get; set; } = true;
+    public Updates.Model.DeviceInfo? DeviceToReturn { get; set; }
 
     public FakeDeviceUpdates(IPowerSource power)
     {
         Power = power;
     }
+
+    public Updates.Model.DeviceInfo ReadDevice() =>
+        DeviceToReturn ?? ReportToReturn?.Device ?? new Updates.Model.DeviceInfo(
+            Updates.Model.MakerId.Other, "Unknown", "Unknown", null, null, null, [], []);
 
     public Task<CheckReport> CheckAsync(IProgress<CheckProgress>? progress, CancellationToken ct)
     {

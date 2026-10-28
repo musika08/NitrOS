@@ -130,6 +130,123 @@ public static class Merger
             .ToList();
     }
 
+    public static IReadOnlyList<MergedItem> CombineWithDevices(
+        IReadOnlyList<MergedItem> updateItems,
+        DeviceInfo device)
+    {
+        ArgumentNullException.ThrowIfNull(device);
+        var result = new List<MergedItem>(updateItems ?? Array.Empty<MergedItem>());
+        var additional = new List<MergedItem>();
+
+        // 1. BIOS
+        if (!string.IsNullOrWhiteSpace(device.BiosVersion) &&
+            !result.Any(m => m.Item.Kind == UpdateKind.Bios))
+        {
+            var biosName = $"{device.Manufacturer} {device.Model} BIOS".Trim();
+            if (string.IsNullOrWhiteSpace(device.Manufacturer) && string.IsNullOrWhiteSpace(device.Model))
+                biosName = "System BIOS";
+
+            var biosItem = new UpdateItem(
+                "bios",
+                biosName,
+                UpdateKind.Bios,
+                device.BiosVersion,
+                device.BiosVersion,
+                null,
+                null,
+                device.BiosDate,
+                "system",
+                "Installed")
+            {
+                Method = InstallMethod.PageOnly
+            };
+            additional.Add(new MergedItem(biosItem, ItemState.UpToDate, null, Array.Empty<UpdateItem>()));
+        }
+
+        // 2. Firmware (ESRT)
+        foreach (var fw in device.Firmware)
+        {
+            var fwKey = $"fw:{fw.Id}";
+            if (!result.Any(m => string.Equals(m.Item.Key, fwKey, StringComparison.OrdinalIgnoreCase)))
+            {
+                var fwName = fw.Name ?? "System Firmware";
+                var fwVer = fw.PackageVersion ?? (fw.Version > 0 ? fw.Version.ToString() : null);
+                var fwItem = new UpdateItem(
+                    fwKey,
+                    fwName,
+                    UpdateKind.Firmware,
+                    fwVer,
+                    fwVer,
+                    null,
+                    null,
+                    null,
+                    "system",
+                    "Installed")
+                {
+                    Method = InstallMethod.PageOnly
+                };
+                additional.Add(new MergedItem(fwItem, ItemState.UpToDate, null, Array.Empty<UpdateItem>()));
+            }
+        }
+
+        // 3. Hardware Devices (Display, Net, Media, Bluetooth)
+        var interestingClasses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Display", "Net", "Media", "Bluetooth"
+        };
+
+        foreach (var dev in device.Devices)
+        {
+            if (string.IsNullOrWhiteSpace(dev.DriverVersion) || string.IsNullOrWhiteSpace(dev.Name))
+                continue;
+
+            if (dev.DeviceClass == null || !interestingClasses.Contains(dev.DeviceClass))
+                continue;
+
+            // Skip noisy virtual / WAN / miniport devices
+            var name = dev.Name;
+            if (name.StartsWith("WAN Miniport", StringComparison.OrdinalIgnoreCase) ||
+                name.StartsWith("Microsoft Kernel", StringComparison.OrdinalIgnoreCase) ||
+                name.StartsWith("NDIS Virtual", StringComparison.OrdinalIgnoreCase) ||
+                name.StartsWith("Bluetooth Device (Personal Area Network)", StringComparison.OrdinalIgnoreCase) ||
+                name.StartsWith("Generic software", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // Check if this device is already represented in result
+            bool alreadyRepresented = result.Any(m =>
+                string.Equals(m.Item.Key, $"dev:{dev.InstanceId}", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(m.Item.Name, dev.Name, StringComparison.OrdinalIgnoreCase) ||
+                (dev.HardwareIds.Count > 0 && dev.HardwareIds.Any(hid => m.Item.Key.EndsWith(hid, StringComparison.OrdinalIgnoreCase))));
+
+            if (!alreadyRepresented)
+            {
+                var devItem = new UpdateItem(
+                    $"dev:{dev.InstanceId}",
+                    dev.Name,
+                    UpdateKind.Driver,
+                    dev.DriverVersion,
+                    dev.DriverVersion,
+                    null,
+                    null,
+                    dev.DriverDate,
+                    "system",
+                    dev.DriverProvider ?? "Installed")
+                {
+                    Method = InstallMethod.PageOnly
+                };
+                additional.Add(new MergedItem(devItem, ItemState.UpToDate, null, Array.Empty<UpdateItem>()));
+            }
+        }
+
+        result.AddRange(additional
+            .OrderBy(m => KindOrder(m.Item.Kind))
+            .ThenBy(m => m.Item.Name, StringComparer.OrdinalIgnoreCase));
+
+        return result;
+    }
+
     private static int StateOrder(ItemState s) => s switch
     {
         ItemState.NewVersion => 0,

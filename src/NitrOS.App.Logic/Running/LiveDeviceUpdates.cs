@@ -4,6 +4,7 @@ using NitrOS.Live.Systems;
 using NitrOS.Live.Windows;
 using NitrOS.Updates.Checking;
 using NitrOS.Updates.Installing;
+using NitrOS.Updates.Model;
 
 namespace NitrOS.App.Logic.Running;
 
@@ -24,6 +25,8 @@ public sealed class LiveDeviceUpdates(
     private readonly object _lock = new();
 
     public IPowerSource Power => _power;
+
+    public DeviceInfo ReadDevice() => _checker.ReadDevice();
 
     public async Task<CheckReport> CheckAsync(IProgress<CheckProgress>? progress, CancellationToken ct)
     {

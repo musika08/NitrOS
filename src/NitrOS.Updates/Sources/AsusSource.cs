@@ -39,8 +39,10 @@ public sealed class AsusSource(HttpClient http, FirmwareMap map) : IUpdateSource
 
         try
         {
-            var biosJsonTask = _http.GetStringAsync(biosUrl, ct);
-            var driversJsonTask = _http.GetStringAsync(driversUrl, ct);
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(6));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+            var biosJsonTask = _http.GetStringAsync(biosUrl, linkedCts.Token);
+            var driversJsonTask = _http.GetStringAsync(driversUrl, linkedCts.Token);
             await Task.WhenAll(biosJsonTask, driversJsonTask);
 
             biosResponse = JsonSerializer.Deserialize<AsusApiResponse>(biosJsonTask.Result, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });

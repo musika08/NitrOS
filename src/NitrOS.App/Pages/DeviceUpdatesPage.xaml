@@ -40,7 +40,7 @@
             </ItemsControl>
 
             <!-- Update Items List -->
-            <TextBlock Text="Available updates" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,8,0,0" />
+            <TextBlock Text="Devices and updates" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,8,0,0" />
 
             <ItemsControl ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}">
                 <ItemsControl.ItemTemplate>

@@ -99,7 +99,7 @@ public sealed class IsoRunner : IRunner
 
         _index.Set(new IsoBuildRecord(state.Request.OutputIso, state.WorkFolder, state.BuildId, state.Request.Card, state.Request.SwitchIds));
 
-        var buildProgress = new Progress<BuildProgress>(bp =>
+        var buildProgress = new DirectProgress<BuildProgress>(bp =>
         {
             progress.Report(new RunProgress(bp.SwitchId, bp.Done, bp.Total, bp.LogLine));
         });
@@ -139,5 +139,10 @@ public sealed class IsoRunner : IRunner
             NeedsRestart = false,
             Request = request
         };
+    }
+
+    private sealed class DirectProgress<T>(Action<T> action) : IProgress<T>
+    {
+        public void Report(T value) => action(value);
     }
 }

@@ -22,6 +22,8 @@ public sealed class UpdateChecker(
     private readonly WindowsUpdatePolicy _policy = policy ?? throw new ArgumentNullException(nameof(policy));
     private readonly TimeProvider _clock = clock ?? throw new ArgumentNullException(nameof(clock));
 
+    public DeviceInfo ReadDevice() => _reader.Read();
+
     public async Task<CheckReport> CheckAsync(IProgress<CheckProgress>? progress, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
@@ -42,9 +44,11 @@ public sealed class UpdateChecker(
         int total = applicableSources.Count;
         int completed = 0;
 
+        progress?.Report(new CheckProgress("sources", 0, total));
+
         var tasks = applicableSources.Select(async source =>
         {
-            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(3));
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
 
             SourceResult result;

@@ -56,7 +56,7 @@ public sealed class SwitchRow : ObservableObject
 
         MemoryText = def.Measured is not null
             ? $"Saves about {Plain.Memory(def.Measured.MemoryMb)} (estimate)"
-            : "not measured yet";
+            : (IsPureSetting(def) ? "Setting tweak" : "Included in card estimate");
 
         RiskBadge = def.Risk switch
         {
@@ -74,4 +74,7 @@ public sealed class SwitchRow : ObservableObject
                 onToggle(Id);
         });
     }
+
+    private static bool IsPureSetting(SwitchDef def) =>
+        def.Live.Count > 0 && def.Live.All(a => a is RegistrySet or RegistryDelete or FeatureDisable or PowerSet);
 }

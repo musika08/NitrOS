@@ -7,6 +7,7 @@ public sealed class WinUpdateAgent : IWindowsUpdateAgent
     public Task<IReadOnlyList<WuRecord>> SearchDriversAsync(CancellationToken ct)
     {
         var tcs = new TaskCompletionSource<IReadOnlyList<WuRecord>>();
+        var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
         var thread = new Thread(() =>
         {
@@ -24,6 +25,7 @@ public sealed class WinUpdateAgent : IWindowsUpdateAgent
 
                 ct.ThrowIfCancellationRequested();
                 dynamic searchResult = searcher.Search("IsInstalled=0 and IsHidden=0 and Type='Driver'");
+                ct.ThrowIfCancellationRequested();
                 dynamic updates = searchResult.Updates;
                 int count = updates.Count;
 
@@ -84,7 +86,18 @@ public sealed class WinUpdateAgent : IWindowsUpdateAgent
             }
             catch (Exception ex)
             {
-                tcs.TrySetException(ex);
+                if (ct.IsCancellationRequested)
+                {
+                    tcs.TrySetCanceled(ct);
+                }
+                else
+                {
+                    tcs.TrySetException(ex);
+                }
+            }
+            finally
+            {
+                reg.Dispose();
             }
         });
 

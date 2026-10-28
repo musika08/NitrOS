@@ -392,6 +392,17 @@ public sealed class AppComposition
     {
         public IPowerSource Power => new WinPowerSource();
 
+        public NitrOS.Updates.Model.DeviceInfo ReadDevice() =>
+            new NitrOS.Updates.Model.DeviceInfo(
+                NitrOS.Updates.Model.MakerId.Asus,
+                "ASUSTeK COMPUTER INC.",
+                "ROG Xbox Ally X RC73XA_RC73XA",
+                "RC73XA",
+                "RC73XA.319",
+                null,
+                [],
+                []);
+
         public Task<NitrOS.Updates.Checking.CheckReport> CheckAsync(IProgress<NitrOS.Updates.Checking.CheckProgress>? progress, CancellationToken ct)
         {
             var device = new NitrOS.Updates.Model.DeviceInfo(
