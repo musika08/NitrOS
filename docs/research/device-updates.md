@@ -35,6 +35,15 @@ power-delivery firmware) also came through Windows Update.
 The `ASUS System Control Interface v3` driver (3.1.72.0 installed) is what
 power and fan control use. It must stay when Armoury Crate is removed.
 
+## 2026-10-28 Live Hardware & WUA Check on Ally X
+
+- **Policy check:** `ExcludeWUDriversInQualityUpdate` = 1 is set on the host. A WUA search (`IsInstalled=0 and Type='Driver'`) still successfully returns available drivers and firmware items (e.g. Realtek USB network, ITE PD firmware 10.1.2.20, ASUS system firmware 10.1.2.319). Policy prevents automatic Windows Update driver downloads but does not block manual discovery.
+- **ESRT Resources:**
+  - System Firmware `{68e0fa36-5d2a-5046-91c6-e0bfe84f77f3}`: Version 793 (0x319, BIOS `RC73XA.319`).
+  - ITE PD `{cbf5a488-f654-3fce-b3fc-8a1d94ead498}`: Version 21 (0x15).
+  - NOVATEK TouchPanel `{222a79d6-d2aa-358b-b1ac-8771faf8fec0}`: Version 9.
+  - Device Firmware `{22cc2999-e6fd-3ea9-800c-cff443d45585}`: Version 1.
+
 ## Other sources (web research, not yet tried)
 
 - **Windows Update, all brands:** Windows Update Agent API (`IUpdateSearcher`,

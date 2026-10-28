@@ -412,10 +412,8 @@ updates screen.
 - Primary BattlEye, Easy Anti-Cheat and FACEIT requirement pages (the
   research could not read them).
 - Whether Smart App Control blocks anything NitrOS does.
-- How to read the Ally X controller (MCU) firmware version without Armoury
-  Crate.
-- How ASUS's BIOS and MCU updaters run silently or with progress, and their
-  exit codes.
+- How to read the Ally X controller (MCU) firmware version without Armoury Crate: answered in [asus-updaters.md](../../research/asus-updaters.md) (requires vendor HID reports over CFU; safe default is "can't tell" and HandOff).
+- How ASUS's BIOS and MCU updaters run silently or with progress, and their exit codes: answered in [asus-updaters.md](../../research/asus-updaters.md) (Inno Setup parameters `/SUPPRESSMSGBOXES /VERYSILENT /NORESTART`; BIOS requires mains power, reboot and HandOff).
 - Lenovo (Legion Go), Dell and HP listings, each tried live before shipping.
 - How to check AMD, NVIDIA and Intel's latest driver versions: answered in [gpu-driver-sources.md](../../research/gpu-driver-sources.md) (verdict: Page only for all three; open vendor support/download page).
 
