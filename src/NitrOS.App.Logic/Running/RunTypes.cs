@@ -35,4 +35,5 @@ public sealed record RunResult(
     public MachineSnapshot? After { get; init; }            // Tune
     public bool NeedsRestart { get; init; }
     public string? OutputPath { get; init; }                // ISO, plan 6
+    public RunRequest? Request { get; init; }
 }
