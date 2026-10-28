@@ -5,6 +5,27 @@
     Title="NitrOS">
 
     <Grid>
-        <Frame x:Name="ContentFrame" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="TitleBarArea" Height="48" Padding="16,0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+                <Button x:Name="BackButton"
+                        Content="&#xE72B;"
+                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                        Width="40" Height="40"
+                        Visibility="Collapsed"
+                        Click="OnBackClicked" />
+                <TextBlock Text="NitrOS"
+                           Style="{ThemeResource TitleTextBlockStyle}"
+                           FontSize="18"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
+        <Frame x:Name="ContentFrame"
+               Grid.Row="1" />
     </Grid>
 </Window>

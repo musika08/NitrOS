@@ -1,0 +1,118 @@
+<Page
+    x:Class="NitrOS.App.Pages.DonePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer XYFocusKeyboardNavigation="Enabled">
+        <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
+                    Margin="24"
+                    Spacing="16"
+                    HorizontalAlignment="Center">
+
+            <TextBlock Text="{x:Bind ViewModel.Headline, Mode=OneWay}"
+                       Style="{ThemeResource TitleTextBlockStyle}" />
+
+            <!-- Restore point line -->
+            <TextBlock Text="{x:Bind ViewModel.RestorePointLine, Mode=OneWay}"
+                       Style="{ThemeResource SubtitleTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Visibility="{x:Bind ViewModel.RestorePointLine, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
+
+            <!-- ISO path line -->
+            <TextBlock Text="{x:Bind ViewModel.IsoLine, Mode=OneWay}"
+                       Style="{ThemeResource BodyTextBlockStyle}"
+                       Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                       Visibility="{x:Bind ViewModel.IsoLine, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
+
+            <!-- Before/After snapshot metrics -->
+            <TextBlock Text="{x:Bind ViewModel.BeforeAfter, Mode=OneWay}"
+                       Style="{ThemeResource BodyStrongTextBlockStyle}"
+                       TextWrapping="Wrap"
+                       Visibility="{x:Bind ViewModel.BeforeAfter, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
+
+            <!-- Counts list -->
+            <ItemsControl ItemsSource="{x:Bind ViewModel.Counts, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <TextBlock Text="{x:Bind}"
+                                   Style="{ThemeResource BodyTextBlockStyle}"
+                                   Margin="0,2" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Problems list -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource SystemFillColorCriticalBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16"
+                    Visibility="{x:Bind ViewModel.Problems, Mode=OneWay, Converter={StaticResource HasItemsToVisibilityConverter}}">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Problems"
+                               Style="{ThemeResource BodyStrongTextBlockStyle}"
+                               Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Problems, Mode=OneWay}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Text="{x:Bind}"
+                                           Style="{ThemeResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,2" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- MayBeChanged section -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16"
+                    Visibility="{x:Bind ViewModel.MayBeChangedHeading, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="{x:Bind ViewModel.MayBeChangedHeading, Mode=OneWay}"
+                               Style="{ThemeResource BodyStrongTextBlockStyle}"
+                               TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.MayBeChanged, Mode=OneWay}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Text="{x:Bind}"
+                                           Style="{ThemeResource CaptionTextBlockStyle}"
+                                           Margin="0,2" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Action buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,8,0,0">
+                <Button x:Name="RestartButton"
+                        Content="Restart now"
+                        Style="{ThemeResource AccentButtonStyle}"
+                        Command="{x:Bind ViewModel.Restart}"
+                        Visibility="{x:Bind ViewModel.NeedsRestart, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                        MinWidth="120" />
+
+                <Button Content="Retry without System Restore"
+                        Command="{x:Bind ViewModel.RetryWithoutRestorePoint}"
+                        Visibility="{x:Bind ViewModel.CanRetryWithoutRestorePoint, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                <Button Content="Add Xbox back"
+                        Command="{x:Bind ViewModel.AddXboxBack}"
+                        Visibility="{x:Bind ViewModel.ShowAddXboxBack, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                <Button Content="Close"
+                        Command="{x:Bind ViewModel.Close}"
+                        MinWidth="100" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -1,0 +1,62 @@
+<Page
+    x:Class="NitrOS.App.Pages.StartPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:screens="using:NitrOS.App.Logic.Screens"
+    mc:Ignorable="d">
+
+    <ScrollViewer XYFocusKeyboardNavigation="Enabled">
+        <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
+                    Margin="24"
+                    Spacing="16"
+                    HorizontalAlignment="Center">
+
+            <TextBlock Text="What would you like to do?"
+                       Style="{ThemeResource TitleTextBlockStyle}"
+                       Margin="0,0,0,8" />
+
+            <!-- Banner for session warnings or drift findings -->
+            <InfoBar IsOpen="{x:Bind ViewModel.Banner, Mode=OneWay, Converter={StaticResource StringToBoolConverter}}"
+                     Severity="Warning"
+                     IsClosable="False"
+                     Message="{x:Bind ViewModel.Banner, Mode=OneWay}"
+                     Visibility="{x:Bind ViewModel.Banner, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
+
+            <ItemsControl ItemsSource="{x:Bind ViewModel.Entries, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="screens:StartEntry">
+                        <Border Margin="0,4"
+                                Padding="16"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="4" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Title}"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                    <TextBlock Text="{x:Bind Description}"
+                                               Style="{ThemeResource BodyTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Text="{x:Bind DisabledReason}"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                               Visibility="{x:Bind DisabledReason, Converter={StaticResource NullToVisibilityConverter}}" />
+                                </StackPanel>
+
+                                <Button Grid.Column="1"
+                                        Content="Open"
+                                        Command="{x:Bind Open}"
+                                        IsEnabled="{x:Bind Enabled}"
+                                        VerticalAlignment="Center"
+                                        Margin="16,0,0,0" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

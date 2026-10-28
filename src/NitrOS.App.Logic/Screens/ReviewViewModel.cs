@@ -22,7 +22,7 @@ public sealed class ReviewViewModel : ObservableObject, IScreen
     private readonly Navigator _navigator;
 
     private RunRequest? _request;
-    private IReadOnlyList<(string Group, IReadOnlyList<string> Names)> _changes = [];
+    private IReadOnlyList<ReviewGroup> _changes = [];
     private IReadOnlyList<string> _stopsWorking = [];
     private IReadOnlyList<string> _dependencyWarnings = [];
     private string? _irreversibleWarning;
@@ -33,7 +33,7 @@ public sealed class ReviewViewModel : ObservableObject, IScreen
 
     public ScreenKey Key => ScreenKeys.Review;
 
-    public IReadOnlyList<(string Group, IReadOnlyList<string> Names)> Changes
+    public IReadOnlyList<ReviewGroup> Changes
     {
         get => _changes;
         private set => SetProperty(ref _changes, value);
@@ -150,7 +150,7 @@ public sealed class ReviewViewModel : ObservableObject, IScreen
         var sel = _request.Selection;
 
         // Changes (by group)
-        var changesList = new List<(string Group, IReadOnlyList<string> Names)>();
+        var changesList = new List<ReviewGroup>();
         foreach (var group in _catalog.Groups)
         {
             var names = group.Switches
@@ -158,7 +158,7 @@ public sealed class ReviewViewModel : ObservableObject, IScreen
                 .Select(s => s.Name)
                 .ToList();
             if (names.Count > 0)
-                changesList.Add((group.Title, (IReadOnlyList<string>)names));
+                changesList.Add(new ReviewGroup(group.Title, names));
         }
         Changes = changesList;
 

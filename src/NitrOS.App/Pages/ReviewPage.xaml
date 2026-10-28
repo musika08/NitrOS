@@ -1,0 +1,149 @@
+<Page
+    x:Class="NitrOS.App.Pages.ReviewPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:screens="using:NitrOS.App.Logic.Screens"
+    mc:Ignorable="d">
+
+    <ScrollViewer XYFocusKeyboardNavigation="Enabled">
+        <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
+                    Margin="24"
+                    Spacing="16"
+                    HorizontalAlignment="Center">
+
+            <TextBlock Text="Review your changes"
+                       Style="{ThemeResource TitleTextBlockStyle}" />
+
+            <!-- Safety note -->
+            <TextBlock Text="{x:Bind ViewModel.SafetyNote, Mode=OneWay}"
+                       Style="{ThemeResource SubtitleTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Visibility="{x:Bind ViewModel.SafetyNote, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
+
+            <!-- Irreversible changes notice -->
+            <Border Visibility="{x:Bind ViewModel.IrreversibleWarning, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"
+                    Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}"
+                    BorderBrush="{ThemeResource SystemFillColorCriticalBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Irreversible changes"
+                               Style="{ThemeResource BodyStrongTextBlockStyle}"
+                               Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                    <TextBlock Text="{x:Bind ViewModel.IrreversibleWarning, Mode=OneWay}"
+                               Style="{ThemeResource BodyTextBlockStyle}"
+                               TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.IrreversibleNames, Mode=OneWay}" Margin="0,4,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Text="{x:Bind}"
+                                           Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Dependency warnings -->
+            <Border Visibility="{x:Bind ViewModel.DependencyWarnings, Mode=OneWay, Converter={StaticResource HasItemsToVisibilityConverter}}"
+                    Background="{ThemeResource SystemFillColorCautionBackgroundBrush}"
+                    BorderBrush="{ThemeResource SystemFillColorCautionBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Dependency warnings"
+                               Style="{ThemeResource BodyStrongTextBlockStyle}"
+                               Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.DependencyWarnings, Mode=OneWay}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Text="{x:Bind}"
+                                           Style="{ThemeResource BodyTextBlockStyle}"
+                                           TextWrapping="Wrap" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Stops working summary -->
+            <Border Visibility="{x:Bind ViewModel.StopsWorking, Mode=OneWay, Converter={StaticResource HasItemsToVisibilityConverter}}"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="What stops working"
+                               Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.StopsWorking, Mode=OneWay}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Text="{x:Bind}"
+                                           Style="{ThemeResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,2" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Grouped changes list -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Switches to apply"
+                               Style="{ThemeResource SubtitleTextBlockStyle}" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Changes, Mode=OneWay}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="screens:ReviewGroup">
+                                <StackPanel Spacing="4" Margin="0,4">
+                                    <TextBlock Text="{x:Bind Group}"
+                                               Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                    <ItemsControl ItemsSource="{x:Bind Names}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="x:String">
+                                                <TextBlock Text="{x:Bind}"
+                                                           Style="{ThemeResource BodyTextBlockStyle}"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                           Margin="12,1,0,1" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Unavailable reason banner -->
+            <TextBlock Text="{x:Bind ViewModel.GoUnavailableReason, Mode=OneWay}"
+                       Style="{ThemeResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                       Visibility="{x:Bind ViewModel.GoUnavailableReason, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"
+                       TextWrapping="Wrap" />
+
+            <!-- Action buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,8,0,0">
+                <Button x:Name="GoButton"
+                        Content="Go"
+                        Style="{ThemeResource AccentButtonStyle}"
+                        Command="{x:Bind ViewModel.Go}"
+                        MinWidth="120" />
+
+                <Button Content="Back"
+                        Command="{x:Bind ViewModel.Back}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

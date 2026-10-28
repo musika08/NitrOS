@@ -1,12 +1,20 @@
 <Application
     x:Class="NitrOS.App.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:NitrOS.App">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <ResourceDictionary Source="Styles/Sizes.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+            <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+            <local:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+            <local:StringToBoolConverter x:Key="StringToBoolConverter" />
+            <local:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <local:HasItemsToVisibilityConverter x:Key="HasItemsToVisibilityConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

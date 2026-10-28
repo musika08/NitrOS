@@ -1,0 +1,85 @@
+<Page
+    x:Class="NitrOS.App.Pages.HealthPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:screens="using:NitrOS.App.Logic.Screens"
+    mc:Ignorable="d">
+
+    <ScrollViewer XYFocusKeyboardNavigation="Enabled">
+        <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
+                    Margin="24"
+                    Spacing="16"
+                    HorizontalAlignment="Center">
+
+            <TextBlock Text="System health check"
+                       Style="{ThemeResource TitleTextBlockStyle}" />
+
+            <TextBlock Text="{x:Bind ViewModel.AfterRestartLine, Mode=OneWay}"
+                       Style="{ThemeResource SubtitleTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Visibility="{x:Bind ViewModel.AfterRestartLine, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
+
+            <!-- Health items list -->
+            <ItemsControl ItemsSource="{x:Bind ViewModel.Items, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="screens:HealthRow">
+                        <Border Margin="0,4"
+                                Padding="16"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="4" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{x:Bind Name}"
+                                                   Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                        <TextBlock Text="OK"
+                                                   Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                                   Visibility="{x:Bind Ok, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="Needs attention"
+                                                   Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                                   Visibility="{x:Bind Ok, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                                   FontWeight="SemiBold" />
+                                    </StackPanel>
+
+                                    <TextBlock Text="{x:Bind Detail}"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               Visibility="{x:Bind Detail, Converter={StaticResource NullToVisibilityConverter}}" />
+
+                                    <TextBlock Text="{x:Bind LikelySwitchName}"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                               Visibility="{x:Bind LikelySwitchName, Converter={StaticResource NullToVisibilityConverter}}" />
+                                </StackPanel>
+
+                                <Button Grid.Column="1"
+                                        Content="Undo change"
+                                        Command="{x:Bind UndoLikely}"
+                                        Visibility="{x:Bind UndoLikely, Converter={StaticResource NullToVisibilityConverter}}"
+                                        VerticalAlignment="Center"
+                                        Margin="16,0,0,0" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Bottom action buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,8,0,0">
+                <Button Content="Check again"
+                        Style="{ThemeResource AccentButtonStyle}"
+                        Command="{x:Bind ViewModel.CheckAgain}"
+                        MinWidth="120" />
+
+                <Button Content="Back"
+                        Command="{x:Bind ViewModel.Back}"
+                        MinWidth="100" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

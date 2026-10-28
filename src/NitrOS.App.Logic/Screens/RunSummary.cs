@@ -6,10 +6,22 @@ namespace NitrOS.App.Logic.Screens;
 
 public enum SwitchUndoState { CanUndo, Undone, CannotUndo, NothingToUndo }
 
-public sealed record SwitchSummary(string Id, string Name, SwitchUndoState State, string? Hint);
+public sealed record SwitchSummary(string Id, string Name, SwitchUndoState State, string? Hint)
+{
+    public bool CanUndo => State == SwitchUndoState.CanUndo;
+    public string? Reason => Hint ?? (State switch
+    {
+        SwitchUndoState.Undone => "Already undone",
+        SwitchUndoState.CannotUndo => "Cannot be undone by NitrOS",
+        SwitchUndoState.NothingToUndo => "Nothing to undo",
+        _ => null
+    });
+}
 
 public sealed record RunSummary(string Path, string RunId, DateTimeOffset When, IReadOnlyList<SwitchSummary> Switches)
 {
+    public string Title => $"Tune run from {When.LocalDateTime:yyyy-MM-dd HH:mm}";
+    public string Subtitle => $"{Switches.Count} changes recorded";
     public static RunSummary Build(string path, RunJournal journal, Catalog catalog)
     {
         ArgumentNullException.ThrowIfNull(journal);

@@ -8,4 +8,7 @@ public sealed record CardItem(
     string MemoryText,
     string ProcessesText,
     string StopsText,
-    string? PartlyNote);
+    string? PartlyNote)
+{
+    public bool IsRecommended => Id == CardId.Recommended;
+}

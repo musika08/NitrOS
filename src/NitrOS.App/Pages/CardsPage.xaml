@@ -1,0 +1,84 @@
+<Page
+    x:Class="NitrOS.App.Pages.CardsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:screens="using:NitrOS.App.Logic.Screens"
+    mc:Ignorable="d">
+
+    <ScrollViewer XYFocusKeyboardNavigation="Enabled">
+        <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
+                    Margin="24"
+                    Spacing="16"
+                    HorizontalAlignment="Center">
+
+            <TextBlock Text="Choose a profile"
+                       Style="{ThemeResource TitleTextBlockStyle}" />
+
+            <TextBlock Text="{x:Bind ViewModel.MemoryLine, Mode=OneWay}"
+                       Style="{ThemeResource SubtitleTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+            <ItemsControl x:Name="CardsList" ItemsSource="{x:Bind ViewModel.Cards, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="screens:CardItem">
+                        <Border Margin="0,6"
+                                Padding="20"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="6" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{x:Bind Title}"
+                                                   Style="{ThemeResource SubtitleTextBlockStyle}"
+                                                   FontWeight="SemiBold" />
+                                        <Border Visibility="{x:Bind IsRecommended, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                CornerRadius="4"
+                                                Padding="6,2">
+                                            <TextBlock Text="Recommended"
+                                                       FontSize="11"
+                                                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,4,0,0">
+                                        <TextBlock Text="{x:Bind MemoryText}"
+                                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                                   Visibility="{x:Bind MemoryText, Converter={StaticResource NullToVisibilityConverter}}" />
+                                        <TextBlock Text="{x:Bind ProcessesText}"
+                                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                                   Visibility="{x:Bind ProcessesText, Converter={StaticResource NullToVisibilityConverter}}" />
+                                    </StackPanel>
+
+                                    <TextBlock Text="{x:Bind StopsText}"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                               TextWrapping="Wrap" />
+
+                                    <TextBlock Text="{x:Bind PartlyNote}"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                               TextWrapping="Wrap"
+                                               Visibility="{x:Bind PartlyNote, Converter={StaticResource NullToVisibilityConverter}}" />
+                                </StackPanel>
+
+                                <Button x:Name="PickButton"
+                                        Grid.Column="1"
+                                        Content="Pick"
+                                        Style="{ThemeResource AccentButtonStyle}"
+                                        Tag="{x:Bind Id}"
+                                        Click="OnPickClicked"
+                                        VerticalAlignment="Center"
+                                        Margin="16,0,0,0" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
