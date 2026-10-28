@@ -1,5 +1,6 @@
 using NitrOS.Core.Model;
 using NitrOS.Live.Journal;
+using NitrOS.Live.Systems;
 using NitrOS.Live.Tests.Fakes;
 
 namespace NitrOS.Live.Tests;
@@ -46,7 +47,7 @@ public sealed class DriftCheckerTests : IDisposable
         Assert.Empty(new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid).Drifted);
 
         Tune.Put(_f, "C", "0");
-        _f.Registry.DeleteValue(Systems.LiveHive.LocalMachine, Tune.Key, "D", Systems.RegView.Default);
+        _f.Registry.DeleteValue(LiveHive.LocalMachine, Tune.Key, "D", RegView.Default);
 
         Assert.Equal(["sw.turned", "sw.deleted"], new DriftChecker(_f.ToLive()).Check(journal, Tune.Options.UserSid).Drifted);
     }
