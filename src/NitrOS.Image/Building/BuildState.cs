@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using NitrOS.Core.Json;
 using NitrOS.Core.Model;
+using NitrOS.Image.FirstBoot;
 
 public sealed record BuildState(
     string BuildId,
@@ -19,7 +20,8 @@ public sealed record BuildState(
     IReadOnlyList<ImageEntry> Entries,
     string WorkFolder,
     DateTimeOffset Created,
-    DateTimeOffset Updated)
+    DateTimeOffset Updated,
+    FirstBootPlan? FirstBoot = null)
 {
     public static string NewBuildId(DateTimeOffset? now = null)
     {

@@ -17,6 +17,7 @@ public sealed class FakeImageServicing : IImageServicing
     public List<ImageEdition> EditionsList { get; } = [];
 
     public string? FailOn { get; set; }
+    public Exception? CustomException { get; set; }
     public string? CrashOn { get; set; }
     public MountStatus DefaultMountStatus { get; set; } = MountStatus.Ok;
 
@@ -25,7 +26,7 @@ public sealed class FakeImageServicing : IImageServicing
         Calls.Add(callName);
         if (string.Equals(FailOn, callName, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException($"Simulated failure on {callName}");
+            throw CustomException ?? new InvalidOperationException($"Simulated failure on {callName}");
         }
         if (string.Equals(CrashOn, callName, StringComparison.OrdinalIgnoreCase))
         {
