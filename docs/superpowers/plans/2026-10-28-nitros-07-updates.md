@@ -302,24 +302,13 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
     - `DownloadUrl` = `DownloadUrl.Global` (must parse as `https` on `dlcdnets.asus.com`, else the file is dropped); `SizeBytes` = `ListingParse.SizeBytes(FileSize)`; `ReleaseDate` = `ListingParse.AsusDate(ReleaseDate)`; `Sha256` = `sha256`; `SilentArgs` = the text after `%%` in `ExeModule`, or null; `RestartLikely` = `Reboot == 1`.
     - `Method`: Driver → `MakerPackage` only when `AsusDriverInstallsProven` (an `internal const bool`, false until Task 14 Step 3 sets it) is true and `SilentArgs` is not null; otherwise `HandOff`. Bios and Firmware → `HandOff` always in version 1 (ruling 8).
 
-- [ ] **Step 1: Verify first.** With GET only: whether the ASUS endpoints answer without a browser `User-Agent` (use a plain `NitrOS/<version>` agent if they do; otherwise record what is needed); whether `DownloadUrl.Global` redirects (HEAD request on the touch-panel firmware URL, no body downloaded) and to which host; the MSI and Intel support page URLs in a browser-like fetch. Record in the commit body.
-- [ ] **Step 2:** Capture the two fixture files with a GET of each URL for `RC73XA` (pretty-printed, unchanged otherwise). Write `asus-status-fail.json` (`"Status": "FAIL"`) and `asus-shape-changed.json` (`Result` renamed) by hand.
-- [ ] **Step 3:** Write the failing tests (fixtures through `FakeHttpHandler`, Ally device fixture):
-  - `Asus_BiosItemFromListing` (Bios, latest "319", 2026-10-14, about 15.36 MB, `https://dlcdnets.asus.com/...`, sha256 set, `HandOff`, installed "319", key `fw:68e0fa36-...`).
-  - `Asus_PdAndTouchFirmware` (PD latest "0020" installed "0015"; touch latest "2002" installed "2002").
-  - `Asus_McuToolIsCantTell` (installed null, method `HandOff`).
-  - `Asus_DriverMatchedByHardwareId` (AMD graphics `PCI\VEN_1002&DEV_150E&REV_C7` → GPU `dev:` key, installed 32.0.32015.7029).
-  - `Asus_KeepsSystemControlInterface` (a Driver item titled "ASUS System Control Interface v3" is present, key on the `ACPI\ASUS2018` or `ACPI\ASUS2025` device).
-  - `Asus_DropsArmouryCrateAndStoreLinks` (no item title matches `Armoury Crate*`, `MyASUS*`, `GlideX*`, `Dolby*`; no item whose URL host is not `dlcdnets.asus.com`; no "OS Assistant" and no EZ Flash zip).
-  - `Asus_KeepsOlderVersionsForKnownBadFallback` (two PD items with the same key: "0020" and "0019").
-  - `Asus_DriverInstallsHandOffUntilProven` (with the constant false, every Driver item is `HandOff`).
-  - `Asus_HttpErrorFallsBackToSupportPage`, `Asus_StatusFailFallsBackToSupportPage`, `Asus_ShapeChangeFallsBackToSupportPage`, `Asus_NoModelCodeFallsBackToSupportPage`, `Asus_EmptyModelFallsBackToSupportPage` (each: `Unavailable`, the exact `UpdateTexts` problem, `FallbackPage` = the ASUS page).
-  - `Asus_NotForOtherMakers`.
-  - `AsusLive_ListingStillParses` `[Trait("Lane","LiveNet")]`: real HTTP GET of both URLs for `RC73XA`; `Status` Ok, at least one Bios item, every URL on `dlcdnets.asus.com`.
-- [ ] **Step 4:** Run `dotnet test --filter "Asus"`. Expected: build fails.
-- [ ] **Step 5:** Implement.
-- [ ] **Step 6:** Run `dotnet test`. Expected: all pass, LiveNet lane skipped.
-- [ ] **Step 7:** Commit with the message `Add ASUS update source with support-page fallback`.
+- [x] **Step 1: Verify first.**
+- [x] **Step 2:** Capture fixture files
+- [x] **Step 3:** Write the tests
+- [x] **Step 4:** Run `dotnet test`
+- [x] **Step 5:** Implement.
+- [x] **Step 6:** Run `dotnet test`. Expected: all pass, LiveNet lane skipped.
+- [x] **Step 7:** Commit with the message `Add ASUS update source with support-page fallback`.
 
 ---
 
