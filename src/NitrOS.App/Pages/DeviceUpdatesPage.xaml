@@ -9,17 +9,32 @@
     XYFocusKeyboardNavigation="Enabled">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="16" Margin="32">
+        <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
+                    Margin="24,20"
+                    Spacing="14"
+                    HorizontalAlignment="Center">
 
             <!-- Top Header & Check Actions -->
-            <StackPanel Spacing="8">
-                <TextBlock Text="Device updates" Style="{StaticResource TitleTextBlockStyle}" />
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <Button x:Name="CheckButton" Content="Check for updates" Command="{x:Bind ViewModel.CheckCommand, Mode=OneWay}" />
-                    <TextBlock Text="{x:Bind ViewModel.LastChecked, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <StackPanel Spacing="6">
+                <TextBlock Text="Device updates"
+                           FontSize="24"
+                           FontWeight="SemiBold" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button x:Name="CheckButton"
+                            Content="Check for updates"
+                            Command="{x:Bind ViewModel.CheckCommand, Mode=OneWay}" />
+                    <TextBlock Text="{x:Bind ViewModel.LastChecked, Mode=OneWay}"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </StackPanel>
-                <ProgressBar IsIndeterminate="True" Visibility="{x:Bind ViewModel.IsChecking, Mode=OneWay}" />
-                <TextBlock Text="{x:Bind ViewModel.CheckProgress, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsChecking, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" />
+                <ProgressBar IsIndeterminate="True"
+                             Visibility="{x:Bind ViewModel.IsChecking, Mode=OneWay}"
+                             Margin="0,4,0,0" />
+                <TextBlock Text="{x:Bind ViewModel.CheckProgress, Mode=OneWay}"
+                           Visibility="{x:Bind ViewModel.IsChecking, Mode=OneWay}"
+                           FontSize="11"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             </StackPanel>
 
             <!-- Policy Note -->
@@ -27,6 +42,7 @@
                 IsOpen="True"
                 IsClosable="False"
                 Severity="Informational"
+                CornerRadius="{StaticResource AppleCardCornerRadius}"
                 Message="{x:Bind ViewModel.PolicyNote, Mode=OneWay}"
                 Visibility="{x:Bind ViewModel.PolicyNote, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
 
@@ -34,19 +50,33 @@
             <ItemsControl ItemsSource="{x:Bind ViewModel.Notices, Mode=OneWay}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="x:String">
-                        <InfoBar IsOpen="True" IsClosable="False" Severity="Warning" Message="{x:Bind}" Margin="0,4" />
+                        <InfoBar IsOpen="True"
+                                 IsClosable="False"
+                                 Severity="Warning"
+                                 CornerRadius="{StaticResource AppleCardCornerRadius}"
+                                 Message="{x:Bind}"
+                                 Margin="0,2" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
             <!-- Update Items List -->
-            <TextBlock Text="Devices and updates" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,8,0,0" />
+            <TextBlock Text="Devices and updates"
+                       FontSize="15"
+                       FontWeight="SemiBold"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Margin="2,4,0,0" />
 
             <ItemsControl ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="screens:UpdateRow">
-                        <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="16" Margin="0,4">
-                            <Grid RowSpacing="8" ColumnSpacing="16">
+                        <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource AppleCardCornerRadius}"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                Padding="14,10"
+                                Margin="0,3">
+                            <Grid RowSpacing="6" ColumnSpacing="12">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
@@ -59,18 +89,35 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!-- Title, Kind, State badge -->
-                                <StackPanel Orientation="Horizontal" Spacing="8" Grid.Row="0" Grid.Column="0">
-                                    <TextBlock Text="{x:Bind Name}" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
-                                    <Border Background="{ThemeResource AccentFillColorDefaultBrush}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                        <TextBlock Text="{x:Bind KindText}" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" />
+                                <StackPanel Orientation="Horizontal" Spacing="8" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Name}"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <Border Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                            CornerRadius="{StaticResource ApplePillCornerRadius}"
+                                            Padding="6,1"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind KindText}"
+                                                   Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold" />
                                     </Border>
-                                    <Border Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                        <TextBlock Text="{x:Bind StateText}" Style="{StaticResource CaptionTextBlockStyle}" />
+                                    <Border Background="{ThemeResource LayerFillColorAltBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="{StaticResource ApplePillCornerRadius}"
+                                            Padding="6,1"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind StateText}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                     </Border>
                                 </StackPanel>
 
                                 <!-- Buttons -->
-                                <StackPanel Orientation="Horizontal" Spacing="8" Grid.Row="0" Grid.Column="1">
+                                <StackPanel Orientation="Horizontal" Spacing="6" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center">
                                     <Button Content="Install" Command="{x:Bind Install}" Visibility="{x:Bind Install, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" Style="{StaticResource AccentButtonStyle}" />
                                     <Button Content="Get anyway" Command="{x:Bind GetAnyway}" Visibility="{x:Bind GetAnyway, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
                                     <Button Content="Open page" Command="{x:Bind OpenPage}" Visibility="{x:Bind OpenPage, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
@@ -79,11 +126,21 @@
                                 </StackPanel>
 
                                 <!-- Versions & Details -->
-                                <StackPanel Spacing="4" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
-                                    <TextBlock Text="{x:Bind InstalledText}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    <TextBlock Text="{x:Bind LatestText}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    <TextBlock Text="{x:Bind AlsoOfferedText}" Visibility="{x:Bind AlsoOfferedText, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                                    <TextBlock Text="{x:Bind BlockedReason}" Visibility="{x:Bind BlockedReason, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                                <StackPanel Spacing="2" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
+                                    <TextBlock Text="{x:Bind InstalledText}"
+                                               FontSize="12"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Text="{x:Bind LatestText}"
+                                               FontSize="12"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Text="{x:Bind AlsoOfferedText}"
+                                               FontSize="11"
+                                               Visibility="{x:Bind AlsoOfferedText, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"
+                                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                    <TextBlock Text="{x:Bind BlockedReason}"
+                                               FontSize="11"
+                                               Visibility="{x:Bind BlockedReason, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"
+                                               Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
                                 </StackPanel>
 
                                 <!-- Warning for Firmware -->
@@ -91,14 +148,23 @@
                                     Text="Do not turn off your PC while firmware is updating."
                                     Visibility="{x:Bind IsFirmware}"
                                     Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                                    Style="{StaticResource CaptionTextBlockStyle}"
+                                    FontSize="11"
                                     Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" />
 
                                 <!-- Progress & Result -->
-                                <StackPanel Spacing="4" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2">
-                                    <TextBlock Text="{x:Bind Progress, Mode=OneWay}" Visibility="{x:Bind Progress, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-                                    <TextBlock Text="{x:Bind Result, Mode=OneWay}" Visibility="{x:Bind Result, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                    <TextBlock Text="{x:Bind Unavailable, Mode=OneWay}" Visibility="{x:Bind Unavailable, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" />
+                                <StackPanel Spacing="3" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2">
+                                    <TextBlock Text="{x:Bind Progress, Mode=OneWay}"
+                                               Visibility="{x:Bind Progress, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"
+                                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                               FontSize="12" />
+                                    <TextBlock Text="{x:Bind Result, Mode=OneWay}"
+                                               Visibility="{x:Bind Result, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"
+                                               FontSize="12"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{x:Bind Unavailable, Mode=OneWay}"
+                                               Visibility="{x:Bind Unavailable, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               FontSize="11" />
                                 </StackPanel>
                             </Grid>
                         </Border>

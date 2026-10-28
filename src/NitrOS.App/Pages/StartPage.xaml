@@ -9,39 +9,48 @@
 
     <ScrollViewer XYFocusKeyboardNavigation="Enabled">
         <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
-                    Margin="24"
-                    Spacing="16"
+                    Margin="24,20"
+                    Spacing="14"
                     HorizontalAlignment="Center">
 
-            <TextBlock Text="What would you like to do?"
-                       Style="{ThemeResource TitleTextBlockStyle}"
-                       Margin="0,0,0,8" />
+            <!-- Apple-style refined header -->
+            <StackPanel Spacing="3" Margin="0,0,0,4">
+                <TextBlock Text="Overview"
+                           FontSize="24"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="Manage tuning setups, device updates, and system health."
+                           FontSize="13"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
 
             <!-- Banner for session warnings or drift findings -->
             <InfoBar IsOpen="{x:Bind ViewModel.Banner, Mode=OneWay, Converter={StaticResource StringToBoolConverter}}"
                      Severity="Warning"
                      IsClosable="False"
+                     CornerRadius="{StaticResource AppleCardCornerRadius}"
                      Message="{x:Bind ViewModel.Banner, Mode=OneWay}"
                      Visibility="{x:Bind ViewModel.Banner, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
 
+            <!-- Apple-like compact grouped cards -->
             <ItemsControl ItemsSource="{x:Bind ViewModel.Entries, Mode=OneWay}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="screens:StartEntry">
-                        <Border Margin="0,4"
-                                Padding="16"
+                        <Border Margin="0,3"
+                                Padding="16,12"
                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                 BorderThickness="1"
-                                CornerRadius="8">
+                                CornerRadius="{StaticResource AppleCardCornerRadius}">
                             <Grid ColumnDefinitions="*,Auto">
-                                <StackPanel Spacing="4" VerticalAlignment="Center">
+                                <StackPanel Spacing="3" VerticalAlignment="Center">
                                     <TextBlock Text="{x:Bind Title}"
-                                               Style="{ThemeResource SubtitleTextBlockStyle}" />
+                                               FontSize="15"
+                                               FontWeight="SemiBold" />
                                     <TextBlock Text="{x:Bind Description}"
-                                               Style="{ThemeResource BodyTextBlockStyle}"
+                                               FontSize="13"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                     <TextBlock Text="{x:Bind DisabledReason}"
-                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               FontSize="12"
                                                Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                                Visibility="{x:Bind DisabledReason, Converter={StaticResource NullToVisibilityConverter}}" />
                                 </StackPanel>
@@ -50,6 +59,7 @@
                                         Content="Open"
                                         Command="{x:Bind Open}"
                                         IsEnabled="{x:Bind Enabled}"
+                                        MinWidth="72"
                                         VerticalAlignment="Center"
                                         Margin="16,0,0,0" />
                             </Grid>

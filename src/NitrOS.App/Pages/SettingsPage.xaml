@@ -8,25 +8,27 @@
 
     <ScrollViewer XYFocusKeyboardNavigation="Enabled">
         <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
-                    Margin="24"
-                    Spacing="16"
+                    Margin="24,20"
+                    Spacing="14"
                     HorizontalAlignment="Center">
 
             <TextBlock Text="Settings"
-                       Style="{ThemeResource TitleTextBlockStyle}" />
+                       FontSize="24"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,4" />
 
-            <Border Padding="20"
+            <Border Padding="16,12"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
-                    CornerRadius="8">
+                    CornerRadius="{StaticResource AppleCardCornerRadius}">
                 <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Spacing="4" VerticalAlignment="Center">
+                    <StackPanel Spacing="3" VerticalAlignment="Center">
                         <TextBlock Text="Check after Windows updates"
-                                   Style="{ThemeResource SubtitleTextBlockStyle}"
+                                   FontSize="15"
                                    FontWeight="SemiBold" />
                         <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}"
-                                   Style="{ThemeResource BodyTextBlockStyle}"
+                                   FontSize="13"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    TextWrapping="Wrap" />
                     </StackPanel>
@@ -41,8 +43,8 @@
 
             <Button Content="Back"
                     Command="{x:Bind ViewModel.Back}"
-                    Margin="0,8,0,0"
-                    MinWidth="100" />
+                    Margin="0,6,0,0"
+                    MinWidth="90" />
         </StackPanel>
     </ScrollViewer>
 </Page>

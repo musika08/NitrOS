@@ -9,16 +9,18 @@
 
     <ScrollViewer XYFocusKeyboardNavigation="Enabled">
         <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
-                    Margin="24"
-                    Spacing="16"
+                    Margin="24,20"
+                    Spacing="14"
                     HorizontalAlignment="Center">
 
             <TextBlock Text="Review your changes"
-                       Style="{ThemeResource TitleTextBlockStyle}" />
+                       FontSize="24"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,4" />
 
             <!-- Safety note -->
             <TextBlock Text="{x:Bind ViewModel.SafetyNote, Mode=OneWay}"
-                       Style="{ThemeResource SubtitleTextBlockStyle}"
+                       FontSize="13"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        Visibility="{x:Bind ViewModel.SafetyNote, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
 
@@ -27,20 +29,22 @@
                     Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}"
                     BorderBrush="{ThemeResource SystemFillColorCriticalBrush}"
                     BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="16">
-                <StackPanel Spacing="6">
+                    CornerRadius="{StaticResource AppleCardCornerRadius}"
+                    Padding="14,10">
+                <StackPanel Spacing="4">
                     <TextBlock Text="Irreversible changes"
-                               Style="{ThemeResource BodyStrongTextBlockStyle}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
                                Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
                     <TextBlock Text="{x:Bind ViewModel.IrreversibleWarning, Mode=OneWay}"
-                               Style="{ThemeResource BodyTextBlockStyle}"
+                               FontSize="12"
                                TextWrapping="Wrap" />
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.IrreversibleNames, Mode=OneWay}" Margin="0,4,0,0">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.IrreversibleNames, Mode=OneWay}" Margin="0,2,0,0">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="x:String">
                                 <TextBlock Text="{x:Bind}"
-                                           Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                           FontSize="12"
+                                           FontWeight="SemiBold" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -52,17 +56,18 @@
                     Background="{ThemeResource SystemFillColorCautionBackgroundBrush}"
                     BorderBrush="{ThemeResource SystemFillColorCautionBrush}"
                     BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="16">
-                <StackPanel Spacing="6">
+                    CornerRadius="{StaticResource AppleCardCornerRadius}"
+                    Padding="14,10">
+                <StackPanel Spacing="4">
                     <TextBlock Text="Dependency warnings"
-                               Style="{ThemeResource BodyStrongTextBlockStyle}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
                                Foreground="{ThemeResource SystemFillColorCautionBrush}" />
                     <ItemsControl ItemsSource="{x:Bind ViewModel.DependencyWarnings, Mode=OneWay}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="x:String">
                                 <TextBlock Text="{x:Bind}"
-                                           Style="{ThemeResource BodyTextBlockStyle}"
+                                           FontSize="12"
                                            TextWrapping="Wrap" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -75,19 +80,20 @@
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="16">
-                <StackPanel Spacing="6">
+                    CornerRadius="{StaticResource AppleCardCornerRadius}"
+                    Padding="14,10">
+                <StackPanel Spacing="4">
                     <TextBlock Text="What stops working"
-                               Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                               FontSize="14"
+                               FontWeight="SemiBold" />
                     <ItemsControl ItemsSource="{x:Bind ViewModel.StopsWorking, Mode=OneWay}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="x:String">
                                 <TextBlock Text="{x:Bind}"
-                                           Style="{ThemeResource CaptionTextBlockStyle}"
+                                           FontSize="12"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            TextWrapping="Wrap"
-                                           Margin="0,2" />
+                                           Margin="0,1" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -98,24 +104,26 @@
             <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="16">
-                <StackPanel Spacing="12">
+                    CornerRadius="{StaticResource AppleCardCornerRadius}"
+                    Padding="14,10">
+                <StackPanel Spacing="8">
                     <TextBlock Text="Switches to apply"
-                               Style="{ThemeResource SubtitleTextBlockStyle}" />
+                               FontSize="15"
+                               FontWeight="SemiBold" />
                     <ItemsControl ItemsSource="{x:Bind ViewModel.Changes, Mode=OneWay}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="screens:ReviewGroup">
-                                <StackPanel Spacing="4" Margin="0,4">
+                                <StackPanel Spacing="3" Margin="0,3">
                                     <TextBlock Text="{x:Bind Group}"
-                                               Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                               FontSize="13"
+                                               FontWeight="SemiBold" />
                                     <ItemsControl ItemsSource="{x:Bind Names}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="x:String">
                                                 <TextBlock Text="{x:Bind}"
-                                                           Style="{ThemeResource BodyTextBlockStyle}"
+                                                           FontSize="12"
                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                           Margin="12,1,0,1" />
+                                                           Margin="10,1,0,1" />
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
@@ -128,21 +136,22 @@
 
             <!-- Unavailable reason banner -->
             <TextBlock Text="{x:Bind ViewModel.GoUnavailableReason, Mode=OneWay}"
-                       Style="{ThemeResource CaptionTextBlockStyle}"
+                       FontSize="12"
                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                        Visibility="{x:Bind ViewModel.GoUnavailableReason, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"
                        TextWrapping="Wrap" />
 
             <!-- Action buttons -->
-            <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,8,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,6,0,0">
                 <Button x:Name="GoButton"
                         Content="Go"
                         Style="{ThemeResource AccentButtonStyle}"
                         Command="{x:Bind ViewModel.Go}"
-                        MinWidth="120" />
+                        MinWidth="100" />
 
                 <Button Content="Back"
-                        Command="{x:Bind ViewModel.Back}" />
+                        Command="{x:Bind ViewModel.Back}"
+                        MinWidth="80" />
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

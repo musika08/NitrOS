@@ -9,50 +9,70 @@
 
     <ScrollViewer XYFocusKeyboardNavigation="Enabled">
         <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
-                    Margin="24"
-                    Spacing="16"
+                    Margin="24,20"
+                    Spacing="14"
                     HorizontalAlignment="Center">
 
-            <TextBlock Text="System health check"
-                       Style="{ThemeResource TitleTextBlockStyle}" />
-
-            <TextBlock Text="{x:Bind ViewModel.AfterRestartLine, Mode=OneWay}"
-                       Style="{ThemeResource SubtitleTextBlockStyle}"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                       Visibility="{x:Bind ViewModel.AfterRestartLine, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
+            <StackPanel Spacing="3" Margin="0,0,0,4">
+                <TextBlock Text="System health check"
+                           FontSize="24"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="{x:Bind ViewModel.AfterRestartLine, Mode=OneWay}"
+                           FontSize="13"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Visibility="{x:Bind ViewModel.AfterRestartLine, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
+            </StackPanel>
 
             <!-- Health items list -->
             <ItemsControl ItemsSource="{x:Bind ViewModel.Items, Mode=OneWay}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="screens:HealthRow">
-                        <Border Margin="0,4"
-                                Padding="16"
+                        <Border Margin="0,3"
+                                Padding="14,10"
                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                 BorderThickness="1"
-                                CornerRadius="8">
+                                CornerRadius="{StaticResource AppleCardCornerRadius}">
                             <Grid ColumnDefinitions="*,Auto">
-                                <StackPanel Spacing="4" VerticalAlignment="Center">
+                                <StackPanel Spacing="3" VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <TextBlock Text="{x:Bind Name}"
-                                                   Style="{ThemeResource BodyStrongTextBlockStyle}" />
-                                        <TextBlock Text="OK"
-                                                   Foreground="{ThemeResource SystemFillColorSuccessBrush}"
-                                                   Visibility="{x:Bind Ok, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                   FontWeight="SemiBold" />
-                                        <TextBlock Text="Needs attention"
-                                                   Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                                                   Visibility="{x:Bind Ok, Converter={StaticResource InverseBoolToVisibilityConverter}}"
-                                                   FontWeight="SemiBold" />
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
+                                        <Border Visibility="{x:Bind Ok, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
+                                                BorderBrush="{ThemeResource SystemFillColorSuccessBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="{StaticResource ApplePillCornerRadius}"
+                                                Padding="6,1"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="OK"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                                        </Border>
+                                        <Border Visibility="{x:Bind Ok, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                                Background="{ThemeResource SystemFillColorCautionBackgroundBrush}"
+                                                BorderBrush="{ThemeResource SystemFillColorCautionBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="{StaticResource ApplePillCornerRadius}"
+                                                Padding="6,1"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="Needs attention"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                                        </Border>
                                     </StackPanel>
 
                                     <TextBlock Text="{x:Bind Detail}"
-                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               FontSize="12"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                Visibility="{x:Bind Detail, Converter={StaticResource NullToVisibilityConverter}}" />
 
                                     <TextBlock Text="{x:Bind LikelySwitchName}"
-                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               FontSize="11"
                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                Visibility="{x:Bind LikelySwitchName, Converter={StaticResource NullToVisibilityConverter}}" />
                                 </StackPanel>
@@ -70,15 +90,15 @@
             </ItemsControl>
 
             <!-- Bottom action buttons -->
-            <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,8,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,6,0,0">
                 <Button Content="Check again"
                         Style="{ThemeResource AccentButtonStyle}"
                         Command="{x:Bind ViewModel.CheckAgain}"
-                        MinWidth="120" />
+                        MinWidth="110" />
 
                 <Button Content="Back"
                         Command="{x:Bind ViewModel.Back}"
-                        MinWidth="100" />
+                        MinWidth="90" />
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

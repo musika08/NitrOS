@@ -10,20 +10,29 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid x:Name="TitleBarArea" Height="48" Padding="16,0">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+        <!-- Apple macOS-style compact 44px navigation bar with subtle bottom border -->
+        <Border x:Name="TitleBarArea"
+                Height="44"
+                Padding="16,0"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1"
+                Background="{ThemeResource LayerFillColorAltBrush}">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10">
                 <Button x:Name="BackButton"
                         Content="&#xE72B;"
                         FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                        Width="40" Height="40"
+                        Width="32" Height="32"
+                        Padding="0"
+                        CornerRadius="16"
                         Visibility="Collapsed"
                         Click="OnBackClicked" />
                 <TextBlock Text="NitrOS"
-                           Style="{ThemeResource TitleTextBlockStyle}"
-                           FontSize="18"
-                           VerticalAlignment="Center" />
+                           FontSize="15"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
             </StackPanel>
-        </Grid>
+        </Border>
 
         <Frame x:Name="ContentFrame"
                Grid.Row="1" />
