@@ -1,6 +1,10 @@
 using NitrOS.Core.Loading;
 using NitrOS.Core.Model;
 using NitrOS.Core.Selecting;
+using NitrOS.Image.Building;
+using NitrOS.Image.Iso;
+using NitrOS.Image.Systems;
+using NitrOS.Image.Windows;
 using NitrOS.Live;
 using NitrOS.Live.Journal;
 using NitrOS.Live.Systems;
@@ -20,7 +24,21 @@ public static class CliApp
 
     private sealed class UsageException(string message) : Exception(message);
 
-    private sealed record Parsed(string? Card, string[]? Ids, bool Yes, bool AllowNoRestore, string? Catalog, List<string> Positional);
+    private sealed record Parsed(
+        string? Card,
+        string[]? Ids,
+        bool Yes,
+        bool AllowNoRestore,
+        string? Catalog,
+        string? Source,
+        string? Out,
+        int? Edition,
+        string? ToolsDir,
+        bool Discard,
+        string? StopAfter,
+        string? FirstBootRoute,
+        string? IsoCard,
+        List<string> Positional);
 
     public static int Run(string[] args, TextWriter output, LiveSystems systems, CliEnvironment env, CancellationToken ct = default) =>
         Run(args, output, env with { Systems = () => systems }, ct);
@@ -43,6 +61,8 @@ public static class CliApp
                 "health" => Health(p, output, env),
                 "journals" => Journals(p, output, env),
                 "restore-xbox" => RestoreXbox(p, output, env, ct),
+                "image-info" => ImageInfo(p, output, env),
+                "build-iso" => BuildIso(p, output, env, ct),
                 _ => throw new UsageException($"Unknown command '{command}'."),
             };
         }
@@ -71,16 +91,20 @@ public static class CliApp
           nitros apply --card <...> [--ids a,b] --yes [--allow-without-restore-point] [--catalog <dir>]
           nitros undo  <journal> [--ids a,b] --yes
           nitros drift <journal>
-          nitros health
+          nitros health [--iso-card <card>]
           nitros journals
           nitros restore-xbox --yes [--catalog <dir>]
+          nitros image-info --source <iso|folder>
+          nitros build-iso --source <iso|folder> --out <iso> (--card <...> | --ids a,b) [--edition <n>] [--tools-dir <dir>] --yes
+          nitros build-iso --out <iso> --discard --yes
         """;
 
     private static Parsed Parse(string[] args)
     {
-        string? card = null, catalog = null;
+        string? card = null, catalog = null, source = null, outIso = null, toolsDir = null, stopAfter = null, firstBootRoute = null, isoCard = null;
+        int? edition = null;
         string[]? ids = null;
-        bool yes = false, allow = false;
+        bool yes = false, allow = false, discard = false;
         var positional = new List<string>();
         for (var i = 0; i < args.Length; i++)
         {
@@ -90,6 +114,17 @@ public static class CliApp
                 case "--allow-without-restore-point": allow = true; break;
                 case "--card": card = Value(args, ref i); break;
                 case "--catalog": catalog = Value(args, ref i); break;
+                case "--source": source = Value(args, ref i); break;
+                case "--out": outIso = Value(args, ref i); break;
+                case "--edition":
+                    if (!int.TryParse(Value(args, ref i), out var ed)) throw new UsageException("--edition must be an integer.");
+                    edition = ed;
+                    break;
+                case "--tools-dir": toolsDir = Value(args, ref i); break;
+                case "--discard": discard = true; break;
+                case "--stop-after": stopAfter = Value(args, ref i); break;
+                case "--first-boot-route": firstBootRoute = Value(args, ref i); break;
+                case "--iso-card": isoCard = Value(args, ref i); break;
                 case "--ids":
                     ids = Value(args, ref i).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                     if (ids.Length == 0) throw new UsageException("--ids needs at least one id.");
@@ -99,7 +134,7 @@ public static class CliApp
                 default: positional.Add(args[i]); break;
             }
         }
-        return new Parsed(card, ids, yes, allow, catalog, positional);
+        return new Parsed(card, ids, yes, allow, catalog, source, outIso, edition, toolsDir, discard, stopAfter, firstBootRoute, isoCard, positional);
     }
 
     private static string Value(string[] args, ref int i)
@@ -275,21 +310,43 @@ public static class CliApp
     private static int Health(Parsed p, TextWriter o, CliEnvironment env)
     {
         NoPositional(p);
+
+        if (!string.IsNullOrWhiteSpace(p.IsoCard))
+        {
+            var card = ParseCard(p.IsoCard);
+            var load = CatalogLoader.Load(p.Catalog ?? env.CatalogDir);
+            if (!load.Ok)
+            {
+                o.WriteLine($"Error: Could not load catalog from '{p.Catalog ?? env.CatalogDir}'.");
+                return BadArguments;
+            }
+
+            var sel = Selection.FromCard(load.Catalog!, card, TargetMode.BuildIso, DeviceProfile.Desktop);
+            o.WriteLine($"Health check for ISO preset '{p.IsoCard}' ({sel.On.Count} switches):");
+            var applied = new HashSet<string>(sel.On, StringComparer.Ordinal);
+            var report = HealthCheck.Run(env.Health, applied);
+            foreach (var i in report.Items)
+            {
+                o.WriteLine($"{(i.Ok ? "OK  " : "FAIL")} {i.Name}{(i.Ok || i.LikelySwitchId is null ? "" : $" (likely: {i.LikelySwitchId})")}");
+            }
+            return report.AllOk ? Ok : Refused;
+        }
+
         var store = OpenStore(o, env, refuse: false);
-        var applied = new HashSet<string>(StringComparer.Ordinal);
+        var appliedNormal = new HashSet<string>(StringComparer.Ordinal);
         if (store?.List().FirstOrDefault() is { } latest)
         {
             try
             {
                 foreach (var e in store.Load(latest).Entries)
-                    if (e.Outcome == ActionOutcome.Applied) applied.Add(e.SwitchId);
+                    if (e.Outcome == ActionOutcome.Applied) appliedNormal.Add(e.SwitchId);
             }
             catch (Exception) { /* unreadable journal: check as if nothing was applied */ }
         }
-        var report = HealthCheck.Run(env.Health, applied);
-        foreach (var i in report.Items)
+        var reportNormal = HealthCheck.Run(env.Health, appliedNormal);
+        foreach (var i in reportNormal.Items)
             o.WriteLine($"{(i.Ok ? "OK  " : "FAIL")} {i.Name}{(i.Ok || i.LikelySwitchId is null ? "" : $" (likely: {i.LikelySwitchId})")}");
-        return report.AllOk ? Ok : Refused;
+        return reportNormal.AllOk ? Ok : Refused;
     }
 
     private static int Journals(Parsed p, TextWriter o, CliEnvironment env)
@@ -490,6 +547,182 @@ public static class CliApp
         }
 
         o.WriteLine("Restore Xbox completed successfully.");
+        return Ok;
+    }
+
+    private static int ImageInfo(Parsed p, TextWriter o, CliEnvironment env)
+    {
+        NoPositional(p);
+        if (string.IsNullOrWhiteSpace(p.Source))
+        {
+            throw new UsageException("image-info requires --source <iso|folder>.");
+        }
+
+        var imgSystems = env.Image != null ? env.Image() : WinImageSystems.Create();
+        using var mount = imgSystems.Media.Open(p.Source);
+        var installWim = Path.Combine(mount.Root, "sources", "install.wim");
+        if (!imgSystems.Files.Exists(installWim))
+        {
+            installWim = Path.Combine(mount.Root, "sources", "install.esd");
+        }
+
+        var editions = imgSystems.Dism.Editions(installWim);
+        o.WriteLine($"Editions in '{p.Source}':");
+        foreach (var ed in editions)
+        {
+            o.WriteLine($"  Index {ed.Index}: {ed.Name} (Edition: {ed.EditionId}, Arch: {ed.Architecture}, Version: {ed.Version})");
+        }
+        return Ok;
+    }
+
+    private static int BuildIso(Parsed p, TextWriter o, CliEnvironment env, CancellationToken ct)
+    {
+        NoPositional(p);
+
+        if (p.Discard)
+        {
+            if (string.IsNullOrWhiteSpace(p.Out)) throw new UsageException("build-iso --discard requires --out <iso>.");
+            if (!p.Yes)
+            {
+                o.WriteLine("Refused: discard removes work files. Run with --yes to go ahead.");
+                return Refused;
+            }
+
+            var guard = SessionGuard.Check(env.Session);
+            if (!guard.Ok)
+            {
+                o.WriteLine($"Refused: {guard.Reason}");
+                return Refused;
+            }
+
+            var imgSystems = env.Image != null ? env.Image() : WinImageSystems.Create();
+            var outFull = Path.GetFullPath(p.Out);
+            var drive = Path.GetPathRoot(outFull) ?? "C:\\";
+            var existingWork = imgSystems.Files.SubFolders(drive)
+                .FirstOrDefault(d => Path.GetFileName(d).StartsWith("NitrOS-work-", StringComparison.OrdinalIgnoreCase) &&
+                                     new BuildStore(d).TryLoad() is { } st &&
+                                     string.Equals(st.Request.OutputIso, p.Out, StringComparison.OrdinalIgnoreCase));
+
+            if (existingWork != null)
+            {
+                imgSystems.Files.DeleteWorkTree(existingWork);
+                o.WriteLine($"Discarded unfinished build for '{p.Out}'.");
+            }
+            else
+            {
+                o.WriteLine($"No unfinished build found for '{p.Out}'.");
+            }
+            return Ok;
+        }
+
+        // Must have --yes
+        if (!p.Yes)
+        {
+            o.WriteLine("Refused: build-iso creates a new Windows installation media. Run the same command again with --yes to go ahead.");
+            return Refused;
+        }
+
+        // Diagnostic option checks
+        var hasDiag = !string.IsNullOrWhiteSpace(p.StopAfter) || !string.IsNullOrWhiteSpace(p.FirstBootRoute);
+        var isVm = string.Equals(Environment.GetEnvironmentVariable("NITROS_VM"), "1", StringComparison.Ordinal);
+        if (hasDiag && !isVm)
+        {
+            o.WriteLine("Error: Diagnostic options are only permitted when NITROS_VM=1.");
+            return BadArguments;
+        }
+
+        if (string.IsNullOrWhiteSpace(p.Source) || string.IsNullOrWhiteSpace(p.Out))
+        {
+            throw new UsageException("build-iso requires both --source and --out.");
+        }
+
+        if (p.Card != null && p.Ids != null)
+        {
+            throw new UsageException("build-iso requires either --card or --ids, not both.");
+        }
+        if (p.Card == null && p.Ids == null)
+        {
+            throw new UsageException("build-iso requires either --card or --ids.");
+        }
+
+        var guardIso = SessionGuard.Check(env.Session);
+        if (!guardIso.Ok)
+        {
+            o.WriteLine($"Refused: {guardIso.Reason}");
+            return Refused;
+        }
+
+        var catDir = p.Catalog ?? env.CatalogDir;
+        var load = CatalogLoader.Load(catDir);
+        if (!load.Ok)
+        {
+            o.WriteLine($"Error: Could not load catalog from '{catDir}'.");
+            return BadArguments;
+        }
+
+        var catalog = load.Catalog!;
+        var dev = DeviceDetector.Detect(env.Device);
+        var toolsDir = p.ToolsDir ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NitrOS", "tools");
+        var oscdimg = env.Oscdimg != null ? env.Oscdimg(toolsDir) : new Oscdimg(toolsDir, new OscdimgDownloader(new HttpGet()));
+        var imgSystemsReal = env.Image != null ? env.Image() : WinImageSystems.Create();
+
+        Selection sel;
+        CardId? cardId = null;
+        if (p.Card != null)
+        {
+            cardId = ParseCard(p.Card);
+            sel = Selection.FromCard(catalog, cardId.Value, TargetMode.BuildIso, dev);
+        }
+        else
+        {
+            sel = Selection.FromIds(catalog, p.Ids!, TargetMode.BuildIso, dev);
+        }
+
+        Func<string, BuildStore> storeFactory = folder => new BuildStore(folder);
+        var imageBuilder = new ImageBuilder(imgSystemsReal, catalog, dev, storeFactory, oscdimg);
+        var existing = imageBuilder.FindResumable(p.Out);
+        BuildState state;
+        if (existing != null)
+        {
+            o.WriteLine($"Resuming existing ISO build for '{p.Out}'...");
+            state = existing;
+        }
+        else
+        {
+            var req = new BuildRequest(p.Source, p.Out, p.Edition, sel.On.ToList(), cardId);
+            try
+            {
+                state = imageBuilder.Start(req);
+            }
+            catch (BuildRefusedException bre)
+            {
+                o.WriteLine($"Refused: {bre.Message}");
+                return Refused;
+            }
+        }
+
+        var progress = new Progress<BuildProgress>(bp =>
+        {
+            if (bp.LogLine != null) o.WriteLine($"  {bp.LogLine}");
+        });
+
+        var res = imageBuilder.Run(state, progress, ct);
+        if (res.Status == BuildStatus.Refused)
+        {
+            o.WriteLine($"Refused: {res.Reason}");
+            return Refused;
+        }
+        if (res.Status != BuildStatus.Done)
+        {
+            o.WriteLine($"Build finished with status {res.Status}: {res.Reason}");
+            return Refused;
+        }
+
+        foreach (var (id, sr) in res.Switches)
+        {
+            o.WriteLine($"  [{id}] {sr}");
+        }
+        o.WriteLine($"Output: {res.OutputPath}");
         return Ok;
     }
 

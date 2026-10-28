@@ -1,3 +1,7 @@
+using NitrOS.Image.Building;
+using NitrOS.Image.Iso;
+using NitrOS.Image.Systems;
+using NitrOS.Image.Windows;
 using NitrOS.Live;
 using NitrOS.Live.Systems;
 using NitrOS.Live.Windows;
@@ -23,6 +27,9 @@ public sealed record CliEnvironment(
 
     public Func<LiveSystems, NitrOS.Core.Model.Catalog?, IXboxRestore>? XboxRestore { get; init; } = null;
 
+    public Func<ImageSystems>? Image { get; init; } = null;
+    public Func<string, IOscdimg>? Oscdimg { get; init; } = null;
+
     /// <summary>The real PC. WinSystems.Create (which creates the locked-down backup folder) runs only when a command asks for the systems.</summary>
     public static CliEnvironment Real() => new(
         WinSystems.Create,
@@ -34,5 +41,7 @@ public sealed record CliEnvironment(
     {
         SecureJournalDir = () => BackupFolder.Ensure(WinSystems.BackupPath),
         Memory = new WinMemoryFacts(),
+        Image = () => WinImageSystems.Create(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NitrOS", "tools", "oscdimg.exe")),
+        Oscdimg = toolsDir => new Oscdimg(toolsDir, new OscdimgDownloader(new HttpGet()))
     };
 }
