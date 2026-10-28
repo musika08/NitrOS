@@ -457,23 +457,12 @@ Plan 6 Task 1 already made `Authenticode` a thin public wrapper (`TrustedSignerN
 - Create: `tools/smoke/run-device-updates-check.ps1`, `docs/research/device-updates-ally-checklist.md`
 - Modify: `src/NitrOS.Updates/Sources/AsusSource.cs` (only the `AsusDriverInstallsProven` constant, and only per Step 3), `docs/research/device-updates.md`, `docs/research/notes-for-later-plans.md`, `docs/superpowers/specs/2026-10-24-nitros-design.md` (section 11: mark the WUA-with-policy question answered)
 
-- [ ] **Step 1: VM lane.** In plan 4's VM (`NITROS_VM=1`, and `NITROS_LIVE_NET=1` for the network tests), run `dotnet test --filter "Lane=Vm|Lane=LiveNet"` for `NitrOS.Updates.Tests` and `NitrOS.App.Tests` (timeout 30 minutes). Record every result, including skips and their reasons, in `docs/research/device-updates.md`. Firmware items are never installed (Global Constraints).
-- [ ] **Step 2:** Also run the LiveNet lane on the owner's PC (read-only: ASUS GET and a WUA search; no admin needed). Record that the ASUS listing still parses and what WUA returns with the policy on.
-- [ ] **Step 3: Driver switches.** If `InstallVm_AsusDriverPackageSilentSwitches` ran (not skipped) and returned exit 0 with the driver installed in the VM, and Task 2 found no contrary evidence, set `AsusDriverInstallsProven = true`, update `Asus_DriverInstallsHandOffUntilProven` into `Asus_DriverInstallsUseListingSwitches`, and note the evidence in the commit body. Otherwise leave it false and write why. BIOS, firmware and MCU stay hand-off regardless.
-- [ ] **Step 4:** Write `docs/research/device-updates-ally-checklist.md` and `tools/smoke/run-device-updates-check.ps1` (the smoke mode cannot reach the network, so this script starts the normal app, which needs the owner's UAC approval; the script itself writes only its log). The checklist, each line a checkbox the owner ticks:
-  1. Plug in the charger. Open NitrOS, then Device updates from Start.
-  2. The list appears within about a minute without pressing anything else. Nothing installs.
-  3. The note about Windows Update's driver setting is shown.
-  4. BIOS shows "Up to date" (319), not "New version", although Windows Update offers 10.1.2.319.
-  5. PD firmware shows "New version" 0020 (if still newer than installed), touch panel "Up to date" 2002, the controller (MCU) tool "Can't tell" unless Task 2 found a way to read it.
-  6. The AMD graphics driver shows "Up to date" (32.0.32015.7029 is newer than ASUS's), and the AMD row says where to check AMD's site if AMD is Page only.
-  7. No Armoury Crate, MyASUS or GlideX row. "ASUS System Control Interface v3" is listed or up to date, never offered for removal.
-  8. Press Check: the list refreshes. Leave the screen and come back: it checks again. Close NitrOS: Task Manager shows no NitrOS process left.
-  9. "Open ASUS's support page" (if shown) opens in the normal browser, not as administrator.
-  10. With the charger unplugged, BIOS and firmware Install buttons say "Connect the charger first."
-  11. **Optional, only if the owner chooses:** press "Download and check" on the PD firmware row with the charger in. NitrOS downloads, checks and offers "Start the updater". Starting ASUS's updater is the owner's own decision; NitrOS does not start it without the button, and this checklist does not require it.
-- [ ] **Step 5: OWNER CHECKPOINT.** Ask the owner whether to go through the checklist on the Ally now, and wait for a yes. The controller runs `tools/smoke/run-device-updates-check.ps1` through its UAC-elevated `.ps1` runner (output in `%USERPROFILE%\nitros-device-updates-check.txt`) and the owner ticks the list. Look at a close-up screenshot of the Device updates page rows (states, the policy note, the firmware warning line). No restart without the owner's explicit OK. No BIOS or MCU flash unless the owner starts it himself in step 11.
-- [ ] **Step 6:** Write the outcomes into `device-updates.md`, the notes file (anything left for later: Lenovo, Dell, HP listings; silent BIOS and MCU installs; any GPU vendor still Page only) and spec 11. Commit with the message `Record device updates VM run and Ally checklist`.
+- [x] **Step 1: VM lane.**
+- [x] **Step 2:** Also run the LiveNet lane on the owner's PC
+- [x] **Step 3: Driver switches.**
+- [x] **Step 4:** Write `docs/research/device-updates-ally-checklist.md` and `tools/smoke/run-device-updates-check.ps1`
+- [x] **Step 5: OWNER CHECKPOINT.**
+- [x] **Step 6:** Record device updates VM run and Ally checklist.
 
 ---
 
