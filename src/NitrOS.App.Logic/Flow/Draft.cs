@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using NitrOS.App.Logic.Running;
 using NitrOS.Core.Model;
 using NitrOS.Core.Selecting;
 
@@ -11,6 +12,7 @@ public sealed class Draft(Catalog catalog, DeviceProfile device) : ObservableObj
     private TargetMode _mode;
     private CardId? _card;
     private Selection? _selection;
+    private IsoPaths? _iso;
 
     public TargetMode Mode
     {
@@ -30,11 +32,18 @@ public sealed class Draft(Catalog catalog, DeviceProfile device) : ObservableObj
         set => SetProperty(ref _selection, value);
     }
 
+    public IsoPaths? Iso
+    {
+        get => _iso;
+        set => SetProperty(ref _iso, value);
+    }
+
     public void Start(TargetMode mode)
     {
         Mode = mode;
         Card = null;
         Selection = null;
+        Iso = null;
     }
 
     public void PickCard(CardId card)

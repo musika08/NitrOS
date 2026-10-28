@@ -249,4 +249,27 @@ public sealed class DoneViewModelTests
         Assert.NotNull(vm.IsoLine);
         Assert.Equal(@"Your ISO is at D:\Iso\nitros-slim.iso. Test it in a virtual machine before you install it.", vm.IsoLine);
     }
+
+    [Fact]
+    public void Done_IsoCancelledShowsResumeText()
+    {
+        var repo = TestCatalog.LoadRepo();
+        var (vm, _, _, _, _) = Create(repo);
+
+        var res = new RunResult(
+            RunKind.Iso,
+            false,
+            null,
+            true,
+            new Dictionary<string, SwitchOutcome>(),
+            [],
+            [])
+        {
+            OutputPath = @"D:\Iso\nitros-slim.iso"
+        };
+
+        vm.OnShown(res);
+
+        Assert.Equal(Texts.IsoStopped, vm.Headline);
+    }
 }

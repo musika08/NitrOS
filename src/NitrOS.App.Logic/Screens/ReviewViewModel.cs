@@ -83,6 +83,7 @@ public sealed class ReviewViewModel : ObservableObject, IScreen
 
     public IAsyncRelayCommand Go { get; }
     public IRelayCommand Back { get; }
+    public IRelayCommand CheckAgain { get; }
 
     public ReviewViewModel(
         Catalog catalog,
@@ -105,6 +106,7 @@ public sealed class ReviewViewModel : ObservableObject, IScreen
 
         Go = new AsyncRelayCommand(ExecuteGoAsync, CanExecuteGo);
         Back = new RelayCommand(() => _navigator.GoTo(ScreenKeys.Switches));
+        CheckAgain = new RelayCommand(UpdateGoStatus);
     }
 
     public void OnShown(object? argument)
@@ -129,7 +131,7 @@ public sealed class ReviewViewModel : ObservableObject, IScreen
     {
         if (d.Selection is null) return null;
         var kind = d.Mode == TargetMode.TunePc ? RunKind.Tune : RunKind.Iso;
-        return new RunRequest(kind, d.Selection, d.Card, false, null);
+        return new RunRequest(kind, d.Selection, d.Card, false, d.Iso);
     }
 
     private void Refresh()
@@ -202,6 +204,11 @@ public sealed class ReviewViewModel : ObservableObject, IScreen
 
     private void UpdateGoStatus()
     {
+        if (_draft is not null && _request is not null)
+        {
+            _request = RequestFromDraft(_draft) ?? _request;
+        }
+
         if (_request is null || _request.Selection.On.Count == 0)
         {
             GoUnavailableReason = null;

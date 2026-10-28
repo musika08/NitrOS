@@ -1,0 +1,82 @@
+<Page
+    x:Class="NitrOS.App.Pages.IsoSourcePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:screens="using:NitrOS.App.Logic.Screens"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16" Padding="24" MaxWidth="720" HorizontalAlignment="Left">
+            <TextBlock Text="Build a slim ISO" Style="{StaticResource TitleTextBlockStyle}" />
+
+            <!-- Resume card if present -->
+            <Border
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Visibility="{x:Bind ViewModel.ResumeText, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}, FallbackValue=Collapsed}">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="{x:Bind ViewModel.ResumeText, Mode=OneWay}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Resume build" Command="{x:Bind ViewModel.ResumeBuild}" Style="{StaticResource AccentButtonStyle}" MinHeight="48" />
+                        <Button Content="Throw away" Command="{x:Bind ViewModel.ThrowAway}" MinHeight="48" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Choose Source ISO -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Source Windows 11 ISO" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <Button Content="Choose ISO" Command="{x:Bind ViewModel.PickSource}" MinHeight="48" HorizontalAlignment="Left" />
+                <TextBlock Text="{x:Bind ViewModel.SourcePath, Mode=OneWay}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock Text="{x:Bind ViewModel.AlwaysNote}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Editions -->
+            <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.Editions.Count, Mode=OneWay, Converter={StaticResource IntToVisibilityConverter}, FallbackValue=Collapsed}">
+                <TextBlock Text="Select edition" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <ListView ItemsSource="{x:Bind ViewModel.Editions, Mode=OneWay}" SelectionMode="Single" SelectedItem="{x:Bind ViewModel.Chosen, Mode=TwoWay}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="screens:EditionChoice">
+                            <RadioButton
+                                Content="{x:Bind Text}"
+                                IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}, Mode=TwoWay}"
+                                IsEnabled="{x:Bind Usable}"
+                                MinHeight="48" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </StackPanel>
+
+            <!-- Choose Output ISO -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Save new ISO to" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <Button Content="Choose save location" Command="{x:Bind ViewModel.PickOutput}" MinHeight="48" HorizontalAlignment="Left" />
+                <TextBlock Text="{x:Bind ViewModel.OutputPath, Mode=OneWay}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+            <!-- Notes -->
+            <TextBlock
+                Text="{x:Bind ViewModel.ShadowDefenderNote, Mode=OneWay}"
+                Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                TextWrapping="Wrap"
+                Visibility="{x:Bind ViewModel.ShadowDefenderNote, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}, FallbackValue=Collapsed}" />
+
+            <TextBlock
+                Text="{x:Bind ViewModel.Problem, Mode=OneWay}"
+                Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                TextWrapping="Wrap"
+                Visibility="{x:Bind ViewModel.Problem, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}, FallbackValue=Collapsed}" />
+
+            <!-- Navigation Buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,16,0,0">
+                <Button Content="Back" Command="{x:Bind ViewModel.Back}" MinHeight="48" MinWidth="100" />
+                <Button Content="Continue to Presets" Command="{x:Bind ViewModel.Continue}" Style="{StaticResource AccentButtonStyle}" MinHeight="48" MinWidth="160" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -96,7 +96,20 @@ public sealed class StartViewModelTests
     }
 
     [Fact]
-    public void Start_IsoOpensCardsInIsoMode()
+    public void Start_IsoOpensSourceWhenRegistered()
+    {
+        var (vm, nav, draft) = Create();
+        nav.Register(ScreenKeys.IsoSource, () => new DummyScreen(ScreenKeys.IsoSource));
+        var iso = vm.Entries.First(e => e.Title == "Build a slim ISO");
+
+        iso.Open.Execute(null);
+
+        Assert.Equal(TargetMode.BuildIso, draft.Mode);
+        Assert.Equal(ScreenKeys.IsoSource, nav.Current?.Key);
+    }
+
+    [Fact]
+    public void Start_IsoOpensCardsWhenSourceUnregistered()
     {
         var (vm, nav, draft) = Create();
         var iso = vm.Entries.First(e => e.Title == "Build a slim ISO");

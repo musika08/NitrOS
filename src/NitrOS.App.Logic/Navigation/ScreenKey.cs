@@ -8,6 +8,7 @@ public readonly record struct ScreenKey(string Name)
 public static class ScreenKeys
 {
     public static readonly ScreenKey Start = new("start");
+    public static readonly ScreenKey IsoSource = new("iso-source");
     public static readonly ScreenKey Cards = new("cards");
     public static readonly ScreenKey Switches = new("switches");
     public static readonly ScreenKey Review = new("review");

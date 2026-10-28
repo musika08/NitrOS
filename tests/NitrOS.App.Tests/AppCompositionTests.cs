@@ -60,7 +60,7 @@ public sealed class AppCompositionTests
     }
 
     [Fact]
-    public void Composition_IsoRunnerIsPlaceholder()
+    public void Composition_IsoRunnerIsReal()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "nitros_comp_" + Guid.NewGuid().ToString("N"));
         try
@@ -68,7 +68,7 @@ public sealed class AppCompositionTests
             var comp = AppComposition.CreateReal(AppDomain.CurrentDomain.BaseDirectory, new DummyDialogs(), tempDir);
             var isoRunner = comp.Runners.For(RunKind.Iso);
 
-            Assert.IsType<UnavailableIsoRunner>(isoRunner);
+            Assert.IsType<IsoRunner>(isoRunner);
         }
         finally
         {

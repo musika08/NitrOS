@@ -47,6 +47,7 @@ public partial class App : Application
 
         var pageMap = new PageMap();
         pageMap.Add(ScreenKeys.Start, typeof(StartPage));
+        pageMap.Add(ScreenKeys.IsoSource, typeof(IsoSourcePage));
         pageMap.Add(ScreenKeys.Cards, typeof(CardsPage));
         pageMap.Add(ScreenKeys.Switches, typeof(SwitchesPage));
         pageMap.Add(ScreenKeys.Review, typeof(ReviewPage));

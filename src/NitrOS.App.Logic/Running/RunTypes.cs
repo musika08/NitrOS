@@ -8,7 +8,10 @@ namespace NitrOS.App.Logic.Running;
 public enum RunKind { Tune, Iso, XboxRestore }
 
 /// <summary>Plan 6 fills these from its own source-ISO screen; null for Tune runs.</summary>
-public sealed record IsoPaths(string SourceIso, string OutputIso);
+public sealed record IsoPaths(string SourceIso, string OutputIso)
+{
+    public int? EditionIndex { get; init; }
+}
 
 public sealed record RunRequest(RunKind Kind, Selection Selection, CardId? Card, bool AllowWithoutRestorePoint, IsoPaths? Iso);
 

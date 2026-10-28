@@ -73,7 +73,14 @@ public sealed class StartViewModel : ObservableObject, IScreen
         var isoCmd = new RelayCommand(() =>
         {
             _draft.Start(TargetMode.BuildIso);
-            _navigator.GoTo(ScreenKeys.Cards);
+            if (_navigator.IsRegistered(ScreenKeys.IsoSource))
+            {
+                _navigator.GoTo(ScreenKeys.IsoSource);
+            }
+            else
+            {
+                _navigator.GoTo(ScreenKeys.Cards);
+            }
         });
 
         var undoCmd = new RelayCommand(() => _navigator.GoTo(ScreenKeys.Undo));

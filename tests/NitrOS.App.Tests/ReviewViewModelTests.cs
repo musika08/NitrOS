@@ -145,7 +145,10 @@ public sealed class ReviewViewModelTests
         draft.Start(TargetMode.BuildIso);
         draft.PickCard(CardId.Recommended);
 
-        var isoRunner = new UnavailableIsoRunner();
+        var isoRunner = new RecordingRunner(RunKind.Iso)
+        {
+            Readiness = new RunReadiness(false, Texts.IsoChoosePaths)
+        };
         var runners = new RunnerSet([isoRunner]);
         var session = new FakeSession();
         var probe = new FakeLockProbe();
@@ -155,7 +158,39 @@ public sealed class ReviewViewModelTests
         vm.OnShown(draft);
 
         Assert.False(vm.Go.CanExecute(null));
-        Assert.Equal(Texts.IsoLater, vm.GoUnavailableReason);
+        Assert.Equal(Texts.IsoChoosePaths, vm.GoUnavailableReason);
+    }
+
+    [Fact]
+    public void Review_IsoCheckAgainRefreshesGo()
+    {
+        var repo = TestCatalog.LoadRepo();
+        var gate = new RunGate();
+        var nav = new Navigator(gate);
+        var draft = new Draft(repo, DeviceProfile.Desktop);
+        draft.Start(TargetMode.BuildIso);
+        draft.PickCard(CardId.Recommended);
+
+        var isoRunner = new RecordingRunner(RunKind.Iso)
+        {
+            Readiness = new RunReadiness(false, Texts.IsoChoosePaths)
+        };
+        var runners = new RunnerSet([isoRunner]);
+        var session = new FakeSession();
+        var probe = new FakeLockProbe();
+        var dialogs = new FakeDialogs();
+
+        var vm = new ReviewViewModel(repo, draft, runners, session, probe, gate, dialogs, nav);
+        vm.OnShown(draft);
+
+        Assert.False(vm.Go.CanExecute(null));
+        Assert.Equal(Texts.IsoChoosePaths, vm.GoUnavailableReason);
+
+        isoRunner.Readiness = new RunReadiness(true, null);
+        vm.CheckAgain.Execute(null);
+
+        Assert.True(vm.Go.CanExecute(null));
+        Assert.Null(vm.GoUnavailableReason);
     }
 
     [Fact]

@@ -91,6 +91,10 @@ public sealed class AppComposition
         var dummyCatalog = Catalog ?? new Catalog([], new CardMeasurements());
 
         Navigator.Register(ScreenKeys.Start, () => new StartViewModel(Navigator, Draft, AppContext));
+        var dummyBackend = ImageIsoBackend.CreateReal(dummyCatalog, AppContext.Device);
+        var dummyPicker = new DummyFilePicker();
+        var dummyRegistry = new NoOpRegistry();
+        Navigator.Register(ScreenKeys.IsoSource, () => new IsoSourceViewModel(Navigator, Draft, dummyBackend, dummyPicker, Dialogs, new IsoBuildIndex(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NitrOS", "app"), _ => FolderState.Missing, _ => { }, Session), dummyRegistry));
         Navigator.Register(ScreenKeys.Cards, () => new CardsViewModel(Navigator, Draft, AppContext));
         Navigator.Register(ScreenKeys.Switches, () => new SwitchesViewModel(Navigator, Draft, AppContext));
         Navigator.Register(ScreenKeys.Review, () => new ReviewViewModel(dummyCatalog, Draft, Runners, Session, TuneLockProbe, RunGate, Dialogs, Navigator));
@@ -168,7 +172,9 @@ public sealed class AppComposition
             exePath,
             Thread.Sleep);
 
-        var isoRunner = new UnavailableIsoRunner();
+        var isoIndex = new IsoBuildIndex(appDir, BackupFolder.Check, p => BackupFolder.Ensure(p), session);
+        var isoBackend = ImageIsoBackend.CreateReal(catalog ?? new Catalog([], new CardMeasurements()), device);
+        var isoRunner = new IsoRunner(isoBackend, session, isoIndex);
         var runners = new RunnerSet([tuneRunner, isoRunner]);
         var xboxRestorer = new UnprovenXboxRestorer();
 
@@ -282,6 +288,12 @@ public sealed class AppComposition
             afterRestart,
             journalAccess,
             exePath);
+    }
+
+    private sealed class DummyFilePicker : IFilePicker
+    {
+        public Task<string?> PickIsoToOpenAsync() => Task.FromResult<string?>(null);
+        public Task<string?> PickIsoToSaveAsync(string suggestedName) => Task.FromResult<string?>(null);
     }
 
     private sealed class ForbiddenUndoService : IUndoService

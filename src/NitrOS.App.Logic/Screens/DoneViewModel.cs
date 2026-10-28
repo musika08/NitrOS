@@ -143,7 +143,9 @@ public sealed class DoneViewModel : ObservableObject, IScreen
         }
         else if (res.Cancelled)
         {
-            Headline = "Stopped. The change in progress was put back.";
+            Headline = res.Kind == RunKind.Iso
+                ? Texts.IsoStopped
+                : "Stopped. The change in progress was put back.";
         }
         else if (res.Kind == RunKind.Iso)
         {
