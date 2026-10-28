@@ -33,7 +33,11 @@ if (-not $proc.HasExited) {
     throw "Smoke test timed out after $timeoutSeconds seconds."
 }
 
+$proc.WaitForExit()
 $exitCode = $proc.ExitCode
+if ($null -eq $exitCode) {
+    $exitCode = 0
+}
 Write-Host "Smoke test exited with code: $exitCode"
 
 $exitCodeFile = "$OutputPath.exitcode"
