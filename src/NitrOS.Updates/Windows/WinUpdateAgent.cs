@@ -7,7 +7,7 @@ public sealed class WinUpdateAgent : IWindowsUpdateAgent
     public Task<IReadOnlyList<WuRecord>> SearchDriversAsync(CancellationToken ct)
     {
         var tcs = new TaskCompletionSource<IReadOnlyList<WuRecord>>();
-        var reg = ct.Register(() => tcs.TrySetCanceled(ct));
+        var reg = ct.Register(() => tcs.TrySetResult(Array.Empty<WuRecord>()));
 
         var thread = new Thread(() =>
         {

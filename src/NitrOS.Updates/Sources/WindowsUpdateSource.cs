@@ -20,7 +20,9 @@ public sealed class WindowsUpdateSource(IWindowsUpdateAgent agent, FirmwareMap m
         IReadOnlyList<WuRecord> records;
         try
         {
-            records = await _agent.SearchDriversAsync(ct);
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+            records = await _agent.SearchDriversAsync(linkedCts.Token);
         }
         catch (Exception)
         {

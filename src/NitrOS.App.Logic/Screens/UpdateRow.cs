@@ -23,7 +23,7 @@ public sealed class UpdateRow : ObservableObject
     };
 
     public string InstalledText => string.IsNullOrEmpty(Item.InstalledVersion)
-        ? "Installed: can't read it on this PC"
+        ? "Installed: Utility / Not detected"
         : $"Installed: {Item.InstalledVersion}";
 
     public string LatestText
@@ -34,7 +34,10 @@ public sealed class UpdateRow : ObservableObject
                 return $"Check {Item.SourceName}'s site";
 
             if (Merged.State == ItemState.UpToDate)
-                return "Latest: Up to date";
+            {
+                var ver = Item.LatestVersion ?? Item.InstalledVersion;
+                return $"Latest: {ver} (Up to date)";
+            }
 
             var sizeStr = Item.SizeBytes.HasValue ? $", {Item.SizeBytes.Value / 1024.0 / 1024.0:F1} MB" : "";
             var dateStr = Item.ReleaseDate.HasValue ? $", {Item.ReleaseDate.Value:d MMM yyyy}" : "";
@@ -46,11 +49,16 @@ public sealed class UpdateRow : ObservableObject
     {
         ItemState.UpToDate => "Up to date",
         ItemState.NewVersion => "New version",
-        ItemState.CantTell => "Can't tell",
+        ItemState.CantTell => "Utility",
         ItemState.Blocked => "Blocked",
-        ItemState.PageOnly => "On the maker's site",
+        ItemState.PageOnly => "Maker's site",
         _ => "Unknown"
     };
+
+    public bool IsUpToDate => Merged.State == ItemState.UpToDate;
+    public bool IsNewVersion => Merged.State == ItemState.NewVersion;
+    public bool IsBlocked => Merged.State == ItemState.Blocked;
+    public bool IsUtility => Merged.State == ItemState.CantTell || Merged.State == ItemState.PageOnly;
 
     public string? BlockedReason => Merged.BlockedReason;
 

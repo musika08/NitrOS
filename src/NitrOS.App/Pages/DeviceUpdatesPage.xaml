@@ -29,10 +29,10 @@
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </StackPanel>
                 <ProgressBar IsIndeterminate="True"
-                             Visibility="{x:Bind ViewModel.IsChecking, Mode=OneWay}"
+                             Visibility="{x:Bind ViewModel.IsChecking, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
                              Margin="0,4,0,0" />
                 <TextBlock Text="{x:Bind ViewModel.CheckProgress, Mode=OneWay}"
-                           Visibility="{x:Bind ViewModel.IsChecking, Mode=OneWay}"
+                           Visibility="{x:Bind ViewModel.IsChecking, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
                            FontSize="11"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             </StackPanel>
@@ -103,7 +103,50 @@
                                                    FontSize="11"
                                                    FontWeight="SemiBold" />
                                     </Border>
-                                    <Border Background="{ThemeResource LayerFillColorAltBrush}"
+
+                                    <!-- Up to date badge (Green) -->
+                                    <Border Visibility="{x:Bind IsUpToDate, Converter={StaticResource BoolToVisibilityConverter}}"
+                                            Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
+                                            BorderBrush="{ThemeResource SystemFillColorSuccessBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="{StaticResource ApplePillCornerRadius}"
+                                            Padding="6,1"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="Up to date"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                                    </Border>
+
+                                    <!-- New version badge (Blue) -->
+                                    <Border Visibility="{x:Bind IsNewVersion, Converter={StaticResource BoolToVisibilityConverter}}"
+                                            Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                            CornerRadius="{StaticResource ApplePillCornerRadius}"
+                                            Padding="6,1"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="New version"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                    </Border>
+
+                                    <!-- Blocked badge (Red) -->
+                                    <Border Visibility="{x:Bind IsBlocked, Converter={StaticResource BoolToVisibilityConverter}}"
+                                            Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}"
+                                            BorderBrush="{ThemeResource SystemFillColorCriticalBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="{StaticResource ApplePillCornerRadius}"
+                                            Padding="6,1"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="Blocked"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                                    </Border>
+
+                                    <!-- Utility / Manual badge (Gray) -->
+                                    <Border Visibility="{x:Bind IsUtility, Converter={StaticResource BoolToVisibilityConverter}}"
+                                            Background="{ThemeResource LayerFillColorAltBrush}"
                                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                             BorderThickness="1"
                                             CornerRadius="{StaticResource ApplePillCornerRadius}"
@@ -125,14 +168,16 @@
                                     <Button Content="Open folder" Command="{x:Bind OpenFolder}" Visibility="{x:Bind OpenFolder, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}" />
                                 </StackPanel>
 
-                                <!-- Versions & Details -->
-                                <StackPanel Spacing="2" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
-                                    <TextBlock Text="{x:Bind InstalledText}"
-                                               FontSize="12"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    <TextBlock Text="{x:Bind LatestText}"
-                                               FontSize="12"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <!-- Versions & Details (Side-by-side comparison) -->
+                                <StackPanel Spacing="3" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="16">
+                                        <TextBlock Text="{x:Bind InstalledText}"
+                                                   FontSize="12"
+                                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                                        <TextBlock Text="{x:Bind LatestText}"
+                                                   FontSize="12"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
                                     <TextBlock Text="{x:Bind AlsoOfferedText}"
                                                FontSize="11"
                                                Visibility="{x:Bind AlsoOfferedText, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}"

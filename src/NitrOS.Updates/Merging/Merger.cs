@@ -214,11 +214,12 @@ public static class Merger
                 continue;
             }
 
-            // Check if this device is already represented in result
+            // Check if this device is already represented in result or additional
             bool alreadyRepresented = result.Any(m =>
                 string.Equals(m.Item.Key, $"dev:{dev.InstanceId}", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(m.Item.Name, dev.Name, StringComparison.OrdinalIgnoreCase) ||
-                (dev.HardwareIds.Count > 0 && dev.HardwareIds.Any(hid => m.Item.Key.EndsWith(hid, StringComparison.OrdinalIgnoreCase))));
+                (dev.HardwareIds.Count > 0 && dev.HardwareIds.Any(hid => m.Item.Key.EndsWith(hid, StringComparison.OrdinalIgnoreCase))))
+                || additional.Any(m => string.Equals(m.Item.Name, dev.Name, StringComparison.OrdinalIgnoreCase));
 
             if (!alreadyRepresented)
             {
