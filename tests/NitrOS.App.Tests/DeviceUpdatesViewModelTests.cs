@@ -126,6 +126,30 @@ public sealed class DeviceUpdatesViewModelTests
     }
 
     [Fact]
+    public async Task DeviceUpdates_UpdateAll_And_UpdateSelected_WorkForGetAnywayItems()
+    {
+        var pdItem = new UpdateItem("fw:2", "PD Firmware", UpdateKind.Firmware, null, "0020", new Uri("https://dlcdnets.asus.com/pd.exe"), null, null, "asus", "ASUS");
+        var report = new CheckReport(
+            new DeviceInfo(MakerId.Asus, "ASUS", "Ally", "RC73XA", "319", null, [], []),
+            [new MergedItem(pdItem, ItemState.CantTell, null, [])],
+            [], [], false, DateTimeOffset.UtcNow);
+
+        var (vm, updates, dialogs, _, _, _) = CreateVm(report);
+        dialogs.NextConfirmResult = true;
+
+        vm.OnShown(null);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        Assert.True(vm.CanUpdateAll);
+        Assert.True(vm.CanUpdateSelected);
+
+        await vm.UpdateSelectedCommand.ExecuteAsync(null);
+
+        Assert.Single(updates.InstallCalls);
+        Assert.True(updates.InstallCalls[0].UserConfirmedFirmwareWarning);
+    }
+
+    [Fact]
     public void RunGate_TryEnterWithMessageSetsBusyMessage()
     {
         var gate = new RunGate();

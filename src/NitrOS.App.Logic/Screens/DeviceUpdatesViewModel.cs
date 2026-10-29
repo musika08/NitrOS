@@ -58,8 +58,23 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
         {
             if (SetProperty(ref _rows, value))
             {
+                foreach (var r in _rows)
+                {
+                    r.PropertyChanged += (_, e) =>
+                    {
+                        if (e.PropertyName is nameof(UpdateRow.IsSelected) or nameof(UpdateRow.HasAction))
+                        {
+                            OnPropertyChanged(nameof(CanUpdateAll));
+                            OnPropertyChanged(nameof(CanUpdateSelected));
+                            UpdateAllCommand?.NotifyCanExecuteChanged();
+                            UpdateSelectedCommand?.NotifyCanExecuteChanged();
+                        }
+                    };
+                }
                 OnPropertyChanged(nameof(CanUpdateAll));
+                OnPropertyChanged(nameof(CanUpdateSelected));
                 UpdateAllCommand?.NotifyCanExecuteChanged();
+                UpdateSelectedCommand?.NotifyCanExecuteChanged();
             }
         }
     }
@@ -88,9 +103,11 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
         private set => SetProperty(ref _lastChecked, value);
     }
 
-    public bool CanUpdateAll => !IsChecking && Rows.Any(r => r.Install != null && r.Merged.State == ItemState.NewVersion);
+    public bool CanUpdateAll => !IsChecking && Rows.Any(r => r.HasAction);
+    public bool CanUpdateSelected => !IsChecking && Rows.Any(r => r.IsSelected && r.HasAction);
     public IAsyncRelayCommand CheckCommand { get; }
     public IAsyncRelayCommand UpdateAllCommand { get; }
+    public IAsyncRelayCommand UpdateSelectedCommand { get; }
 
     public DeviceUpdatesViewModel(
         IDeviceUpdates updates,
@@ -109,6 +126,7 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
 
         CheckCommand = new AsyncRelayCommand(RunCheckAsync, () => !IsChecking);
         UpdateAllCommand = new AsyncRelayCommand(RunUpdateAllAsync, () => CanUpdateAll);
+        UpdateSelectedCommand = new AsyncRelayCommand(RunUpdateSelectedAsync, () => CanUpdateSelected);
     }
 
     public void OnShown(object? argument)
@@ -247,86 +265,134 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
         {
             r.Install?.NotifyCanExecuteChanged();
             r.GetAnyway?.NotifyCanExecuteChanged();
+            r.StartUpdater?.NotifyCanExecuteChanged();
         }
         OnPropertyChanged(nameof(CanUpdateAll));
+        OnPropertyChanged(nameof(CanUpdateSelected));
         UpdateAllCommand?.NotifyCanExecuteChanged();
+        UpdateSelectedCommand?.NotifyCanExecuteChanged();
     }
 
     private async Task RunUpdateAllAsync()
     {
         if (IsChecking) return;
-        var targets = Rows.Where(r => r.Install != null && r.Merged.State == ItemState.NewVersion).ToList();
+        var targets = Rows.Where(r => r.HasAction).ToList();
         if (targets.Count == 0) return;
+
+        bool hasFirmware = targets.Any(t => t.IsFirmware);
+        var notes = hasFirmware
+            ? new[] { "Keep charger connected.", "Do not turn off or restart the PC until updates complete." }
+            : Array.Empty<string>();
+
+        var ok = await _dialogs.ConfirmAsync(new ConfirmRequest(
+            $"Update all ({targets.Count} items)?",
+            hasFirmware ? "Firmware updates included. Maintain power." : "Download and install all available updates.",
+            notes,
+            "Update all",
+            "Cancel"));
+        if (!ok) return;
 
         foreach (var row in targets)
         {
-            if (row.Install != null && row.Install.CanExecute(null))
-            {
-                await row.Install.ExecuteAsync(null);
-            }
+            await RunInstallFlowAsync(row, confirmPrompt: null, suppressConfirm: true);
         }
         UpdateRowCommandsCanExecute();
     }
 
-    private async Task RunInstallFlowAsync(UpdateRow row, string? confirmPrompt)
+    private async Task RunUpdateSelectedAsync()
+    {
+        if (IsChecking) return;
+        var targets = Rows.Where(r => r.IsSelected && r.HasAction).ToList();
+        if (targets.Count == 0) return;
+
+        bool hasFirmware = targets.Any(t => t.IsFirmware);
+        var notes = hasFirmware
+            ? new[] { "Keep charger connected.", "Do not turn off or restart the PC until updates complete." }
+            : Array.Empty<string>();
+
+        var ok = await _dialogs.ConfirmAsync(new ConfirmRequest(
+            $"Update selected ({targets.Count} items)?",
+            hasFirmware ? "Firmware updates included. Maintain power." : "Download and install selected updates.",
+            notes,
+            "Update selected",
+            "Cancel"));
+        if (!ok) return;
+
+        foreach (var row in targets)
+        {
+            await RunInstallFlowAsync(row, confirmPrompt: null, suppressConfirm: true);
+        }
+        UpdateRowCommandsCanExecute();
+    }
+
+    private async Task RunInstallFlowAsync(UpdateRow row, string? confirmPrompt, bool suppressConfirm = false)
     {
         var item = row.Item;
 
-        if (!string.IsNullOrEmpty(confirmPrompt))
+        if (!suppressConfirm)
         {
-            var ok = await _dialogs.ConfirmAsync(new ConfirmRequest(
-                "Notice",
-                confirmPrompt,
-                [],
-                "Get update",
-                "Cancel"));
-            if (!ok) return;
-        }
+            if (!string.IsNullOrEmpty(confirmPrompt))
+            {
+                var ok = await _dialogs.ConfirmAsync(new ConfirmRequest(
+                    "Notice",
+                    confirmPrompt,
+                    [],
+                    "Get update",
+                    "Cancel"));
+                if (!ok) return;
+            }
 
-        bool confirmedWarning = false;
-        if (row.IsFirmware)
-        {
-            var kindName = item.Kind == UpdateKind.Bios ? "BIOS" : "firmware";
-            var ok = await _dialogs.ConfirmAsync(new ConfirmRequest(
-                $"Before you update the {kindName}",
-                "",
-                ["Keep the charger connected.", "Do not turn off or restart the PC until it says it is done.", "It can take several minutes."],
-                "I understand",
-                "Cancel"));
-            if (!ok) return;
-            confirmedWarning = true;
-        }
-        else
-        {
-            var ok = await _dialogs.ConfirmAsync(new ConfirmRequest(
-                $"Install {item.Name}?",
-                $"{item.LatestVersion} from {item.SourceName}. A restore point is made first.",
-                [],
-                "Install",
-                "Cancel"));
-            if (!ok) return;
+            if (row.IsFirmware)
+            {
+                var kindName = item.Kind == UpdateKind.Bios ? "BIOS" : "firmware";
+                var ok = await _dialogs.ConfirmAsync(new ConfirmRequest(
+                    $"Before you update the {kindName}",
+                    "",
+                    ["Keep the charger connected.", "Do not turn off or restart the PC until it says it is done.", "It can take several minutes."],
+                    "I understand",
+                    "Cancel"));
+                if (!ok) return;
+            }
+            else
+            {
+                var ok = await _dialogs.ConfirmAsync(new ConfirmRequest(
+                    $"Install {item.Name}?",
+                    $"{item.LatestVersion} from {item.SourceName}. A restore point is made first.",
+                    [],
+                    "Install",
+                    "Cancel"));
+                if (!ok) return;
+            }
         }
 
         using var gateToken = _gate.TryEnter(Texts.InstallingCloseMessage);
         if (gateToken == null)
         {
-            await _dialogs.ShowAsync("Busy", "Another operation is in progress.");
+            if (!suppressConfirm)
+            {
+                await _dialogs.ShowAsync("Busy", "Another operation is in progress.");
+            }
             return;
         }
 
         UpdateRowCommandsCanExecute();
         row.Progress = "Preparing installation...";
 
+        bool progressDone = false;
         var progress = new Progress<InstallProgress>(p =>
         {
-            row.Progress = p.Line ?? p.Stage.ToString();
+            if (!progressDone)
+            {
+                row.Progress = p.Line ?? p.Stage.ToString();
+            }
         });
 
         try
         {
-            var request = new InstallRequest(row.Merged, _device!, confirmedWarning);
+            var request = new InstallRequest(row.Merged, _device!, true);
             var outcome = await _updates.InstallAsync(request, progress, CancellationToken.None);
 
+            progressDone = true;
             row.Progress = null;
             row.Result = outcome.Message;
 
@@ -340,28 +406,44 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
                         row.Result = $"File saved to: {outcome.HandOffPath}";
                     }
                 });
+
+                try
+                {
+                    _updates.StartHandedOff(outcome.HandOffPath);
+                    row.Result = "Installer launched. You can also re-launch or open folder below.";
+                }
+                catch (Exception launchEx)
+                {
+                    row.Result = $"Downloaded. Click 'Start updater' to launch ({launchEx.Message}).";
+                }
             }
             else if (outcome.Status == InstallStatus.InstalledRestartNeeded)
             {
-                var restartOk = await _dialogs.ConfirmAsync(new ConfirmRequest(
-                    "Restart required",
-                    "Restart your PC now to finish the update?",
-                    [],
-                    "Restart now",
-                    "Later"));
-                if (restartOk)
+                if (!suppressConfirm)
                 {
-                    _restarter.Restart();
+                    var restartOk = await _dialogs.ConfirmAsync(new ConfirmRequest(
+                        "Restart required",
+                        "Restart your PC now to finish the update?",
+                        [],
+                        "Restart now",
+                        "Later"));
+                    if (restartOk)
+                    {
+                        _restarter.Restart();
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
+            progressDone = true;
             row.Progress = null;
             row.Result = $"Error: {ex.Message}";
         }
         finally
         {
+            progressDone = true;
+            row.Progress = null;
             UpdateRowCommandsCanExecute();
         }
     }
@@ -376,18 +458,17 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
                 await _dialogs.ShowAsync("Charger required", "Connect the charger first. Firmware and BIOS updates must not lose power.");
                 return;
             }
-
-            var kindName = row.Item.Kind == UpdateKind.Bios ? "BIOS" : "firmware";
-            var ok = await _dialogs.ConfirmAsync(new ConfirmRequest(
-                $"Before you update the {kindName}",
-                "",
-                ["Keep the charger connected.", "Do not turn off or restart the PC until it says it is done.", "It can take several minutes."],
-                "I understand",
-                "Cancel"));
-            if (!ok) return;
         }
 
-        _updates.StartHandedOff(path);
+        try
+        {
+            _updates.StartHandedOff(path);
+            row.Result = "Installer launched.";
+        }
+        catch (Exception ex)
+        {
+            row.Result = $"Could not start: {ex.Message}";
+        }
     }
 
     private void HandleOpenPage(Uri page)

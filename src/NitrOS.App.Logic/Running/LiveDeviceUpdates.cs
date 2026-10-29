@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.IO;
 using Microsoft.Win32.SafeHandles;
 using NitrOS.App.Logic.Ports;
 using NitrOS.Live.Systems;
@@ -64,16 +66,21 @@ public sealed class LiveDeviceUpdates(
             }
         }
 
-        if (handle != null)
+        try
         {
-            try
+            if (handle != null)
             {
                 _runner.StartInteractive(path, handle);
             }
-            finally
+            else if (File.Exists(path))
             {
-                handle.Dispose();
+                var psi = new ProcessStartInfo { FileName = path, UseShellExecute = true };
+                Process.Start(psi);
             }
+        }
+        finally
+        {
+            handle?.Dispose();
         }
     }
 

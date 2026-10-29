@@ -10,6 +10,13 @@ public sealed class UpdateRow : ObservableObject
     private string? _progress;
     private string? _result;
     private string? _unavailable;
+    private bool _isSelected = true;
+    private IAsyncRelayCommand? _install;
+    private IAsyncRelayCommand? _getAnyway;
+    private IRelayCommand? _openPage;
+    private IRelayCommand? _startUpdater;
+    private IRelayCommand? _openFolder;
+    private IRelayCommand? _copyText;
 
     public MergedItem Merged { get; }
     public UpdateItem Item => Merged.Item;
@@ -68,12 +75,73 @@ public sealed class UpdateRow : ObservableObject
 
     public bool IsFirmware => Item.Kind == UpdateKind.Bios || Item.Kind == UpdateKind.Firmware;
 
-    public IAsyncRelayCommand? Install { get; set; }
-    public IAsyncRelayCommand? GetAnyway { get; set; }
-    public IRelayCommand? OpenPage { get; set; }
-    public IRelayCommand? StartUpdater { get; set; }
-    public IRelayCommand? OpenFolder { get; set; }
-    public IRelayCommand? CopyText { get; set; }
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
+    }
+
+    public bool HasAction => (Install != null || GetAnyway != null) && StartUpdater == null;
+    public bool ShowInstall => Install != null && StartUpdater == null;
+    public bool ShowGetAnyway => GetAnyway != null && StartUpdater == null;
+
+    public IAsyncRelayCommand? Install
+    {
+        get => _install;
+        set
+        {
+            if (SetProperty(ref _install, value))
+            {
+                OnPropertyChanged(nameof(ShowInstall));
+                OnPropertyChanged(nameof(HasAction));
+            }
+        }
+    }
+
+    public IAsyncRelayCommand? GetAnyway
+    {
+        get => _getAnyway;
+        set
+        {
+            if (SetProperty(ref _getAnyway, value))
+            {
+                OnPropertyChanged(nameof(ShowGetAnyway));
+                OnPropertyChanged(nameof(HasAction));
+            }
+        }
+    }
+
+    public IRelayCommand? OpenPage
+    {
+        get => _openPage;
+        set => SetProperty(ref _openPage, value);
+    }
+
+    public IRelayCommand? StartUpdater
+    {
+        get => _startUpdater;
+        set
+        {
+            if (SetProperty(ref _startUpdater, value))
+            {
+                OnPropertyChanged(nameof(ShowInstall));
+                OnPropertyChanged(nameof(ShowGetAnyway));
+                OnPropertyChanged(nameof(HasAction));
+            }
+        }
+    }
+
+    public IRelayCommand? OpenFolder
+    {
+        get => _openFolder;
+        set => SetProperty(ref _openFolder, value);
+    }
+
+    public IRelayCommand? CopyText
+    {
+        get => _copyText;
+        set => SetProperty(ref _copyText, value);
+    }
 
     public string? Progress
     {
