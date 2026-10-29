@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Microsoft.Win32.SafeHandles;
 using NitrOS.Core.Model;
 using NitrOS.Live.Systems;
@@ -143,6 +144,69 @@ public sealed class UpdateInstaller(
 
         // 7. Verify file lock, checksum, signature
         progress?.Report(new InstallProgress(InstallStage.Verifying, null, null, "Verifying file signature and checksum..."));
+
+        string originalDownloadedPath = downloadedPath;
+        string? extractDir = null;
+
+        if (!string.IsNullOrEmpty(item.Sha256))
+        {
+            bool matches;
+            try
+            {
+                using (var dlHandle = Authenticode.OpenLocked(downloadedPath))
+                {
+                    matches = _verifier.Sha256Matches(dlHandle, item.Sha256);
+                }
+            }
+            catch (Exception ex)
+            {
+                try { File.Delete(downloadedPath); } catch { }
+                return new InstallOutcome(InstallStatus.Failed, $"Could not verify download checksum: {ex.Message}", null, rpOutcome);
+            }
+
+            if (!matches)
+            {
+                try { File.Delete(downloadedPath); } catch { }
+                return new InstallOutcome(InstallStatus.Refused, "The download does not match the maker's checksum.", null, rpOutcome);
+            }
+        }
+
+        if (downloadedPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                extractDir = Path.Combine(Path.GetDirectoryName(downloadedPath)!, Path.GetFileNameWithoutExtension(downloadedPath));
+                if (Directory.Exists(extractDir))
+                {
+                    try { Directory.Delete(extractDir, recursive: true); } catch { }
+                }
+                ZipFile.ExtractToDirectory(downloadedPath, extractDir, overwriteFiles: true);
+
+                var exes = Directory.GetFiles(extractDir, "*.exe", SearchOption.AllDirectories);
+                if (exes.Length > 0)
+                {
+                    downloadedPath = exes.FirstOrDefault(e =>
+                        e.Contains("setup", StringComparison.OrdinalIgnoreCase) ||
+                        e.Contains("update", StringComparison.OrdinalIgnoreCase) ||
+                        e.Contains("install", StringComparison.OrdinalIgnoreCase)) ?? exes[0];
+                }
+                else if (item.Method == InstallMethod.HandOff)
+                {
+                    return new InstallOutcome(InstallStatus.HandedOff, "Ready for manual installation.", extractDir, rpOutcome);
+                }
+            }
+            catch (InvalidDataException)
+            {
+                // Not a valid zip; proceed as regular file
+            }
+            catch (Exception ex)
+            {
+                try { File.Delete(downloadedPath); } catch { }
+                if (extractDir != null) { try { Directory.Delete(extractDir, recursive: true); } catch { } }
+                return new InstallOutcome(InstallStatus.Failed, $"Could not extract zip archive: {ex.Message}", null, rpOutcome);
+            }
+        }
+
         SafeFileHandle handle;
         try
         {
@@ -150,27 +214,19 @@ public sealed class UpdateInstaller(
         }
         catch (Exception lockEx)
         {
-            try { File.Delete(downloadedPath); } catch { }
+            try { File.Delete(originalDownloadedPath); } catch { }
+            if (extractDir != null) { try { Directory.Delete(extractDir, recursive: true); } catch { } }
             return new InstallOutcome(InstallStatus.Failed, $"Could not open locked file: {lockEx.Message}", null, rpOutcome);
         }
 
         try
         {
-            if (!string.IsNullOrEmpty(item.Sha256))
-            {
-                if (!_verifier.Sha256Matches(handle, item.Sha256))
-                {
-                    handle.Dispose();
-                    try { File.Delete(downloadedPath); } catch { }
-                    return new InstallOutcome(InstallStatus.Refused, "The download does not match the maker's checksum.", null, rpOutcome);
-                }
-            }
-
             var signers = _verifier.Signers(handle, downloadedPath);
             if (signers == null || !signers.Any(s => policy.ExpectedSigners.Any(expected => Authenticode.NamesMatch(s, expected))))
             {
                 handle.Dispose();
-                try { File.Delete(downloadedPath); } catch { }
+                try { File.Delete(originalDownloadedPath); } catch { }
+                if (extractDir != null) { try { Directory.Delete(extractDir, recursive: true); } catch { } }
                 return new InstallOutcome(InstallStatus.Refused, $"The file is not signed by {item.SourceName}, so NitrOS will not run it.", null, rpOutcome);
             }
 
@@ -193,7 +249,8 @@ public sealed class UpdateInstaller(
                 finally
                 {
                     handle.Dispose();
-                    try { File.Delete(downloadedPath); } catch { }
+                    try { File.Delete(originalDownloadedPath); } catch { }
+                    if (extractDir != null) { try { Directory.Delete(extractDir, recursive: true); } catch { } }
                 }
 
                 if (exitCode == 0)

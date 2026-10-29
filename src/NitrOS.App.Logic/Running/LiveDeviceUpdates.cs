@@ -77,6 +77,10 @@ public sealed class LiveDeviceUpdates(
                 var psi = new ProcessStartInfo { FileName = path, UseShellExecute = true };
                 Process.Start(psi);
             }
+            else if (Directory.Exists(path))
+            {
+                _launcher.ShowInFolder(path);
+            }
         }
         finally
         {

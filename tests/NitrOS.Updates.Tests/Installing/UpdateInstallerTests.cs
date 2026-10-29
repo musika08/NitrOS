@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net;
 using System.Text.Json;
 using NitrOS.Core.Model;
@@ -290,6 +291,47 @@ public sealed class UpdateInstallerTests : IDisposable
 
         var outcome = await installer.InstallAsync(request, null, CancellationToken.None);
         Assert.Equal(InstallStatus.Installed, outcome.Status);
+    }
+
+    [Fact]
+    public async Task Install_ExtractsZipPayloadAndVerifiesInnerExe()
+    {
+        var ally = LoadAllyFixture();
+        byte[] zipBytes;
+        using (var ms = new MemoryStream())
+        {
+            using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
+            {
+                var entry = archive.CreateEntry("tool_setup.exe");
+                using var es = entry.Open();
+                es.Write(new byte[64], 0, 64);
+            }
+            zipBytes = ms.ToArray();
+        }
+
+        var (installer, _, verifier, _, _, _) = CreateInstaller(req =>
+        {
+            var resp = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(zipBytes) };
+            resp.Content.Headers.ContentLength = zipBytes.Length;
+            return resp;
+        });
+
+        verifier.SignerNamesResult = ["ASUSTeK COMPUTER INC."];
+
+        var item = new UpdateItem(
+            "fw:mcu", "ROG MCU Firmware Update tool", UpdateKind.Firmware, null, "326",
+            new Uri("https://dlcdnets.asus.com/tool.zip"), (long)zipBytes.Length, null, "asus", "ASUS")
+        {
+            Method = InstallMethod.HandOff
+        };
+        var merged = new MergedItem(item, ItemState.CantTell, null, []);
+        var request = new InstallRequest(merged, ally, UserConfirmedFirmwareWarning: true);
+
+        var outcome = await installer.InstallAsync(request, null, CancellationToken.None);
+
+        Assert.Equal(InstallStatus.HandedOff, outcome.Status);
+        Assert.NotNull(outcome.HandOffPath);
+        Assert.EndsWith(".exe", outcome.HandOffPath, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
