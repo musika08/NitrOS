@@ -39,7 +39,7 @@
 
             <!-- Policy Note -->
             <InfoBar
-                IsOpen="True"
+                IsOpen="{x:Bind ViewModel.PolicyNote, Mode=OneWay, Converter={StaticResource StringToBoolConverter}}"
                 IsClosable="False"
                 Severity="Informational"
                 CornerRadius="{StaticResource AppleCardCornerRadius}"
