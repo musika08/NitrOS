@@ -487,3 +487,6 @@ $RECYCLE.BIN/
 # NitrOS Measure
 measure/measure.local.json
 measure/work/
+/bin_fresh/
+/bin_latest/
+

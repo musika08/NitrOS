@@ -177,7 +177,7 @@ public sealed class UpdateInstaller(
             // 8. HandOff
             if (item.Method == InstallMethod.HandOff)
             {
-                // File stays locked and intact for caller
+                handle.Dispose();
                 return new InstallOutcome(InstallStatus.HandedOff, "Ready for manual installation.", downloadedPath, rpOutcome);
             }
 

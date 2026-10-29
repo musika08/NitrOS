@@ -8,12 +8,21 @@ public sealed class WinFileVerifier : NitrOS.Updates.Installing.IFileVerifier
 {
     public bool Sha256Matches(SafeFileHandle file, string expectedHex)
     {
-        if (file == null || file.IsInvalid) return false;
+        if (file == null || file.IsInvalid || file.IsClosed) return false;
         if (string.IsNullOrWhiteSpace(expectedHex)) return false;
 
-        using var stream = new FileStream(file, FileAccess.Read, 4096, isAsync: false);
-        stream.Seek(0, SeekOrigin.Begin);
-        var hashBytes = SHA256.HashData(stream);
+        using var sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        byte[] buffer = new byte[65536];
+        long offset = 0;
+        int bytesRead;
+
+        while ((bytesRead = RandomAccess.Read(file, buffer, offset)) > 0)
+        {
+            sha.AppendData(buffer, 0, bytesRead);
+            offset += bytesRead;
+        }
+
+        var hashBytes = sha.GetHashAndReset();
         var actualHex = Convert.ToHexString(hashBytes);
 
         return string.Equals(actualHex, expectedHex.Trim(), StringComparison.OrdinalIgnoreCase);

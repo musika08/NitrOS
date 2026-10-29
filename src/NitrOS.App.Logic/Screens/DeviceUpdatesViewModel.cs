@@ -54,7 +54,14 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
     public IReadOnlyList<UpdateRow> Rows
     {
         get => _rows;
-        private set => SetProperty(ref _rows, value);
+        private set
+        {
+            if (SetProperty(ref _rows, value))
+            {
+                OnPropertyChanged(nameof(CanUpdateAll));
+                UpdateAllCommand?.NotifyCanExecuteChanged();
+            }
+        }
     }
 
     public IReadOnlyList<string> Notices
@@ -81,7 +88,9 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
         private set => SetProperty(ref _lastChecked, value);
     }
 
+    public bool CanUpdateAll => !IsChecking && Rows.Any(r => r.Install != null && r.Merged.State == ItemState.NewVersion);
     public IAsyncRelayCommand CheckCommand { get; }
+    public IAsyncRelayCommand UpdateAllCommand { get; }
 
     public DeviceUpdatesViewModel(
         IDeviceUpdates updates,
@@ -99,6 +108,7 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
         _restarter = restarter ?? throw new ArgumentNullException(nameof(restarter));
 
         CheckCommand = new AsyncRelayCommand(RunCheckAsync, () => !IsChecking);
+        UpdateAllCommand = new AsyncRelayCommand(RunUpdateAllAsync, () => CanUpdateAll);
     }
 
     public void OnShown(object? argument)
@@ -238,6 +248,24 @@ public sealed partial class DeviceUpdatesViewModel : ObservableObject, IScreen
             r.Install?.NotifyCanExecuteChanged();
             r.GetAnyway?.NotifyCanExecuteChanged();
         }
+        OnPropertyChanged(nameof(CanUpdateAll));
+        UpdateAllCommand?.NotifyCanExecuteChanged();
+    }
+
+    private async Task RunUpdateAllAsync()
+    {
+        if (IsChecking) return;
+        var targets = Rows.Where(r => r.Install != null && r.Merged.State == ItemState.NewVersion).ToList();
+        if (targets.Count == 0) return;
+
+        foreach (var row in targets)
+        {
+            if (row.Install != null && row.Install.CanExecute(null))
+            {
+                await row.Install.ExecuteAsync(null);
+            }
+        }
+        UpdateRowCommandsCanExecute();
     }
 
     private async Task RunInstallFlowAsync(UpdateRow row, string? confirmPrompt)
