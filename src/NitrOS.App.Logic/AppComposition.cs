@@ -194,10 +194,11 @@ public sealed class AppComposition
         var driftService = new LiveDriftService(journalAccess, WinSystems.CreateAdapters, session);
 
         var downloadsDir = customProgramData is not null ? Path.Combine(customProgramData, "NitrOS", "downloads") : Path.Combine(programData, "NitrOS", "downloads");
+        var installedDevices = new NitrOS.Updates.Windows.WinInstalledDevices();
         var deviceReader = new NitrOS.Updates.Reading.DeviceReader(
             new NitrOS.Updates.Windows.WinIdentity(),
-            new NitrOS.Updates.Windows.WinInstalledDevices(),
-            new NitrOS.Updates.Windows.WinFirmwareTable());
+            installedDevices,
+            new NitrOS.Updates.Windows.WinFirmwareTable(devices: installedDevices));
         var updateSources = NitrOS.Updates.Sources.SourceSet.Default(
             new NitrOS.Updates.Windows.WinUpdateAgent(),
             NitrOS.Updates.Net.HttpFactory.Create(),
