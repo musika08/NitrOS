@@ -70,19 +70,19 @@ public sealed class NoItemsToVisibilityConverter : IValueConverter
         throw new NotSupportedException();
 }
 
-/// <summary>Chip colors for a switch's applied state: green applied, yellow not applied, neutral otherwise.
+/// <summary>Chip colors for a switch versus its profile: green matches the recommendation, yellow differs, neutral when there is none.
 /// ConverterParameter "bg" gives the background, anything else the text color.</summary>
-public sealed class AppliedStateBrushConverter : IValueConverter
+public sealed class RecommendStateBrushConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, string language)
     {
         var background = parameter as string == "bg";
-        var key = (value is NitrOS.App.Logic.Screens.AppliedState state ? state : default, background) switch
+        var key = (value is NitrOS.App.Logic.Screens.RecommendState state ? state : default, background) switch
         {
-            (NitrOS.App.Logic.Screens.AppliedState.Applied, true) => "SystemFillColorSuccessBackgroundBrush",
-            (NitrOS.App.Logic.Screens.AppliedState.Applied, false) => "SystemFillColorSuccessBrush",
-            (NitrOS.App.Logic.Screens.AppliedState.NotApplied, true) => "SystemFillColorCautionBackgroundBrush",
-            (NitrOS.App.Logic.Screens.AppliedState.NotApplied, false) => "SystemFillColorCautionBrush",
+            (NitrOS.App.Logic.Screens.RecommendState.Matches, true) => "SystemFillColorSuccessBackgroundBrush",
+            (NitrOS.App.Logic.Screens.RecommendState.Matches, false) => "SystemFillColorSuccessBrush",
+            (NitrOS.App.Logic.Screens.RecommendState.Differs, true) => "SystemFillColorCautionBackgroundBrush",
+            (NitrOS.App.Logic.Screens.RecommendState.Differs, false) => "SystemFillColorCautionBrush",
             (_, true) => "CockpitRaisedBrush",
             _ => "CockpitTextSecondary",
         };

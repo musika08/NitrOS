@@ -131,7 +131,8 @@ public sealed class SwitchesViewModel : ObservableObject, IScreen
                     isTuneMode,
                     warnings,
                     OnToggleSwitch,
-                    isCurrentlyInEffect);
+                    isCurrentlyInEffect,
+                    _draft.Card is { } picked && picked != CardId.Custom ? Selection.DefaultFor(def, picked) : null);
 
                 _allRows.Add(row);
             }

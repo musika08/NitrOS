@@ -126,7 +126,7 @@ public sealed class Selection
         return new Availability(true, null);
     }
 
-    private static CardDefault DefaultFor(SwitchDef def, CardId card) => card switch
+    public static CardDefault DefaultFor(SwitchDef def, CardId card) => card switch
     {
         CardId.Recommended => def.Cards.Recommended,
         CardId.Gamer => def.Cards.Gamer,

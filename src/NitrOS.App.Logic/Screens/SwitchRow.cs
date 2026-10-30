@@ -5,8 +5,8 @@ using NitrOS.Core.Model;
 
 namespace NitrOS.App.Logic.Screens;
 
-/// <summary>Whether a switch's setting is already in effect on this PC (None when building an ISO).</summary>
-public enum AppliedState { None, Applied, NotApplied }
+/// <summary>How a switch's current position compares with what the chosen profile recommends.</summary>
+public enum RecommendState { None, Matches, Differs }
 
 public sealed class SwitchRow : ObservableObject
 {
@@ -23,7 +23,16 @@ public sealed class SwitchRow : ObservableObject
     public string? UnavailableReason { get; }
     public bool CantUndoBadge { get; }
     public bool CurrentlyInEffect { get; }
-    public AppliedState Applied { get; }
+    private readonly CardDefault? _recommended;
+
+    public RecommendState Recommend
+    {
+        get
+        {
+            if (!IsAvailable || _recommended is not (CardDefault.On or CardDefault.Off)) return RecommendState.None;
+            return IsOn == (_recommended == CardDefault.On) ? RecommendState.Matches : RecommendState.Differs;
+        }
+    }
     public IRelayCommand Toggle { get; }
 
     public bool IsOn
@@ -35,6 +44,7 @@ public sealed class SwitchRow : ObservableObject
             {
                 OnPropertyChanged(nameof(ActionBadge));
                 OnPropertyChanged(nameof(ActionDetail));
+                OnPropertyChanged(nameof(Recommend));
             }
         }
     }
@@ -93,7 +103,8 @@ public sealed class SwitchRow : ObservableObject
         bool isTuneMode,
         IReadOnlyList<string> warnings,
         Action<string> onToggle,
-        bool currentlyInEffect = false)
+        bool currentlyInEffect = false,
+        CardDefault? recommended = null)
     {
         ArgumentNullException.ThrowIfNull(def);
         ArgumentNullException.ThrowIfNull(onToggle);
@@ -106,7 +117,7 @@ public sealed class SwitchRow : ObservableObject
         IsAvailable = isAvailable;
         UnavailableReason = unavailableReason;
         CurrentlyInEffect = currentlyInEffect;
-        Applied = !isTuneMode ? AppliedState.None : currentlyInEffect ? AppliedState.Applied : AppliedState.NotApplied;
+        _recommended = recommended;
         Warnings = warnings ?? [];
 
         MemoryText = def.Measured is not null

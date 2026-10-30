@@ -76,11 +76,11 @@
                                                                VerticalAlignment="Center" />
                                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                                         <Border Style="{StaticResource CockpitChip}"
-                                                                Background="{x:Bind Applied, Converter={StaticResource AppliedStateBrushConverter}, ConverterParameter=bg}">
+                                                                Background="{x:Bind Recommend, Mode=OneWay, Converter={StaticResource RecommendStateBrushConverter}, ConverterParameter=bg}">
                                                             <TextBlock Text="{x:Bind ActionBadge, Mode=OneWay}"
                                                                        FontSize="12"
                                                                        FontWeight="SemiBold"
-                                                                       Foreground="{x:Bind Applied, Converter={StaticResource AppliedStateBrushConverter}}" />
+                                                                       Foreground="{x:Bind Recommend, Mode=OneWay, Converter={StaticResource RecommendStateBrushConverter}}" />
                                                         </Border>
                                                         <Border Style="{StaticResource CockpitChip}"
                                                                 Background="{StaticResource SystemFillColorCautionBackgroundBrush}"
