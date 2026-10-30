@@ -69,3 +69,26 @@ public sealed class NoItemsToVisibilityConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object? parameter, string language) =>
         throw new NotSupportedException();
 }
+
+/// <summary>Chip colors for a switch's applied state: green applied, yellow not applied, neutral otherwise.
+/// ConverterParameter "bg" gives the background, anything else the text color.</summary>
+public sealed class AppliedStateBrushConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, string language)
+    {
+        var background = parameter as string == "bg";
+        var key = (value is NitrOS.App.Logic.Screens.AppliedState state ? state : default, background) switch
+        {
+            (NitrOS.App.Logic.Screens.AppliedState.Applied, true) => "SystemFillColorSuccessBackgroundBrush",
+            (NitrOS.App.Logic.Screens.AppliedState.Applied, false) => "SystemFillColorSuccessBrush",
+            (NitrOS.App.Logic.Screens.AppliedState.NotApplied, true) => "SystemFillColorCautionBackgroundBrush",
+            (NitrOS.App.Logic.Screens.AppliedState.NotApplied, false) => "SystemFillColorCautionBrush",
+            (_, true) => "CockpitRaisedBrush",
+            _ => "CockpitTextSecondary",
+        };
+        return Application.Current.Resources[key];
+    }
+
+    public object ConvertBack(object value, Type targetType, object? parameter, string language) =>
+        throw new NotSupportedException();
+}

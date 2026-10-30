@@ -75,10 +75,12 @@
                                                                TextTrimming="CharacterEllipsis"
                                                                VerticalAlignment="Center" />
                                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                                        <Border Style="{StaticResource CockpitChip}">
+                                                        <Border Style="{StaticResource CockpitChip}"
+                                                                Background="{x:Bind Applied, Converter={StaticResource AppliedStateBrushConverter}, ConverterParameter=bg}">
                                                             <TextBlock Text="{x:Bind ActionBadge, Mode=OneWay}"
                                                                        FontSize="12"
-                                                                       Foreground="{StaticResource CockpitTextSecondary}" />
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="{x:Bind Applied, Converter={StaticResource AppliedStateBrushConverter}}" />
                                                         </Border>
                                                         <Border Style="{StaticResource CockpitChip}"
                                                                 Background="{StaticResource SystemFillColorCautionBackgroundBrush}"

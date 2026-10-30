@@ -18,6 +18,7 @@
             <local:InverseBoolConverter x:Key="InverseBoolConverter" />
             <local:HasItemsToVisibilityConverter x:Key="HasItemsToVisibilityConverter" />
             <local:NoItemsToVisibilityConverter x:Key="NoItemsToVisibilityConverter" />
+            <local:AppliedStateBrushConverter x:Key="AppliedStateBrushConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

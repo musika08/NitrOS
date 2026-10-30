@@ -5,6 +5,9 @@ using NitrOS.Core.Model;
 
 namespace NitrOS.App.Logic.Screens;
 
+/// <summary>Whether a switch's setting is already in effect on this PC (None when building an ISO).</summary>
+public enum AppliedState { None, Applied, NotApplied }
+
 public sealed class SwitchRow : ObservableObject
 {
     private bool _isOn;
@@ -20,6 +23,7 @@ public sealed class SwitchRow : ObservableObject
     public string? UnavailableReason { get; }
     public bool CantUndoBadge { get; }
     public bool CurrentlyInEffect { get; }
+    public AppliedState Applied { get; }
     public IRelayCommand Toggle { get; }
 
     public bool IsOn
@@ -102,6 +106,7 @@ public sealed class SwitchRow : ObservableObject
         IsAvailable = isAvailable;
         UnavailableReason = unavailableReason;
         CurrentlyInEffect = currentlyInEffect;
+        Applied = !isTuneMode ? AppliedState.None : currentlyInEffect ? AppliedState.Applied : AppliedState.NotApplied;
         Warnings = warnings ?? [];
 
         MemoryText = def.Measured is not null
