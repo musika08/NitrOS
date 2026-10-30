@@ -1,5 +1,8 @@
 using System.Net;
 using System.Text.Json;
+using NitrOS.Core.Model;
+using NitrOS.Live.Systems;
+using NitrOS.Live.Tests.Fakes;
 using NitrOS.Updates.Firmware;
 using NitrOS.Updates.Model;
 using NitrOS.Updates.Net;
@@ -97,7 +100,7 @@ public sealed class AsusSourceTests
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(content) };
         });
 
-        var source = new AsusSource(client, FirmwareMap.Shipped());
+        var source = new AsusSource(client, FirmwareMap.Shipped(), new FakeRegistry());
         var result = await source.CheckAsync(ally, CancellationToken.None);
 
         Assert.Equal(SourceStatus.Ok, result.Status);
@@ -105,6 +108,82 @@ public sealed class AsusSourceTests
         Assert.NotNull(mcuItem);
         Assert.Null(mcuItem.InstalledVersion);
         Assert.Equal(InstallMethod.HandOff, mcuItem.Method);
+    }
+
+    [Fact]
+    public async Task Asus_McuToolReadsRegistryWhenPresent()
+    {
+        var ally = LoadAllyFixture();
+        var (biosJson, driversJson) = LoadAsusFixtures();
+        var client = CreateFakeClient(req =>
+        {
+            var content = req.RequestUri!.ToString().Contains("GetPDBIOS") ? biosJson : driversJson;
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(content) };
+        });
+
+        var reg = new FakeRegistry();
+        reg.SetValue(LiveHive.LocalMachine, @"SOFTWARE\ASUS\FWVersion\ROGMCUFW", "FW version", new RegValue(RegistryKind.String, "FGA80100.RC73XA.326"), RegView.Default);
+
+        var source = new AsusSource(client, FirmwareMap.Shipped(), reg);
+        var result = await source.CheckAsync(ally, CancellationToken.None);
+
+        Assert.Equal(SourceStatus.Ok, result.Status);
+        var mcuItem = result.Items.FirstOrDefault(i => i.Name.Contains("MCU"));
+        Assert.NotNull(mcuItem);
+        Assert.Equal("326", mcuItem.InstalledVersion);
+        Assert.Equal("fw:asus:mcu", mcuItem.Key);
+    }
+
+    [Fact]
+    public async Task Asus_DropsAlternativeBatchesAndUnconnectedAccessories()
+    {
+        var ally = LoadAllyFixture();
+        var (biosJson, driversJson) = LoadAsusFixtures();
+        var client = CreateFakeClient(req =>
+        {
+            var content = req.RequestUri!.ToString().Contains("GetPDBIOS") ? biosJson : driversJson;
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(content) };
+        });
+
+        var source = new AsusSource(client, FirmwareMap.Shipped(), new FakeRegistry());
+        var result = await source.CheckAsync(ally, CancellationToken.None);
+
+        Assert.Equal(SourceStatus.Ok, result.Status);
+        Assert.DoesNotContain(result.Items, i => i.Name.Contains("EGIS", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.Items, i => i.Name.Contains("TDK", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.Items, i => i.Name.Contains("Raikiri", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Asus_CardReaderMatchedByPrefixHardwareId()
+    {
+        var ally = LoadAllyFixture();
+        var pciGenesys = new InstalledDevice(
+            @"PCI\VEN_17A0&DEV_9767&SUBSYS_20DF1043&REV_04\4&3091AB3D&0&0012",
+            "Genesys Logic PCIE card reader device",
+            "MTD",
+            new[] { "PCI\\VEN_17A0&DEV_9767&SUBSYS_20DF1043&REV_04", "PCI\\VEN_17A0&DEV_9767&SUBSYS_20DF1043" },
+            "1.2.31.0",
+            null,
+            "Genesys Logic, Inc.");
+        var devices = ally.Devices.Concat(new[] { pciGenesys }).ToList();
+        var allyWithGenesys = ally with { Devices = devices };
+
+        var (biosJson, driversJson) = LoadAsusFixtures();
+        var client = CreateFakeClient(req =>
+        {
+            var content = req.RequestUri!.ToString().Contains("GetPDBIOS") ? biosJson : driversJson;
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(content) };
+        });
+
+        var source = new AsusSource(client, FirmwareMap.Shipped(), new FakeRegistry());
+        var result = await source.CheckAsync(allyWithGenesys, CancellationToken.None);
+
+        Assert.Equal(SourceStatus.Ok, result.Status);
+        var cardReader = result.Items.FirstOrDefault(i => i.Name.Contains("Genesys Card Reader"));
+        Assert.NotNull(cardReader);
+        Assert.Equal("1.2.31.0", cardReader.InstalledVersion);
+        Assert.StartsWith("dev:PCI\\VEN_17A0&DEV_9767", cardReader.Key);
     }
 
     [Fact]

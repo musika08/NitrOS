@@ -1,15 +1,25 @@
 using System.Text.Json;
+using NitrOS.Live.Systems;
+using NitrOS.Live.Windows;
 using NitrOS.Updates.Firmware;
 using NitrOS.Updates.Model;
 
 namespace NitrOS.Updates.Sources;
 
-public sealed class AsusSource(HttpClient http, FirmwareMap map) : IUpdateSource
+public sealed class AsusSource : IUpdateSource
 {
     internal const bool AsusDriverInstallsProven = false;
 
-    private readonly HttpClient _http = http ?? throw new ArgumentNullException(nameof(http));
-    private readonly FirmwareMap _map = map ?? throw new ArgumentNullException(nameof(map));
+    private readonly HttpClient _http;
+    private readonly FirmwareMap _map;
+    private readonly IRegistry _registry;
+
+    public AsusSource(HttpClient http, FirmwareMap map, IRegistry? registry = null)
+    {
+        _http = http ?? throw new ArgumentNullException(nameof(http));
+        _map = map ?? throw new ArgumentNullException(nameof(map));
+        _registry = registry ?? new WinRegistry();
+    }
 
     public string Id => "asus";
     public string Name => "ASUS";
@@ -110,6 +120,16 @@ public sealed class AsusSource(HttpClient http, FirmwareMap map) : IUpdateSource
                 if (title.Contains("EZ Flash", StringComparison.OrdinalIgnoreCase))
                     continue;
 
+                // Drop external optional accessories not connected (e.g. ROG Raikiri controller)
+                if (title.Contains("Raikiri", StringComparison.OrdinalIgnoreCase))
+                {
+                    var hasRaikiri = device.Devices.Any(d =>
+                        d.Name.Contains("Raikiri", StringComparison.OrdinalIgnoreCase) ||
+                        d.HardwareIds.Any(h => h.Contains("GD300", StringComparison.OrdinalIgnoreCase)));
+                    if (!hasRaikiri)
+                        continue;
+                }
+
                 // Validate download URL
                 var globalUrl = file.DownloadUrl?.Global;
                 if (string.IsNullOrWhiteSpace(globalUrl)) continue;
@@ -148,6 +168,11 @@ public sealed class AsusSource(HttpClient http, FirmwareMap map) : IUpdateSource
                         installed = FirmwareMap.InstalledText(link, device);
                         compareRule = link.Rule.ToString();
                     }
+                    else if (title.Contains("MCU", StringComparison.OrdinalIgnoreCase))
+                    {
+                        key = "fw:asus:mcu";
+                        installed = ReadMcuInstalledVersion();
+                    }
                     else
                     {
                         key = $"src:asus:{title}";
@@ -157,14 +182,24 @@ public sealed class AsusSource(HttpClient http, FirmwareMap map) : IUpdateSource
                 {
                     // Driver: match by HardwareInfoList
                     InstalledDevice? matchedDevice = null;
-                    if (file.HardwareInfoList != null)
+                    if (file.HardwareInfoList != null && file.HardwareInfoList.Count > 0)
                     {
                         foreach (var hw in file.HardwareInfoList)
                         {
                             if (string.IsNullOrWhiteSpace(hw.HardwareId)) continue;
                             matchedDevice = device.Devices.FirstOrDefault(d =>
-                                d.HardwareIds.Any(h => string.Equals(h, hw.HardwareId, StringComparison.OrdinalIgnoreCase)));
+                                d.HardwareIds.Any(h =>
+                                    string.Equals(h, hw.HardwareId, StringComparison.OrdinalIgnoreCase) ||
+                                    h.StartsWith(hw.HardwareId, StringComparison.OrdinalIgnoreCase) ||
+                                    hw.HardwareId.StartsWith(h, StringComparison.OrdinalIgnoreCase)));
                             if (matchedDevice != null) break;
+                        }
+
+                        // Driver specifies HardwareInfoList but device has none of the hardware IDs.
+                        // Skip alternative factory batch hardware not present on this machine (e.g. Egis vs FocalTech, TDK vs Bosch).
+                        if (matchedDevice == null)
+                        {
+                            continue;
                         }
                     }
 
@@ -227,6 +262,24 @@ public sealed class AsusSource(HttpClient http, FirmwareMap map) : IUpdateSource
 
                 result.Add(item);
             }
+        }
+    }
+
+    private string? ReadMcuInstalledVersion()
+    {
+        try
+        {
+            var val = _registry.GetValue(LiveHive.LocalMachine, @"SOFTWARE\ASUS\FWVersion\ROGMCUFW", "FW version", RegView.Default);
+            if (val == null || string.IsNullOrWhiteSpace(val.Data))
+                return null;
+
+            var raw = val.Data.Trim();
+            var dot = raw.LastIndexOf('.');
+            return (dot >= 0 && dot < raw.Length - 1) ? raw[(dot + 1)..] : raw;
+        }
+        catch
+        {
+            return null;
         }
     }
 }

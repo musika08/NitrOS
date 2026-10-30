@@ -18,7 +18,7 @@ public sealed class WinFirmwareTable : IFirmwareTable
     public WinFirmwareTable(IRegistry? registry = null, IInstalledDevices? devices = null)
     {
         _registry = registry ?? new WinRegistry();
-        _devices = devices;
+        _devices = devices ?? new WinInstalledDevices();
     }
 
     public IReadOnlyList<FirmwareResource> Read()
