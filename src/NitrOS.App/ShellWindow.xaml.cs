@@ -26,6 +26,34 @@ public sealed partial class ShellWindow : Window
 
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 750));
         AppWindow.Closing += OnAppWindowClosing;
+        SizeChanged += OnWindowSizeChanged;
+    }
+
+    private const double RailCollapsed = 64;
+    private const double RailExpanded = 200;
+    private bool _railExpanded;
+
+    private void OnRailToggleClicked(object sender, RoutedEventArgs e) => SetRailExpanded(!_railExpanded);
+
+    private void OnWindowSizeChanged(object sender, WindowSizeChangedEventArgs e)
+    {
+        // Narrow windows keep the rail collapsed so content never clips.
+        if (e.Size.Width < 900 && _railExpanded) SetRailExpanded(false);
+    }
+
+    private void SetRailExpanded(bool expanded)
+    {
+        _railExpanded = expanded;
+        SidebarColumn.Width = new GridLength(expanded ? RailExpanded : RailCollapsed);
+        var vis = expanded ? Visibility.Visible : Visibility.Collapsed;
+        BrandLabel.Visibility = vis;
+        LabelOverview.Visibility = vis;
+        LabelTune.Visibility = vis;
+        LabelUpdates.Visibility = vis;
+        LabelHealth.Visibility = vis;
+        LabelUndo.Visibility = vis;
+        LabelMyths.Visibility = vis;
+        LabelSettings.Visibility = vis;
     }
 
     public void Initialize(Navigator navigator, RunGate gate, PageMap pageMap, IDialogs dialogs)

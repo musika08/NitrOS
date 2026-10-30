@@ -30,7 +30,7 @@ Make the app compact, ergonomic, sleek, Apple-like, futuristic and rewarding. Ow
 - Keep Mica backdrop; window default size stays 1280x750.
 
 ### Profiles page (`CardsPage.xaml`)
-- 2-column grid of compact cards: name, in-use/recommended chip, big saving figure ("-780 MB"), one detail line. The whole card is the pick target (keeps `OnPickClicked` via card tap, button kept as the keyboard/controller default action). Fits five cards without scrolling at 1280x750.
+- 2-column grid of compact cards: name, in-use/recommended chip, big saving figure ("-780 MB"), one detail line. The whole card is a `Button` (style `CockpitCardButton`, `Tag` = card id), so `CardsPage.xaml.cs` `OnPickClicked` (`sender is Button { Tag: CardId }`) stays unchanged and still works for mouse, touch, keyboard and controller. Do not use a Border/Grid tap target (EGM audit 2026-10-30: the handler matches `Button` only). Fits five cards without scrolling at 1280x750.
 
 ### Switches page (`SwitchesPage.xaml`)
 - Row 44 px: title, small action chip, saving chip, toggle. Description, action detail, risk and unavailable reason move into an expander opened by click or controller A. "Can't undo" stays visible as an amber chip.

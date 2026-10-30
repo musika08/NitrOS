@@ -16,6 +16,19 @@ namespace NitrOS.App;
 
 public static class SmokeRunner
 {
+    private static FrameworkElement? FindByName(DependencyObject parent, string name)
+    {
+        var count = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(parent);
+        for (var i = 0; i < count; i++)
+        {
+            var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(parent, i);
+            if (child is FrameworkElement fe && fe.Name == name) return fe;
+            var found = FindByName(child, name);
+            if (found is not null) return found;
+        }
+        return null;
+    }
+
     public static async Task RunAsync(ShellWindow window, AppComposition composition, string outputPath)
     {
         try
@@ -28,7 +41,7 @@ public static class SmokeRunner
             // Helper to delay and capture window content
             async Task CaptureScreenAsync(string name)
             {
-                await Task.Delay(350);
+                await Task.Delay(2500);
                 if (window.Content is FrameworkElement fe)
                 {
                     var rtb = new RenderTargetBitmap();
@@ -67,6 +80,17 @@ public static class SmokeRunner
             composition.Draft.PickCard(CardId.Recommended);
             composition.Navigator.GoTo(ScreenKeys.Switches);
             await CaptureScreenAsync("Switches-Tune");
+
+            // Expand the first row's details and capture, proving the chevron toggle works
+            if (window.Content is DependencyObject root)
+            {
+                var more = FindByName(root, "MoreButton") as Microsoft.UI.Xaml.Controls.Primitives.ToggleButton;
+                if (more is not null)
+                {
+                    more.IsChecked = true;
+                    await CaptureScreenAsync("Switches-Tune-Expanded");
+                }
+            }
 
             // Gamepad check on Switches page
             var gamepads = Gamepad.Gamepads;
@@ -113,6 +137,24 @@ public static class SmokeRunner
             {
                 composition.Navigator.GoTo(ScreenKeys.DeviceUpdates);
                 await CaptureScreenAsync("DeviceUpdates");
+            }
+
+            // 4b. Remaining screens that open without arguments (screenshots only)
+            foreach (var key in new[]
+            {
+                ScreenKeys.Health, ScreenKeys.Undo, ScreenKeys.Myths, ScreenKeys.Settings
+            })
+            {
+                if (!composition.Navigator.IsRegistered(key)) continue;
+                try
+                {
+                    composition.Navigator.GoTo(key);
+                    await CaptureScreenAsync("Screen-" + key.Name);
+                }
+                catch (Exception)
+                {
+                    // Not reachable without arguments; the other captures still prove the style.
+                }
             }
 
             // 5. Build JSON report

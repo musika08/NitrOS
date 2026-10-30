@@ -2,11 +2,13 @@
     x:Class="NitrOS.App.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:NitrOS.App">
+    xmlns:local="using:NitrOS.App"
+    RequestedTheme="Dark">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <ResourceDictionary Source="Styles/Theme.xaml" />
                 <ResourceDictionary Source="Styles/Sizes.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
@@ -15,6 +17,7 @@
             <local:StringToBoolConverter x:Key="StringToBoolConverter" />
             <local:InverseBoolConverter x:Key="InverseBoolConverter" />
             <local:HasItemsToVisibilityConverter x:Key="HasItemsToVisibilityConverter" />
+            <local:NoItemsToVisibilityConverter x:Key="NoItemsToVisibilityConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -1,0 +1,17 @@
+{
+  "CatalogSwitches": 110,
+  "Device": "deviceprofile { hasbattery = true, hastouchscreen = true, ishandheld = true }",
+  "SessionOk": true,
+  "SessionReason": null,
+  "MemoryLine": "15.6 GB available to Windows. About 8.4 GB of 24.0 GB is set aside for graphics and hardware.",
+  "Screens": [
+    "Start",
+    "Cards",
+    "Switches",
+    "Review"
+  ],
+  "ReviewGoEnabledTune": false,
+  "ReviewGoReasonIso": "Smoke test: nothing is applied.",
+  "Gamepads": 1,
+  "DpadMovedFocus": null
+}

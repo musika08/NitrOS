@@ -5,184 +5,183 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:screens="using:NitrOS.App.Logic.Screens"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    Background="{StaticResource CockpitWindowBrush}">
 
-    <Grid XYFocusKeyboardNavigation="Enabled">
-        <Grid.RowDefinitions>
-            <!-- Top pinned header: Search, Card text, Info -->
-            <RowDefinition Height="Auto" />
-            <!-- Middle scrolling switch list -->
-            <RowDefinition Height="*" />
-            <!-- Bottom pinned footer: Totals and Review button -->
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
 
-        <!-- Top Pinned Area -->
+
+    <Grid XYFocusKeyboardNavigation="Enabled" RowDefinitions="Auto,*,Auto">
+
+        <!-- Top strip: profile chip, search, myths -->
         <Border Grid.Row="0"
-                Background="{ThemeResource LayerFillColorAltBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                Background="#0F1218"
+                BorderBrush="{StaticResource CockpitStrokeBrush}"
                 BorderThickness="0,0,0,1"
-                Padding="24,12">
-            <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
-                        HorizontalAlignment="Center"
-                        Spacing="8">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="Setup:"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
+                Padding="24,8">
+            <Grid MaxWidth="{StaticResource ContentColumnMaxWidth}"
+                  ColumnDefinitions="Auto,*,Auto"
+                  ColumnSpacing="10">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <TextBlock Text="{x:Bind ViewModel.CardText, Mode=OneWay}"
-                               FontSize="13"
+                               FontSize="14"
                                FontWeight="SemiBold"
-                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                               Foreground="{StaticResource AccentTextFillColorPrimaryBrush}"
                                VerticalAlignment="Center" />
-                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="{StaticResource ApplePillCornerRadius}"
-                            Padding="8,2"
-                            VerticalAlignment="Center">
+                    <Border Style="{StaticResource CockpitChip}">
                         <TextBlock Text="{x:Bind ViewModel.CardStatusText, Mode=OneWay}"
-                                   FontSize="11"
-                                   FontWeight="SemiBold" />
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource CockpitTextSecondary}" />
                     </Border>
                 </StackPanel>
 
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBox x:Name="SearchBox"
-                             PlaceholderText="Search switches..."
-                             Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             VerticalAlignment="Center" />
+                <TextBox x:Name="SearchBox"
+                         Grid.Column="1"
+                         PlaceholderText="Search switches"
+                         Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalAlignment="Center" />
 
-                    <Button Grid.Column="1"
-                            Content="Myths we tested"
-                            Command="{x:Bind ViewModel.OpenMyths}"
-                            Margin="10,0,0,0"
-                            VerticalAlignment="Center" />
-                </Grid>
-            </StackPanel>
+                <Button Grid.Column="2"
+                        Content="Myths we tested"
+                        Command="{x:Bind ViewModel.OpenMyths}"
+                        VerticalAlignment="Center" />
+            </Grid>
         </Border>
 
-        <!-- Scrolling Switch Groups -->
-        <ScrollViewer Grid.Row="1" Margin="24,8">
-            <ItemsControl x:Name="GroupsList"
-                          MaxWidth="{StaticResource ContentColumnMaxWidth}"
-                          HorizontalAlignment="Center"
-                          ItemsSource="{x:Bind ViewModel.Groups, Mode=OneWay}">
-                <ItemsControl.ItemTemplate>
+        <!-- Switch groups -->
+        <ScrollViewer Grid.Row="1" Padding="24,4">
+            <Grid>
+            <ItemsRepeater x:Name="GroupsList"
+                           MaxWidth="{StaticResource ContentColumnMaxWidth}"
+                           HorizontalAlignment="Stretch"
+                           ItemsSource="{x:Bind ViewModel.Groups, Mode=OneWay}">
+                <ItemsRepeater.ItemTemplate>
                     <DataTemplate x:DataType="screens:SwitchGroupView">
-                        <StackPanel Margin="0,6,0,12">
+                        <StackPanel Margin="0,10,0,4" Spacing="4">
                             <TextBlock Text="{x:Bind Title}"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                       Margin="2,0,0,6" />
+                                       Style="{StaticResource SectionHeader}"
+                                       Margin="4,0,0,2" />
 
-                            <ItemsControl ItemsSource="{x:Bind Rows}">
-                                <ItemsControl.ItemTemplate>
+                            <ItemsRepeater ItemsSource="{x:Bind Rows}">
+                                <ItemsRepeater.ItemTemplate>
                                     <DataTemplate x:DataType="screens:SwitchRow">
-                                        <Border Margin="0,2"
-                                                Padding="14,8"
-                                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="{StaticResource AppleControlCornerRadius}">
-                                            <Grid ColumnDefinitions="*,Auto">
-                                                <StackPanel Spacing="3" VerticalAlignment="Center">
-                                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <TextBlock Text="{x:Bind Name}"
-                                                                   FontSize="14"
-                                                                   FontWeight="SemiBold"
-                                                                   VerticalAlignment="Center" />
-                                                        <Border Background="{ThemeResource LayerFillColorAltBrush}"
-                                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                                BorderThickness="1"
-                                                                CornerRadius="{StaticResource ApplePillCornerRadius}"
-                                                                Padding="6,1"
-                                                                VerticalAlignment="Center">
+                                        <Border Style="{StaticResource CockpitRow}" Margin="0,2" Padding="14,0,6,0" MinHeight="48">
+                                            <Grid RowDefinitions="Auto,Auto">
+                                                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="10" MinHeight="48">
+                                                    <TextBlock Text="{x:Bind Name}"
+                                                               FontSize="14"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource CockpitTextPrimary}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center" />
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                        <Border Style="{StaticResource CockpitChip}">
                                                             <TextBlock Text="{x:Bind ActionBadge, Mode=OneWay}"
-                                                                       FontSize="11"
-                                                                       FontWeight="SemiBold"
-                                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                                       FontSize="12"
+                                                                       Foreground="{StaticResource CockpitTextSecondary}" />
                                                         </Border>
-                                                        <Border Visibility="{x:Bind CantUndoBadge, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                                Background="{ThemeResource SystemFillColorCautionBackgroundBrush}"
-                                                                BorderBrush="{ThemeResource SystemFillColorCautionBrush}"
-                                                                BorderThickness="1"
-                                                                CornerRadius="{StaticResource ApplePillCornerRadius}"
-                                                                Padding="6,1"
-                                                                VerticalAlignment="Center">
+                                                        <Border Style="{StaticResource CockpitChip}"
+                                                                Background="{StaticResource SystemFillColorCautionBackgroundBrush}"
+                                                                Visibility="{x:Bind CantUndoBadge, Converter={StaticResource BoolToVisibilityConverter}}">
                                                             <TextBlock Text="Can't undo"
-                                                                       FontSize="11"
+                                                                       FontSize="12"
                                                                        FontWeight="SemiBold"
-                                                                       Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                                                                       Foreground="{StaticResource SystemFillColorCautionBrush}" />
                                                         </Border>
                                                     </StackPanel>
 
-                                                    <TextBlock Text="{x:Bind Description}"
-                                                               FontSize="12"
-                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                               TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Column="2"
+                                                               Text="{x:Bind MemoryText}"
+                                                               FontSize="13"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource AccentTextFillColorPrimaryBrush}"
+                                                               VerticalAlignment="Center" />
 
-                                                    <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,1,0,0">
+                                                    <ToggleSwitch Grid.Column="3"
+                                                                  IsOn="{x:Bind IsOn, Mode=TwoWay}"
+                                                                  IsEnabled="{x:Bind IsAvailable}"
+                                                                  OnContent="" OffContent=""
+                                                                  MinWidth="0"
+                                                                  VerticalAlignment="Center" />
+
+                                                    <ToggleButton x:Name="MoreButton"
+                                                                  Grid.Column="4"
+                                                                  Width="40" Height="40" MinHeight="40"
+                                                                  Padding="0"
+                                                                  Background="Transparent"
+                                                                  BorderThickness="0"
+                                                                  AutomationProperties.Name="Show details">
+                                                        <TextBlock Text="&#xE70D;"
+                                                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                                   FontSize="12"
+                                                                   Foreground="{StaticResource CockpitTextSecondary}" />
+                                                    </ToggleButton>
+                                                </Grid>
+
+                                                <StackPanel Grid.Row="1" Spacing="4" Margin="0,0,8,10"
+                                                            Visibility="{Binding IsChecked, ElementName=MoreButton, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                    <TextBlock Text="{x:Bind Description}"
+                                                               FontSize="13"
+                                                               Foreground="{StaticResource CockpitTextSecondary}"
+                                                               TextWrapping="Wrap" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="12">
                                                         <TextBlock Text="{x:Bind ActionDetail, Mode=OneWay}"
-                                                                   FontSize="11"
-                                                                   Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-                                                        <TextBlock Text="{x:Bind MemoryText}"
-                                                                   FontSize="11"
-                                                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                                   FontSize="12"
+                                                                   Foreground="{StaticResource AccentTextFillColorPrimaryBrush}" />
                                                         <TextBlock Text="{x:Bind RiskBadge}"
-                                                                   FontSize="11"
-                                                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                                   FontSize="12"
+                                                                   Foreground="{StaticResource CockpitTextTertiary}"
                                                                    Visibility="{x:Bind RiskBadge, Converter={StaticResource NullToVisibilityConverter}}" />
                                                     </StackPanel>
-
                                                     <TextBlock Text="{x:Bind UnavailableReason}"
-                                                               FontSize="11"
-                                                               Foreground="{ThemeResource SystemFillColorCriticalBrush}"
-                                                               Visibility="{x:Bind UnavailableReason, Converter={StaticResource NullToVisibilityConverter}}"
-                                                               TextWrapping="Wrap" />
+                                                               FontSize="12"
+                                                               Foreground="{StaticResource SystemFillColorCriticalBrush}"
+                                                               TextWrapping="Wrap"
+                                                               Visibility="{x:Bind UnavailableReason, Converter={StaticResource NullToVisibilityConverter}}" />
                                                 </StackPanel>
-
-                                                <ToggleSwitch Grid.Column="1"
-                                                              IsOn="{x:Bind IsOn, Mode=TwoWay}"
-                                                              IsEnabled="{x:Bind IsAvailable}"
-                                                              VerticalAlignment="Center"
-                                                              Margin="16,0,0,0" />
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
                         </StackPanel>
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+            <TextBlock Text="No switches match your search."
+                       FontSize="14"
+                       Foreground="{StaticResource CockpitTextSecondary}"
+                       HorizontalAlignment="Center"
+                       Margin="0,48,0,0"
+                       Visibility="{x:Bind ViewModel.Groups, Mode=OneWay, Converter={StaticResource NoItemsToVisibilityConverter}}" />
+            </Grid>
         </ScrollViewer>
 
-        <!-- Bottom Pinned Area -->
+        <!-- Bottom bar: live total and Review -->
         <Border Grid.Row="2"
-                Background="{ThemeResource LayerFillColorAltBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                Background="#0F1218"
+                BorderBrush="{StaticResource CockpitStrokeBrush}"
                 BorderThickness="0,1,0,0"
-                Padding="24,10">
+                Padding="24,8">
             <Grid MaxWidth="{StaticResource ContentColumnMaxWidth}"
-                  HorizontalAlignment="Center"
                   ColumnDefinitions="*,Auto">
-                <StackPanel VerticalAlignment="Center" Spacing="2">
-                    <TextBlock Text="{x:Bind ViewModel.OnCountText, Mode=OneWay}"
-                               FontSize="14"
-                               FontWeight="SemiBold" />
+                <StackPanel VerticalAlignment="Center" Spacing="0">
                     <TextBlock Text="{x:Bind ViewModel.TotalsText, Mode=OneWay}"
+                               FontSize="15"
+                               FontWeight="Bold"
+                               TextWrapping="Wrap"
+                               MaxLines="2"
+                               Foreground="{StaticResource AccentTextFillColorPrimaryBrush}" />
+                    <TextBlock Text="{x:Bind ViewModel.OnCountText, Mode=OneWay}"
                                FontSize="12"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                               Foreground="{StaticResource CockpitTextSecondary}" />
                 </StackPanel>
 
                 <Button Grid.Column="1"
                         Content="Review changes"
                         Style="{ThemeResource AccentButtonStyle}"
                         Command="{x:Bind ViewModel.Review}"
-                        MinWidth="120"
+                        MinWidth="140"
                         VerticalAlignment="Center"
                         Margin="16,0,0,0" />
             </Grid>

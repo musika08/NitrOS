@@ -60,3 +60,12 @@ public sealed class HasItemsToVisibilityConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object? parameter, string language) =>
         throw new NotSupportedException();
 }
+
+public sealed class NoItemsToVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, string language) =>
+        value is System.Collections.ICollection { Count: > 0 } ? Visibility.Collapsed : Visibility.Visible;
+
+    public object ConvertBack(object value, Type targetType, object? parameter, string language) =>
+        throw new NotSupportedException();
+}

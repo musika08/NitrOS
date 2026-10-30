@@ -5,10 +5,11 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:screens="using:NitrOS.App.Logic.Screens"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    Background="{StaticResource CockpitWindowBrush}">
 
     <ScrollViewer XYFocusKeyboardNavigation="Enabled">
-        <StackPanel MaxWidth="840"
+        <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
                     Margin="28,24"
                     Spacing="16"
                     HorizontalAlignment="Center">
@@ -32,7 +33,7 @@
                                     Padding="8,2"
                                     VerticalAlignment="Center">
                                 <TextBlock Text="Ready"
-                                           FontSize="11"
+                                           FontSize="12"
                                            FontWeight="SemiBold"
                                            Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
                             </Border>
@@ -45,13 +46,13 @@
                     <Border Grid.Column="1"
                             Width="44" Height="44"
                             CornerRadius="12"
-                            Background="#007AFF"
+                            Background="{StaticResource CockpitAccentBrush}"
                             VerticalAlignment="Center"
                             Margin="16,0,0,0">
                         <TextBlock Text="&#xE790;"
                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                    FontSize="20"
-                                   Foreground="White"
+                                   Foreground="{StaticResource CockpitOnAccentBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Border>
@@ -73,16 +74,13 @@
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        Margin="2,4,0,0" />
 
-            <ItemsControl ItemsSource="{x:Bind ViewModel.Entries, Mode=OneWay}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="2" ItemWidth="412" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
+            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Entries, Mode=OneWay}">
+                <ItemsRepeater.Layout>
+                    <UniformGridLayout MinItemWidth="300" MinColumnSpacing="12" MinRowSpacing="12" ItemsStretch="Fill" />
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
                     <DataTemplate x:DataType="screens:StartEntry">
-                        <Border Margin="0,4,8,4"
-                                Padding="16,14"
+                        <Border Padding="16,14"
                                 MinHeight="96"
                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -99,8 +97,6 @@
                                             Command="{x:Bind Open}"
                                             IsEnabled="{x:Bind Enabled}"
                                             MinWidth="68"
-                                            MinHeight="28"
-                                            CornerRadius="14"
                                             FontSize="12"
                                             VerticalAlignment="Center" />
                                 </Grid>
@@ -114,15 +110,15 @@
 
                                 <TextBlock Grid.Row="2"
                                            Text="{x:Bind DisabledReason}"
-                                           FontSize="11"
+                                           FontSize="12"
                                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                            Visibility="{x:Bind DisabledReason, Converter={StaticResource NullToVisibilityConverter}}"
                                            Margin="0,4,0,0" />
                             </Grid>
                         </Border>
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
         </StackPanel>
     </ScrollViewer>
 </Page>

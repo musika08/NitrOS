@@ -5,7 +5,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:screens="using:NitrOS.App.Logic.Screens"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    Background="{StaticResource CockpitWindowBrush}">
 
     <ScrollViewer XYFocusKeyboardNavigation="Enabled">
         <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
@@ -48,7 +49,7 @@
                                                 Padding="6,1"
                                                 VerticalAlignment="Center">
                                             <TextBlock Text="OK"
-                                                       FontSize="11"
+                                                       FontSize="12"
                                                        FontWeight="SemiBold"
                                                        Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
                                         </Border>
@@ -60,7 +61,7 @@
                                                 Padding="6,1"
                                                 VerticalAlignment="Center">
                                             <TextBlock Text="Needs attention"
-                                                       FontSize="11"
+                                                       FontSize="12"
                                                        FontWeight="SemiBold"
                                                        Foreground="{ThemeResource SystemFillColorCautionBrush}" />
                                         </Border>
@@ -72,7 +73,7 @@
                                                Visibility="{x:Bind Detail, Converter={StaticResource NullToVisibilityConverter}}" />
 
                                     <TextBlock Text="{x:Bind LikelySwitchName}"
-                                               FontSize="11"
+                                               FontSize="12"
                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                Visibility="{x:Bind LikelySwitchName, Converter={StaticResource NullToVisibilityConverter}}" />
                                 </StackPanel>

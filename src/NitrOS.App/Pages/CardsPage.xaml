@@ -5,119 +5,96 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:screens="using:NitrOS.App.Logic.Screens"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    Background="{StaticResource CockpitWindowBrush}">
 
     <ScrollViewer XYFocusKeyboardNavigation="Enabled">
         <StackPanel MaxWidth="{StaticResource ContentColumnMaxWidth}"
-                    Margin="24,20"
-                    Spacing="14"
-                    HorizontalAlignment="Center">
+                    Margin="24,16"
+                    Spacing="12"
+                    HorizontalAlignment="Stretch">
 
-            <!-- Apple-style header -->
-            <StackPanel Spacing="3" Margin="0,0,0,4">
-                <TextBlock Text="Choose a profile"
-                           FontSize="24"
-                           FontWeight="SemiBold" />
+            <StackPanel Spacing="2">
+                <TextBlock Text="Choose a profile" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="{x:Bind ViewModel.MemoryLine, Mode=OneWay}"
                            FontSize="13"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource CockpitTextSecondary}" />
             </StackPanel>
 
-            <ItemsControl x:Name="CardsList" ItemsSource="{x:Bind ViewModel.Cards, Mode=OneWay}">
-                <ItemsControl.ItemTemplate>
+            <ItemsRepeater x:Name="CardsList" ItemsSource="{x:Bind ViewModel.Cards, Mode=OneWay}">
+                <ItemsRepeater.Layout>
+                    <UniformGridLayout MinItemWidth="340"
+                                       MinColumnSpacing="12"
+                                       MinRowSpacing="12"
+                                       ItemsStretch="Fill" />
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
                     <DataTemplate x:DataType="screens:CardItem">
-                        <Border Margin="0,4"
-                                Padding="16,12"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="{StaticResource AppleCardCornerRadius}">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <StackPanel Spacing="5" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <TextBlock Text="{x:Bind Title}"
-                                                   FontSize="15"
-                                                   FontWeight="SemiBold"
-                                                   VerticalAlignment="Center" />
-                                        <Border Visibility="{x:Bind IsInUse, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
-                                                BorderBrush="{ThemeResource SystemFillColorSuccessBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="{StaticResource ApplePillCornerRadius}"
-                                                Padding="8,2"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="In use"
-                                                       FontSize="11"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                        <Button Style="{StaticResource CockpitCardButton}"
+                                Tag="{x:Bind Id}"
+                                Click="OnPickClicked"
+                                AutomationProperties.Name="{x:Bind Title}">
+                            <StackPanel Spacing="6" MaxWidth="300" HorizontalAlignment="Left">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="{x:Bind Title}"
+                                               FontSize="15"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource CockpitTextPrimary}"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                        <Border Style="{StaticResource CockpitChip}"
+                                                Background="{StaticResource SystemFillColorSuccessBackgroundBrush}"
+                                                Visibility="{x:Bind IsInUse, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <TextBlock Text="In use" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource SystemFillColorSuccessBrush}" />
                                         </Border>
-                                        <Border Visibility="{x:Bind IsRecommended, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
-                                                CornerRadius="{StaticResource ApplePillCornerRadius}"
-                                                Padding="8,2"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="Recommended"
-                                                       FontSize="11"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                        <Border Style="{StaticResource CockpitChip}"
+                                                Background="{StaticResource CockpitAccentBrush}"
+                                                BorderThickness="0"
+                                                Visibility="{x:Bind IsRecommended, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <TextBlock Text="Recommended" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource CockpitOnAccentBrush}" />
                                         </Border>
                                     </StackPanel>
+                                </Grid>
 
-                                    <TextBlock Text="{x:Bind InUseText}"
-                                               FontSize="12"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                               Visibility="{x:Bind InUseText, Converter={StaticResource NullToVisibilityConverter}}" />
+                                <TextBlock Text="{x:Bind MemoryText}"
+                                           Style="{StaticResource HeroNumber}"
+                                           FontSize="17"
+                                           TextWrapping="Wrap"
+                                           MaxLines="2"
+                                           TextTrimming="CharacterEllipsis"
+                                           Visibility="{x:Bind MemoryText, Converter={StaticResource NullToVisibilityConverter}}" />
 
-                                    <!-- Apple-style metric stat chips -->
-                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2,0,0">
-                                        <Border Visibility="{x:Bind MemoryText, Converter={StaticResource NullToVisibilityConverter}}"
-                                                Background="{ThemeResource LayerFillColorAltBrush}"
-                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="6"
-                                                Padding="6,2">
-                                            <TextBlock Text="{x:Bind MemoryText}"
-                                                       FontSize="11"
-                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        </Border>
-                                        <Border Visibility="{x:Bind ProcessesText, Converter={StaticResource NullToVisibilityConverter}}"
-                                                Background="{ThemeResource LayerFillColorAltBrush}"
-                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="6"
-                                                Padding="6,2">
-                                            <TextBlock Text="{x:Bind ProcessesText}"
-                                                       FontSize="11"
-                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        </Border>
-                                    </StackPanel>
+                                <TextBlock Text="{x:Bind ProcessesText}"
+                                           FontSize="12"
+                                           Foreground="{StaticResource CockpitTextSecondary}"
+                                           Visibility="{x:Bind ProcessesText, Converter={StaticResource NullToVisibilityConverter}}" />
 
-                                    <TextBlock Text="{x:Bind StopsText}"
-                                               FontSize="12"
-                                               Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                               TextWrapping="Wrap" />
+                                <TextBlock Text="{x:Bind StopsText}"
+                                           FontSize="12"
+                                           Foreground="{StaticResource CockpitTextTertiary}"
+                                           TextWrapping="Wrap"
+                                           MaxLines="2"
+                                           TextTrimming="CharacterEllipsis" />
 
-                                    <TextBlock Text="{x:Bind PartlyNote}"
-                                               FontSize="12"
-                                               Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                                               TextWrapping="Wrap"
-                                               Visibility="{x:Bind PartlyNote, Converter={StaticResource NullToVisibilityConverter}}" />
-                                </StackPanel>
+                                <TextBlock Text="{x:Bind InUseText}"
+                                           FontSize="12"
+                                           Foreground="{StaticResource CockpitTextSecondary}"
+                                           Visibility="{x:Bind InUseText, Converter={StaticResource NullToVisibilityConverter}}" />
 
-                                <Button x:Name="PickButton"
-                                        Grid.Column="1"
-                                        Content="Pick"
-                                        Style="{ThemeResource AccentButtonStyle}"
-                                        Tag="{x:Bind Id}"
-                                        Click="OnPickClicked"
-                                        MinWidth="64"
-                                        VerticalAlignment="Center"
-                                        Margin="16,0,0,0" />
-                            </Grid>
-                        </Border>
+                                <TextBlock Text="{x:Bind PartlyNote}"
+                                           FontSize="12"
+                                           Foreground="{StaticResource SystemFillColorCautionBrush}"
+                                           TextWrapping="Wrap"
+                                           Visibility="{x:Bind PartlyNote, Converter={StaticResource NullToVisibilityConverter}}" />
+                            </StackPanel>
+                        </Button>
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
         </StackPanel>
     </ScrollViewer>
 </Page>
